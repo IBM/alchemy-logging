@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	// Local
-	"github.ibm.com/watson-discovery/disco-data-science/go_src/lib/alog"
+	alog "github.ibm.com/watson-discovery/alog/lib"
 )
 
 // Tests - General Helpers /////////////////////////////////////////////////////
