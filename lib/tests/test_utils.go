@@ -19,7 +19,7 @@ import (
 	"sync"
 
 	// Local
-	alog "github.ibm.com/watson-discovery/alog/lib"
+	"github.ibm.com/watson-discovery/alog/lib/alog"
 )
 
 ////////////////////////////////////////////////////////////////////////////////

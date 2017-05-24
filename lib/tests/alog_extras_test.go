@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	// Local
-	alog "github.ibm.com/watson-discovery/alog/lib"
+	"github.ibm.com/watson-discovery/alog/lib/alog"
 )
 
 // Tests - General Helpers /////////////////////////////////////////////////////

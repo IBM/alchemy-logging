@@ -4,7 +4,7 @@ load(
 )
 
 go_library(
-  name = "go_default_library",
+  name = "alog",
   srcs = glob(["*.go"]),
   visibility = ["//visibility:public"]
 )
