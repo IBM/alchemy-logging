@@ -13,7 +13,7 @@ go_library(
     exclude = ["*_test.go"],
   ),
   deps = [
-    "//lib:alog",
+    "//:go_default_library",
     "//external:go_testify_assert",
   ],
   visibility = ["//visibility:public"]
