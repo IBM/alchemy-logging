@@ -5,8 +5,9 @@
 def projectRepo = 'https://github.ibm.com/watson-discovery/alog.git'
 def dockerRepo = "haproxy-v2.wdc.dev.ibmcsf.net"
 def baseImageVersion = "2.0.0"
-def depsImageName = "disco-ds/deps"
-def depsImageVersion = "2.0.0"
+def depsImageSuffix = "alog"
+def depsImageName = "disco-ds/deps" + "-" + depsImageSuffix
+def depsImageVersion = "1.0.0"
 def dockerArgs = "--volume=/var/run/docker.sock:/var/run/docker.sock:rw"
 def nodeLabel = "pickle"
 def versionBumpChoices = '''NONE
@@ -138,7 +139,7 @@ node(nodeLabel) {
         // Check whether or not the prebuilt dependency image is available. If not,
         // built it first so it can be used later.
         stage('Dependencies') {
-          sh 'ci/dependency_stage.sh ' + baseImageVersion + ' ' + depsImageVersion
+          sh 'ci/dependency_stage.sh ' + baseImageVersion + ' ' + depsImageVersion + ' ' + depsImageSuffix
         }
 
         // From here out, everything runs in the container
