@@ -1,0 +1,3 @@
+[submodule "ci"]
+	path = ci
+	url = git@github.ibm.com:Watson-Discovery/disco-data-science-ci-tools.git
