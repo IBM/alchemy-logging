@@ -102,7 +102,6 @@ node(nodeLabel) {
 
     // Clone the repo and submodules
     stage('Clone') {
-      sh 'git config --global url."https://github.ibm.com/".insteadOf "git@github.ibm.com:"'    
       checkout([
         $class: 'GitSCM', 
         branches: [[name: '*/${BRANCH_NAME}']], 
