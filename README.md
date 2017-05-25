@@ -8,26 +8,26 @@ The primary components of the system are **channels** and **levels** which allow
 
 1. **Levels**: Each logging statement is made at a specific level. Levels provide sequential granularity, allowing detailed debugging statements to be placed in the code without clogging up the logs at runtime. The sequence of levels and their general usage is as follows:
 
-  1. `off`: Disable the given channel completely
-  1. `fatal`: A fatal error has occurred. Any behavior after this statement should be regarded as undefined.
-  1. `error`: An unrecoverable error has occurred. Any behavior after this statement should be regarded as undefined unless the error is explicitly handled.
-  1. `warning`: A recoverable error condition has come up that the service maintainer should be aware of.
-  1. `info`: High-level information that is valuable at runtime under moderate load.
-  1. `trace`: Used to log begin/end of functions for debugging code paths.
-  1. `debug`: High-level debugging statements such as function parameters.
-  1. `debug1`: High-level debugging statements.
-  1. `debug2`: Mid-level debugging statements such as computed values.
-  1. `debug3`: Low-level debugging statements such as computed values inside loops.
-  1. `debug4`: Ultra-low-level debugging statements such as data dumps and/or statements inside multiple nested loops.
+    1. `off`: Disable the given channel completely
+    1. `fatal`: A fatal error has occurred. Any behavior after this statement should be regarded as undefined.
+    1. `error`: An unrecoverable error has occurred. Any behavior after this statement should be regarded as undefined unless the error is explicitly handled.
+    1. `warning`: A recoverable error condition has come up that the service maintainer should be aware of.
+    1. `info`: High-level information that is valuable at runtime under moderate load.
+    1. `trace`: Used to log begin/end of functions for debugging code paths.
+    1. `debug`: High-level debugging statements such as function parameters.
+    1. `debug1`: High-level debugging statements.
+    1. `debug2`: Mid-level debugging statements such as computed values.
+    1. `debug3`: Low-level debugging statements such as computed values inside loops.
+    1. `debug4`: Ultra-low-level debugging statements such as data dumps and/or statements inside multiple nested loops.
 
 Using this combination of **Channels** and **Levels**, you can fine-tune what log statements are enabled when you run your application under different circumstances.
 
 ## Standard Configuration
 There are two primary pieces of configuration when setting up the `alog` environment:
 
-1. **default_log_level**: This is the level that will be enabled for a given channel when a specific level has not been set in the **log_filters**.
+1. **default_level**: This is the level that will be enabled for a given channel when a specific level has not been set in the **filters**.
 
-1. **log_filters**: This is a mapping from channel name to level that allows levels to be set on a per-channel basis.
+1. **filters**: This is a mapping from channel name to level that allows levels to be set on a per-channel basis.
 
 The `alog.Config()` function allows both the default level and filters to be set at once. For example:
 
@@ -166,11 +166,7 @@ In addition to the standard configuration for default level and filters, there a
 
 1. `ResetDefaults`: Reset configuration to all standard defaults.
 
-1. `ConfigWriter`: Set the `io.Writer` instance to use as the backend for logging. This can be used to send log statements to places other than `os.Stderr`. It directly overwrites the `io.Writer` used by the standard `log` instance.
-
-1. `ConfigPrefix`: Set the string prefix that the underlying `log` instance will use.
-
-1. `ConfigFlags`: Set the flags that the underlying `log` instance will use.
+1. `ConfigWriter`: Set the `io.Writer` instance to use as the backend for logging. This can be used to send log statements to places other than `os.Stderr`.
 
 1. `SetMaxChannelLen`: Set the truncation length for channel strings in the header.
 
@@ -178,11 +174,13 @@ In addition to the standard configuration for default level and filters, there a
 
 1. `EnableFullFuncSig`/`DisableFullFuncSig`: These functions enable or disable printing the full function signature as part of the `FnLog` functions.
 
+1. `UseJSONLogFormatter`: This function switches the formatter from standard pretty-printing to a key/value JSON format. This is particularly useful when logs are being sent to a collection server such as Logmet.
+
 # Alog Extras
 In addition to the core functionality, a number of convenient extras come along with the `alog` package to help with common usage patterns.
 
 ## Command Line Configuration
-The most common usage for `alog` is as a command-line configurable logging framework. As such, a standard set of command line flags are provided withdocumentation. The important functions for this functionality are:
+The most common usage for `alog` is as a command-line configurable logging framework. As such, a standard set of command line flags are provided with documentation. The important functions for this functionality are:
 
 1. `GetFlags`: Construct the standard set of `alog` command line flags.
 
