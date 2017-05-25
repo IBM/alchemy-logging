@@ -9,8 +9,9 @@ def depsImageName = "disco-ds/deps"
 def depsImageVersion = "2.0.0"
 def dockerArgs = "--volume=/var/run/docker.sock:/var/run/docker.sock:rw"
 def nodeLabel = "pickle"
-def versionBumpChoices = '''Minor
+def versionBumpChoices = '''NONE
 Major
+Minor
 Sub'''
 def versionBumpDescription = '''<p>Choose what type of version bump this is. The version format is:</p>
 
@@ -77,7 +78,7 @@ nodeLabel = env.NODE_LABEL
 
 changeLog = ""
 versionBumpType = ""
-if (env.VERSION_BUMP_TYPE != "") {
+if (env.VERSION_BUMP_TYPE != "NONE") {
   versionStage = true
   cooStage = true
   versionBumpType = env.VERSION_BUMP_TYPE
