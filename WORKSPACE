@@ -1,4 +1,4 @@
-workspace(name = "alog")
+workspace(name = "com_github_ibm_alog")
 
 ## Tools for accessing repositories ############################################
 
