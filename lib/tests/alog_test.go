@@ -507,12 +507,45 @@ func Test_Alog_LogMap(t *testing.T) {
 	alog.LogMap("TEST", alog.INFO, map[string]interface{}{
 		"b": 1,
 		"a": "two",
+		"c": []string{"e", "f"},
 	})
 
 	// Check the result
 	assert.True(t, verifyLogs(entries, []expEntry{
 		expEntry{channel: "TEST ", level: "INFO", body: "a: two"},
 		expEntry{channel: "TEST ", level: "INFO", body: "b: 1"},
+		expEntry{channel: "TEST ", level: "INFO", body: "c: [e f]"},
+	}))
+
+	// Reset for next test
+	alog.ResetDefaults()
+}
+
+////
+// LogWithMap - Test message plus structured data
+//
+// 1) Log a LogWithMap line
+//  -> Verify key/val output
+////
+func Test_Alog_LogWithMap(t *testing.T) {
+	alog.ConfigDefaultLevel(alog.DEBUG2)
+
+	// Set up the writer to capture logged lines
+	entries := []string{}
+	ConfigStdLogWriter(&entries)
+
+	alog.LogWithMap("TEST", alog.INFO, map[string]interface{}{
+		"b": 1,
+		"a": "two",
+		"c": []string{"e", "f"},
+	}, "Hi logging world, this is a test %d", 1)
+
+	// Check the result
+	assert.True(t, verifyLogs(entries, []expEntry{
+		expEntry{channel: "TEST ", level: "INFO", body: "Hi logging world, this is a test 1"},
+		expEntry{channel: "TEST ", level: "INFO", body: "a: two"},
+		expEntry{channel: "TEST ", level: "INFO", body: "b: 1"},
+		expEntry{channel: "TEST ", level: "INFO", body: "c: [e f]"},
 	}))
 
 	// Reset for next test
@@ -747,15 +780,48 @@ func Test_Alog_JSONLogMap(t *testing.T) {
 	ConfigJSONLogWriter(&entries)
 	alog.ConfigDefaultLevel(alog.DEBUG2)
 
+	// NOTE: The 'c' key works as a []string as well, but the validation fails on
+	// reflect.DeepEqual since you have one []string and one []interface{}
 	md := map[string]interface{}{
 		"test_key":  "string_val",
 		"test_key2": 23,
+		"c":         []interface{}{string("e"), string("f")},
 	}
 	alog.LogMap("TEST", alog.DEBUG2, md)
 
 	// Check the result
 	assert.True(t, verifyJSONLogs(entries, []expEntry{
 		expEntry{channel: "TEST", level: "debug2", mapData: md},
+	}))
+
+	// Reset for next test
+	alog.ResetDefaults()
+}
+
+////
+// JSON LogWithMap - Verify that LogWithMap k/v entries are serialized along
+// with full message
+//
+// 1) Log a LogWithMap line
+//  -> map data keys/values present in result
+//  -> formatted message present in result
+////
+func Test_Alog_JSONLogWithMap(t *testing.T) {
+
+	// Configure
+	entries := []string{}
+	ConfigJSONLogWriter(&entries)
+	alog.ConfigDefaultLevel(alog.DEBUG2)
+
+	md := map[string]interface{}{
+		"test_key":  "string_val",
+		"test_key2": 23,
+	}
+	alog.LogWithMap("TEST", alog.DEBUG2, md, "Hello logging world, this is a test %d", 1)
+
+	// Check the result
+	assert.True(t, verifyJSONLogs(entries, []expEntry{
+		expEntry{channel: "TEST", level: "debug2", mapData: md, body: "Hello logging world, this is a test 1"},
 	}))
 
 	// Reset for next test

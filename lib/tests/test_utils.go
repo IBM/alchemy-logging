@@ -276,7 +276,7 @@ func matchExpJSON(entry string, expected expEntry) bool {
 				match = false
 			}
 		} else if !reflect.DeepEqual(v, gotVal) {
-			fmt.Printf("Value mismatch for mapData entry [%s]. Got: %v, expected %v\n", k, gotVal, v)
+			fmt.Printf("Value mismatch for mapData entry [%s]. Got: [%v - %s], expected [%v - %s]\n", k, gotVal, reflect.TypeOf(gotVal), v, reflect.TypeOf(v))
 			match = false
 		}
 	}
