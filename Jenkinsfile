@@ -79,7 +79,7 @@ nodeLabel = env.NODE_LABEL
 
 changeLog = ""
 versionBumpType = ""
-if (env.VERSION_BUMP_TYPE != "NONE") {
+if (env.VERSION_BUMP_TYPE != "NONE" && env.VERSION_BUMP_TYPE != null) {
   print "VERSION_BUMP_TYPE: [" + env.VERSION_BUMP_TYPE + "]"
   versionStage = true
   cooStage = true
