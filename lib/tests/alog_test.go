@@ -48,15 +48,15 @@ func Test_Alog_HappyPath(t *testing.T) {
 
 	// Log with no configuration
 	alog.Log("TEST", alog.INFO, "Test1")
-	assert.True(t, verifyLogs(entries, []expEntry{}))
+	assert.True(t, VerifyLogs(entries, []ExpEntry{}))
 	entries = []string{}
 
 	// Set default level and try again
 	alog.ConfigDefaultLevel(alog.INFO)
 	alog.Log("TEST", alog.INFO, "Test2")
 	alog.Log("TEST", alog.DEBUG, "Debug test!")
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "TEST ", level: "INFO", body: "Test2"},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST ", level: "INFO", body: "Test2"},
 	}))
 	entries = []string{}
 
@@ -64,8 +64,8 @@ func Test_Alog_HappyPath(t *testing.T) {
 	alog.ConfigChannel("TEST", alog.OFF)
 	alog.Log("TEST", alog.INFO, "Can't see me...")
 	alog.Log("FOO", alog.INFO, "Use the default!")
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "FOO  ", level: "INFO", body: "Use the default!"},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "FOO  ", level: "INFO", body: "Use the default!"},
 	}))
 	entries = []string{}
 
@@ -73,16 +73,16 @@ func Test_Alog_HappyPath(t *testing.T) {
 	for i := 1; i < 3; i++ {
 		alog.Log("FOO", alog.INFO, "This is formatting test [%d]", i)
 	}
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "FOO  ", level: "INFO", body: "This is formatting test [1]"},
-		expEntry{channel: "FOO  ", level: "INFO", body: "This is formatting test [2]"},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "FOO  ", level: "INFO", body: "This is formatting test [1]"},
+		ExpEntry{channel: "FOO  ", level: "INFO", body: "This is formatting test [2]"},
 	}))
 	entries = []string{}
 
 	// Test a really long channel name
 	alog.Log("LONGCHANNEL", alog.INFO, "Line me up nice...")
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "LONGC", level: "INFO", body: "Line me up nice..."},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "LONGC", level: "INFO", body: "Line me up nice..."},
 	}))
 	entries = []string{}
 
@@ -121,12 +121,12 @@ func Test_Alog_Indent(t *testing.T) {
 	alog.Log("TEST", alog.DEBUG2, "Made it!")
 
 	// Check the result
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "TEST ", level: "DBG2", body: "Outside the indent", nIndent: 0},
-		expEntry{channel: "TEST ", level: "DBG2", body: "Level 1", nIndent: 1},
-		expEntry{channel: "TEST ", level: "DBG2", body: "Level 2", nIndent: 2},
-		expEntry{channel: "TEST ", level: "DBG2", body: "Level 1", nIndent: 1},
-		expEntry{channel: "TEST ", level: "DBG2", body: "Made it!", nIndent: 0},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST ", level: "DBG2", body: "Outside the indent", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "DBG2", body: "Level 1", nIndent: 1},
+		ExpEntry{channel: "TEST ", level: "DBG2", body: "Level 2", nIndent: 2},
+		ExpEntry{channel: "TEST ", level: "DBG2", body: "Level 1", nIndent: 1},
+		ExpEntry{channel: "TEST ", level: "DBG2", body: "Made it!", nIndent: 0},
 	}))
 
 	// Reset for next test
@@ -155,12 +155,12 @@ func Test_Alog_IndentDisabled(t *testing.T) {
 	alog.Log("TEST", alog.DEBUG2, "Made it!")
 
 	// Check the result
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "TEST ", level: "DBG2", body: "Outside the indent", nIndent: 0},
-		expEntry{channel: "TEST ", level: "DBG2", body: "Level 1", nIndent: 0},
-		expEntry{channel: "TEST ", level: "DBG2", body: "Level 2", nIndent: 0},
-		expEntry{channel: "TEST ", level: "DBG2", body: "Level 1", nIndent: 0},
-		expEntry{channel: "TEST ", level: "DBG2", body: "Made it!", nIndent: 0},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST ", level: "DBG2", body: "Outside the indent", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "DBG2", body: "Level 1", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "DBG2", body: "Level 2", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "DBG2", body: "Level 1", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "DBG2", body: "Made it!", nIndent: 0},
 	}))
 
 	// Reset for next test
@@ -196,10 +196,10 @@ func Test_Alog_Channel(t *testing.T) {
 	ch.Log(alog.INFO, "Done with FOO")
 
 	// Check the result
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "THIS ", level: "INFO", body: "Logged to this!"},
-		expEntry{channel: "FOO  ", level: "INFO", body: "Doin it in FOO"},
-		expEntry{channel: "THIS ", level: "INFO", body: "Done with FOO"},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "THIS ", level: "INFO", body: "Logged to this!"},
+		ExpEntry{channel: "FOO  ", level: "INFO", body: "Doin it in FOO"},
+		ExpEntry{channel: "THIS ", level: "INFO", body: "Done with FOO"},
 	}))
 
 	// Reset for next test
@@ -251,16 +251,16 @@ func Test_Alog_GID(t *testing.T) {
 	ch.Log(alog.INFO, "All goroutines done")
 
 	// Check the result
-	assert.True(t, verifyLogsUnordered(entries, []expEntry{
-		expEntry{channel: "PARLL", level: "INFO", body: "Logging in a goroutine", hasGid: true},
-		expEntry{channel: "PARLL", level: "INFO", body: "Logging in a goroutine", hasGid: true},
-		expEntry{channel: "PARLL", level: "INFO", body: "Logging in a goroutine", hasGid: true},
-		expEntry{channel: "PARLL", level: "INFO", body: "Logging in a goroutine", hasGid: true},
-		expEntry{channel: "MAIN ", level: "INFO", body: "Done with 0", hasGid: true},
-		expEntry{channel: "MAIN ", level: "INFO", body: "Done with 1", hasGid: true},
-		expEntry{channel: "MAIN ", level: "INFO", body: "Done with 2", hasGid: true},
-		expEntry{channel: "MAIN ", level: "INFO", body: "Done with 3", hasGid: true},
-		expEntry{channel: "MAIN ", level: "INFO", body: "All goroutines done", hasGid: true},
+	assert.True(t, VerifyLogsUnordered(entries, []ExpEntry{
+		ExpEntry{channel: "PARLL", level: "INFO", body: "Logging in a goroutine", hasGid: true},
+		ExpEntry{channel: "PARLL", level: "INFO", body: "Logging in a goroutine", hasGid: true},
+		ExpEntry{channel: "PARLL", level: "INFO", body: "Logging in a goroutine", hasGid: true},
+		ExpEntry{channel: "PARLL", level: "INFO", body: "Logging in a goroutine", hasGid: true},
+		ExpEntry{channel: "MAIN ", level: "INFO", body: "Done with 0", hasGid: true},
+		ExpEntry{channel: "MAIN ", level: "INFO", body: "Done with 1", hasGid: true},
+		ExpEntry{channel: "MAIN ", level: "INFO", body: "Done with 2", hasGid: true},
+		ExpEntry{channel: "MAIN ", level: "INFO", body: "Done with 3", hasGid: true},
+		ExpEntry{channel: "MAIN ", level: "INFO", body: "All goroutines done", hasGid: true},
 	}))
 
 	// Reset for next test
@@ -299,10 +299,10 @@ func Test_Alog_IsEnabled(t *testing.T) {
 	}
 
 	// Check the result
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "MAIN ", level: "INFO", body: "About to check if enabled"},
-		expEntry{channel: "MAIN ", level: "INFO", body: "HELLO!"},
-		expEntry{channel: "HIGH ", level: "DBG3", body: "Deep debugging time!"},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "MAIN ", level: "INFO", body: "About to check if enabled"},
+		ExpEntry{channel: "MAIN ", level: "INFO", body: "HELLO!"},
+		ExpEntry{channel: "HIGH ", level: "DBG3", body: "Deep debugging time!"},
 	}))
 
 	// Reset for next test
@@ -344,14 +344,14 @@ func Test_Alog_Scope(t *testing.T) {
 	// Check the result
 	// NOTE: End of "End of function scope" won't have logged yet because it waits
 	//  for the function to close
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "MAIN ", level: "INFO", body: "Trying a scope now...", nIndent: 0},
-		expEntry{channel: "TEST ", level: "INFO", body: "Start: Local scope", nIndent: 0},
-		expEntry{channel: "TEST ", level: "INFO", body: "inside the scope", nIndent: 1},
-		expEntry{channel: "TEST ", level: "INFO", body: "End: Local scope", nIndent: 0},
-		expEntry{channel: "MAIN ", level: "INFO", body: "Bye bye scope", nIndent: 0},
-		expEntry{channel: "MAIN ", level: "DBUG", body: "Start: End of function scope", nIndent: 0},
-		expEntry{channel: "MAIN ", level: "DBUG", body: "Got something to say??", nIndent: 1},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "MAIN ", level: "INFO", body: "Trying a scope now...", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "INFO", body: "Start: Local scope", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "INFO", body: "inside the scope", nIndent: 1},
+		ExpEntry{channel: "TEST ", level: "INFO", body: "End: Local scope", nIndent: 0},
+		ExpEntry{channel: "MAIN ", level: "INFO", body: "Bye bye scope", nIndent: 0},
+		ExpEntry{channel: "MAIN ", level: "DBUG", body: "Start: End of function scope", nIndent: 0},
+		ExpEntry{channel: "MAIN ", level: "DBUG", body: "Got something to say??", nIndent: 1},
 	}))
 
 	// Reset for next test
@@ -399,16 +399,16 @@ func Test_Alog_ChFnLog(t *testing.T) {
 	ch.Log(alog.INFO, "... and we're done!")
 
 	// Check the result
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "FNLOG", level: "INFO", body: "Let's get started...", nIndent: 0},
-		expEntry{channel: "FNLOG", level: "TRCE", body: "Start: func1(0)", nIndent: 0},
-		expEntry{channel: "FNLOG", level: "INFO", body: "bar: 1", nIndent: 1},
-		expEntry{channel: "FNLOG", level: "INFO", body: "bat: 2", nIndent: 1},
-		expEntry{channel: "FNLOG", level: "TRCE", body: "End: func1(0)", nIndent: 0},
-		expEntry{channel: "FREE ", level: "DBUG", body: "Start: freeFuncTest()", nIndent: 0},
-		expEntry{channel: "FREE ", level: "INFO", body: "Something soooooo cool!", nIndent: 1},
-		expEntry{channel: "FREE ", level: "DBUG", body: "End: freeFuncTest()", nIndent: 0},
-		expEntry{channel: "FNLOG", level: "INFO", body: "... and we're done!", nIndent: 0},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "FNLOG", level: "INFO", body: "Let's get started...", nIndent: 0},
+		ExpEntry{channel: "FNLOG", level: "TRCE", body: "Start: func1(0)", nIndent: 0},
+		ExpEntry{channel: "FNLOG", level: "INFO", body: "bar: 1", nIndent: 1},
+		ExpEntry{channel: "FNLOG", level: "INFO", body: "bat: 2", nIndent: 1},
+		ExpEntry{channel: "FNLOG", level: "TRCE", body: "End: func1(0)", nIndent: 0},
+		ExpEntry{channel: "FREE ", level: "DBUG", body: "Start: freeFuncTest()", nIndent: 0},
+		ExpEntry{channel: "FREE ", level: "INFO", body: "Something soooooo cool!", nIndent: 1},
+		ExpEntry{channel: "FREE ", level: "DBUG", body: "End: freeFuncTest()", nIndent: 0},
+		ExpEntry{channel: "FNLOG", level: "INFO", body: "... and we're done!", nIndent: 0},
 	}))
 
 	// Reset for next test
@@ -449,15 +449,15 @@ func Test_Alog_FnLog(t *testing.T) {
 	alog.Log("TEST", alog.INFO, "... and we're done!")
 
 	// Check the result
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "TEST ", level: "INFO", body: "Let's get started...", nIndent: 0},
-		expEntry{channel: "TEST ", level: "TRCE", body: "Start: func1(0)", nIndent: 0},
-		expEntry{channel: "TEST ", level: "INFO", body: "bar: 1", nIndent: 1},
-		expEntry{channel: "TEST ", level: "INFO", body: "bat: 2", nIndent: 1},
-		expEntry{channel: "TEST ", level: "TRCE", body: "End: func1(0)", nIndent: 0},
-		expEntry{channel: "TEST ", level: "DBUG", body: "Start: func2()", nIndent: 0},
-		expEntry{channel: "TEST ", level: "DBUG", body: "End: func2()", nIndent: 0},
-		expEntry{channel: "TEST ", level: "INFO", body: "... and we're done!", nIndent: 0},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST ", level: "INFO", body: "Let's get started...", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "TRCE", body: "Start: func1(0)", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "INFO", body: "bar: 1", nIndent: 1},
+		ExpEntry{channel: "TEST ", level: "INFO", body: "bat: 2", nIndent: 1},
+		ExpEntry{channel: "TEST ", level: "TRCE", body: "End: func1(0)", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "DBUG", body: "Start: func2()", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "DBUG", body: "End: func2()", nIndent: 0},
+		ExpEntry{channel: "TEST ", level: "INFO", body: "... and we're done!", nIndent: 0},
 	}))
 
 	// Reset for next test
@@ -483,8 +483,8 @@ func Test_Alog_ServiceName(t *testing.T) {
 	alog.Log("TEST", alog.INFO, "Hi there")
 
 	// Check the result
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "TEST ", level: "INFO", body: "Hi there", servicename: &sn},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST ", level: "INFO", body: "Hi there", servicename: &sn},
 	}))
 
 	// Reset for next test
@@ -511,10 +511,10 @@ func Test_Alog_LogMap(t *testing.T) {
 	})
 
 	// Check the result
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "TEST ", level: "INFO", body: "a: two"},
-		expEntry{channel: "TEST ", level: "INFO", body: "b: 1"},
-		expEntry{channel: "TEST ", level: "INFO", body: "c: [e f]"},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST ", level: "INFO", body: "a: two"},
+		ExpEntry{channel: "TEST ", level: "INFO", body: "b: 1"},
+		ExpEntry{channel: "TEST ", level: "INFO", body: "c: [e f]"},
 	}))
 
 	// Reset for next test
@@ -541,11 +541,11 @@ func Test_Alog_LogWithMap(t *testing.T) {
 	}, "Hi logging world, this is a test %d", 1)
 
 	// Check the result
-	assert.True(t, verifyLogs(entries, []expEntry{
-		expEntry{channel: "TEST ", level: "INFO", body: "Hi logging world, this is a test 1"},
-		expEntry{channel: "TEST ", level: "INFO", body: "a: two"},
-		expEntry{channel: "TEST ", level: "INFO", body: "b: 1"},
-		expEntry{channel: "TEST ", level: "INFO", body: "c: [e f]"},
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST ", level: "INFO", body: "Hi logging world, this is a test 1"},
+		ExpEntry{channel: "TEST ", level: "INFO", body: "a: two"},
+		ExpEntry{channel: "TEST ", level: "INFO", body: "b: 1"},
+		ExpEntry{channel: "TEST ", level: "INFO", body: "c: [e f]"},
 	}))
 
 	// Reset for next test
@@ -580,8 +580,8 @@ func Test_Alog_JSONBasicChannel(t *testing.T) {
 
 	// Check the result
 	assert.True(t, len(entries) == 1)
-	assert.True(t, verifyJSONLogs(entries, []expEntry{
-		expEntry{channel: "MAIN", level: "info", body: "[10] This is a formatted test"},
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
+		ExpEntry{channel: "MAIN", level: "info", body: "[10] This is a formatted test"},
 	}))
 
 	// Reset for next test
@@ -610,15 +610,15 @@ func Test_Alog_JSONHappyPath(t *testing.T) {
 
 	// Log with no configuration
 	alog.Log("TEST", alog.INFO, "Test1")
-	assert.True(t, verifyJSONLogs(entries, []expEntry{}))
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{}))
 	entries = []string{}
 
 	// Set default level and try again
 	alog.ConfigDefaultLevel(alog.INFO)
 	alog.Log("TEST", alog.INFO, "Test2")
 	alog.Log("TEST", alog.DEBUG, "Debug test!")
-	assert.True(t, verifyJSONLogs(entries, []expEntry{
-		expEntry{channel: "TEST", level: "info", body: "Test2"},
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST", level: "info", body: "Test2"},
 	}))
 	entries = []string{}
 
@@ -626,8 +626,8 @@ func Test_Alog_JSONHappyPath(t *testing.T) {
 	alog.ConfigChannel("TEST", alog.OFF)
 	alog.Log("TEST", alog.INFO, "Can't see me...")
 	alog.Log("FOO", alog.INFO, "Use the default!")
-	assert.True(t, verifyJSONLogs(entries, []expEntry{
-		expEntry{channel: "FOO", level: "info", body: "Use the default!"},
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
+		ExpEntry{channel: "FOO", level: "info", body: "Use the default!"},
 	}))
 	entries = []string{}
 
@@ -635,16 +635,16 @@ func Test_Alog_JSONHappyPath(t *testing.T) {
 	for i := 1; i < 3; i++ {
 		alog.Log("FOO", alog.INFO, "This is formatting test [%d]", i)
 	}
-	assert.True(t, verifyJSONLogs(entries, []expEntry{
-		expEntry{channel: "FOO", level: "info", body: "This is formatting test [1]"},
-		expEntry{channel: "FOO", level: "info", body: "This is formatting test [2]"},
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
+		ExpEntry{channel: "FOO", level: "info", body: "This is formatting test [1]"},
+		ExpEntry{channel: "FOO", level: "info", body: "This is formatting test [2]"},
 	}))
 	entries = []string{}
 
 	// Test a really long channel name (don't truncate for JSON)
 	alog.Log("LONGCHANNEL", alog.INFO, "Line me up nice...")
-	assert.True(t, verifyJSONLogs(entries, []expEntry{
-		expEntry{channel: "LONGCHANNEL", level: "info", body: "Line me up nice..."},
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
+		ExpEntry{channel: "LONGCHANNEL", level: "info", body: "Line me up nice..."},
 	}))
 	entries = []string{}
 
@@ -679,8 +679,8 @@ func Test_Alog_JSONServiceName(t *testing.T) {
 
 	// Check the result
 	assert.True(t, len(entries) == 1)
-	assert.True(t, verifyJSONLogs(entries, []expEntry{
-		expEntry{channel: "MAIN", level: "info", body: "[10] This is a formatted test", servicename: &sn},
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
+		ExpEntry{channel: "MAIN", level: "info", body: "[10] This is a formatted test", servicename: &sn},
 	}))
 
 	// Reset for next test
@@ -719,12 +719,12 @@ func Test_Alog_JSONIndent(t *testing.T) {
 	alog.Log("TEST", alog.DEBUG2, "Made it!")
 
 	// Check the result
-	assert.True(t, verifyJSONLogs(entries, []expEntry{
-		expEntry{channel: "TEST", level: "debug2", body: "Outside the indent", nIndent: 0},
-		expEntry{channel: "TEST", level: "debug2", body: "Level 1", nIndent: 1},
-		expEntry{channel: "TEST", level: "debug2", body: "Level 2", nIndent: 2},
-		expEntry{channel: "TEST", level: "debug2", body: "Level 1", nIndent: 1},
-		expEntry{channel: "TEST", level: "debug2", body: "Made it!", nIndent: 0},
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST", level: "debug2", body: "Outside the indent", nIndent: 0},
+		ExpEntry{channel: "TEST", level: "debug2", body: "Level 1", nIndent: 1},
+		ExpEntry{channel: "TEST", level: "debug2", body: "Level 2", nIndent: 2},
+		ExpEntry{channel: "TEST", level: "debug2", body: "Level 1", nIndent: 1},
+		ExpEntry{channel: "TEST", level: "debug2", body: "Made it!", nIndent: 0},
 	}))
 
 	// Reset for next test
@@ -755,12 +755,12 @@ func Test_Alog_JSONIndentDisabled(t *testing.T) {
 	alog.Log("TEST", alog.DEBUG2, "Made it!")
 
 	// Check the result
-	assert.True(t, verifyJSONLogs(entries, []expEntry{
-		expEntry{channel: "TEST", level: "debug2", body: "Outside the indent", nIndent: 0},
-		expEntry{channel: "TEST", level: "debug2", body: "Level 1", nIndent: 0},
-		expEntry{channel: "TEST", level: "debug2", body: "Level 2", nIndent: 0},
-		expEntry{channel: "TEST", level: "debug2", body: "Level 1", nIndent: 0},
-		expEntry{channel: "TEST", level: "debug2", body: "Made it!", nIndent: 0},
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST", level: "debug2", body: "Outside the indent", nIndent: 0},
+		ExpEntry{channel: "TEST", level: "debug2", body: "Level 1", nIndent: 0},
+		ExpEntry{channel: "TEST", level: "debug2", body: "Level 2", nIndent: 0},
+		ExpEntry{channel: "TEST", level: "debug2", body: "Level 1", nIndent: 0},
+		ExpEntry{channel: "TEST", level: "debug2", body: "Made it!", nIndent: 0},
 	}))
 
 	// Reset for next test
@@ -790,8 +790,8 @@ func Test_Alog_JSONLogMap(t *testing.T) {
 	alog.LogMap("TEST", alog.DEBUG2, md)
 
 	// Check the result
-	assert.True(t, verifyJSONLogs(entries, []expEntry{
-		expEntry{channel: "TEST", level: "debug2", mapData: md},
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST", level: "debug2", mapData: md},
 	}))
 
 	// Reset for next test
@@ -820,8 +820,8 @@ func Test_Alog_JSONLogWithMap(t *testing.T) {
 	alog.LogWithMap("TEST", alog.DEBUG2, md, "Hello logging world, this is a test %d", 1)
 
 	// Check the result
-	assert.True(t, verifyJSONLogs(entries, []expEntry{
-		expEntry{channel: "TEST", level: "debug2", mapData: md, body: "Hello logging world, this is a test 1"},
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST", level: "debug2", mapData: md, body: "Hello logging world, this is a test 1"},
 	}))
 
 	// Reset for next test
@@ -846,8 +846,8 @@ func Test_Alog_JSONGID(t *testing.T) {
 	alog.Log("TEST", alog.DEBUG2, "Test with GID")
 
 	// Check the result
-	assert.True(t, verifyJSONLogs(entries, []expEntry{
-		expEntry{channel: "TEST", level: "debug2", body: "Test with GID", hasGid: true},
+	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
+		ExpEntry{channel: "TEST", level: "debug2", body: "Test with GID", hasGid: true},
 	}))
 
 	// Reset for next test
