@@ -530,6 +530,26 @@ func LogMap(channel LogChannel, level LogLevel, mapData map[string]interface{}) 
 	std.mutex.RUnlock()
 }
 
+// LogWithMap - Log a message with additional structured map data
+func LogWithMap(channel LogChannel, level LogLevel, mapData map[string]interface{}, format string, v ...interface{}) {
+	std.mutex.RLock()
+	if std.isEnabled(channel, level) {
+		for _, m := range std.formatter.FormatEntry(LogEntry{
+			Channel:     channel,
+			Level:       level,
+			Format:      format,
+			Expansion:   v,
+			MapData:     mapData,
+			NIndent:     std.getIndentCount(),
+			Timestamp:   time.Now().UTC(),
+			Servicename: std.serviceName,
+		}) {
+			std.writer.Write([]byte(m))
+		}
+	}
+	std.mutex.RUnlock()
+}
+
 //-- Convenience Methods -------------------------------------------------------
 
 // Indent - Increase the indent level
@@ -773,9 +793,14 @@ func (ch *channelLogImpl) Fatalf(level LogLevel, format string, v ...interface{}
 	Fatalf(ch.channel, level, format, v...)
 }
 
-// LogMap - Log to a LogChannel instance
+// LogMap - LogMap to a LogChannel instance
 func (ch *channelLogImpl) LogMap(level LogLevel, mapData map[string]interface{}) {
 	LogMap(ch.channel, level, mapData)
+}
+
+// LogWithMap - LogWithMap to a LogChannel instance
+func (ch *channelLogImpl) LogWithMap(level LogLevel, mapData map[string]interface{}, format string, v ...interface{}) {
+	LogWithMap(ch.channel, level, mapData, format, v...)
 }
 
 // IsEnabled - IsEnabled for a LogChannel instance

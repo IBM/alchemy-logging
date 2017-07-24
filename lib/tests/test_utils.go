@@ -53,7 +53,8 @@ func ConfigJSONLogWriter(entries *[]string) {
 	alog.UseJSONLogFormatter()
 }
 
-type expEntry struct {
+// ExpEntry - Helper struct to represent an expected log line
+type ExpEntry struct {
 	channel     string
 	level       string
 	hasGid      bool
@@ -63,7 +64,7 @@ type expEntry struct {
 	mapData     map[string]interface{}
 }
 
-func matchExp(entry string, exp expEntry, verbose bool) bool {
+func matchExp(entry string, exp ExpEntry, verbose bool) bool {
 
 	// Big nasty regex to parse out the parts of a Std formatted log:
 	//
@@ -158,7 +159,8 @@ func matchExp(entry string, exp expEntry, verbose bool) bool {
 	return match
 }
 
-func verifyLogs(entries []string, expected []expEntry) bool {
+// VerifyLogs - Verify that the expected STD log lines were logged
+func VerifyLogs(entries []string, expected []ExpEntry) bool {
 	if len(entries) != len(expected) {
 		fmt.Printf("Length mismatch: Expected %d, Got %d\n", len(expected), len(entries))
 		return false
@@ -173,7 +175,9 @@ func verifyLogs(entries []string, expected []expEntry) bool {
 	return match
 }
 
-func verifyLogsUnordered(entries []string, expected []expEntry) bool {
+// VerifyLogsUnordered - Verify that the expecte log lines were logged,
+// regardless of order
+func VerifyLogsUnordered(entries []string, expected []ExpEntry) bool {
 	if len(entries) != len(expected) {
 		fmt.Printf("Length mismatch: Expected %d, Got %d\n", len(expected), len(entries))
 		return false
@@ -195,7 +199,8 @@ func verifyLogsUnordered(entries []string, expected []expEntry) bool {
 	return match
 }
 
-func verifyJSONLogs(entries []string, expected []expEntry) bool {
+// VerifyJSONLogs - Verify that the expected JSON log lines were logged
+func VerifyJSONLogs(entries []string, expected []ExpEntry) bool {
 	if len(entries) != len(expected) {
 		fmt.Printf("Length mismatch: Expected %d, Got %d\n", len(expected), len(entries))
 		return false
@@ -210,7 +215,7 @@ func verifyJSONLogs(entries []string, expected []expEntry) bool {
 	return match
 }
 
-func matchExpJSON(entry string, expected expEntry) bool {
+func matchExpJSON(entry string, expected ExpEntry) bool {
 
 	// Parse to a LogEntry
 	var logEntry alog.LogEntry
@@ -276,7 +281,7 @@ func matchExpJSON(entry string, expected expEntry) bool {
 				match = false
 			}
 		} else if !reflect.DeepEqual(v, gotVal) {
-			fmt.Printf("Value mismatch for mapData entry [%s]. Got: %v, expected %v\n", k, gotVal, v)
+			fmt.Printf("Value mismatch for mapData entry [%s]. Got: [%v - %s], expected [%v - %s]\n", k, gotVal, reflect.TypeOf(gotVal), v, reflect.TypeOf(v))
 			match = false
 		}
 	}
