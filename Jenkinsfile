@@ -3,7 +3,7 @@
 //// Config Vars and Functions /////////////////////////////////////////////////
 
 def projectRepo = 'https://github.ibm.com/watson-discovery/alog.git'
-def dockerRepo = "haproxy-v2.wdc.dev.ibmcsf.net"
+def dockerRepo = "docker-repo-v2.rtp.raleigh.ibm.com:5000"
 def baseImageVersion = "2.0.0"
 def depsImageSuffix = "alog"
 def depsImageName = "disco-ds/deps" + "-" + depsImageSuffix
