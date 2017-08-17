@@ -4,7 +4,8 @@
 
 def projectRepo = 'https://github.ibm.com/watson-discovery/alog.git'
 def dockerRepo = "docker-repo-v2.rtp.raleigh.ibm.com:5000"
-def baseImageVersion = "2.0.0"
+def baseImageSuffix = "bazel"
+def baseImageVersion = "1.1.0"
 def depsImageSuffix = "alog"
 def depsImageName = "disco-ds/deps" + "-" + depsImageSuffix
 def depsImageVersion = "1.0.0"
@@ -139,7 +140,7 @@ node(nodeLabel) {
         // Check whether or not the prebuilt dependency image is available. If not,
         // built it first so it can be used later.
         stage('Dependencies') {
-          sh 'ci/dependency_stage.sh ' + baseImageVersion + ' ' + depsImageVersion + ' ' + depsImageSuffix
+          sh 'ci/dependency_stage.sh -g -b ' + baseImageVersion + ' -d ' + depsImageVersion + ' -B ' + baseImageSuffix + ' -D ' + depsImageSuffix
         }
 
         // From here out, everything runs in the container
