@@ -3,7 +3,7 @@
  * File description: logger.cpp
  * Author information: Gabe Hart ghart@us.ibm.com
  */
-#include "utils/logger.h"
+#include "logger.h"
 
 #include <utility>
 #include <vector>
