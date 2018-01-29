@@ -185,9 +185,7 @@ std::shared_ptr<std::ofstream> InitLogFile(const std::string& a_filename);
 /*-- Detail Macros ----------------------------------------------------------*/
 
 #define ALOG_LEVEL_IMPL(channel, level, msg)\
-  do {if (level == logging::detail::ELogLevels::off) {\
-    throw std::runtime_error("Logging to 'off' is not allowed");\
-  } else if (logging::detail::CLogChannelRegistrySingleton\
+  do {if (logging::detail::CLogChannelRegistrySingleton\
     ::instance()->filter(channel, level)) {\
     logging::detail::CLogChannelRegistrySingleton\
       ::instance()->log( channel, level,\

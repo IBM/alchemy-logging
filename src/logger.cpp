@@ -142,8 +142,13 @@ void CLogChannelRegistrySingleton::disableThreadID()
 bool CLogChannelRegistrySingleton::filter(const std::string& a_channel,
                                           ELogLevels a_level) const
 {
-  auto iter = m_filters.find(a_channel);
-  return (iter != m_filters.end() ? iter->second : m_defaultLevel) >= a_level;
+  if (a_level == logging::detail::ELogLevels::off) {
+    throw std::runtime_error("Logging to 'off' is not allowed");
+    return false;
+  } else {
+    auto iter = m_filters.find(a_channel);
+    return (iter != m_filters.end() ? iter->second : m_defaultLevel) >= a_level;
+  }
 }
 
 void CLogChannelRegistrySingleton::log(const std::string& a_channel,
