@@ -1,0 +1,433 @@
+// (C) Copyright IBM Corp. 2015
+/* (C) Copyright IBM Corp. 2015
+ *
+ * File description: logger.h
+ * Author information: Gabe Hart ghart@us.ibm.com
+ */
+#pragma once
+
+#include <string>
+#include <unordered_map>
+#include <memory>
+#include <functional>
+#include <mutex>
+#include <fstream>
+#include <chrono>
+
+#include <boost/current_function.hpp>
+#include <boost/thread/thread.hpp>
+
+
+/* \brief This tool provides a thread-safe logging environment
+ *
+ * This logger tool provides standard logging functionality including multiple
+ * channels and levels. In addition, it allows threaded applications to perform
+ * logging operations concurrently while enforcing serialized write access to
+ * the log itself.
+ *
+ * There are several key compiler definitions that can effect the behavior of
+ * the logging system:
+ *
+ * DISABLE_LOGGING - Fully disable logging and complie it out
+ * ALOG_SCOPED_FUNCTIONS - Use full scope for function names
+ */
+
+namespace logging
+{
+namespace detail
+{
+
+/** The maximum length of a channel name when printed to the log. Note that
+ * channel names may be longer than this in the code, but only this many
+ * characters will appear in the log */
+static const unsigned MAX_CHANNEL_LENGTH = 5;
+
+/** This is the string used for a single indent */
+static const std::string INDENT_VALUE = "  ";
+
+/** \brief Custom severity level enum */
+enum ELogLevels
+{
+  off = 0,
+  fatal,
+  error,
+  warning,
+  info,
+  trace,
+  debug,
+  debug1,
+  debug2,
+  debug3,
+  debug4
+};
+std::ostream& operator<<(std::ostream&, const detail::ELogLevels&);
+
+/** \brief This class a singleton used to aggregate logging channels */
+class CLogChannelRegistrySingleton
+{
+public:
+  typedef std::shared_ptr<CLogChannelRegistrySingleton> Ptr;
+  typedef std::unordered_map<std::string, ELogLevels> FilterMap;
+
+  /** Allow access to the singleton instance */
+  static const Ptr& instance();
+
+  /** Set the filter levels and the default level from strings */
+  void setupFilters(const std::string& a_filterSpec,
+                    const std::string& a_defaultLevelSpec);
+
+  /** Add a stream as a sink. It must stay in scope outside of this instance */
+  void addSink(std::basic_ostream<char>& a_sink);
+
+  /** Enable/disable thread id logging */
+  void enableThreadID();
+  void disableThreadID();
+
+  /** Determine whether ID threading is currently enabled */
+  bool threadIDEnabled() const { return m_doThreadLog; }
+
+  /** Filter based on the channel and level. This is public so that it can be
+   * run before pushing the message content to a stringstream in the macro */
+  bool filter(const std::string& a_channel, ELogLevels) const;
+
+  /** Send the given string to all sinks with proper formatting. Filtering is
+   * done before this is called in ALOG, so this function does no filtering. */
+  void log(const std::string& a_channel,
+           ELogLevels a_level,
+           const std::string& a_msg);
+
+  /** Add a level of indentation for the current thread */
+  void addIndent();
+
+  /** Remove a level of indentation for the current thread */
+  void removeIndent();
+
+  /** Clear the current filters and sinks and set the default level to off */
+  void reset();
+
+private:
+
+  /* Private default constructor, deleted copy constructor and assignment
+   * operator make this a singleton */
+  CLogChannelRegistrySingleton()
+    : m_defaultLevel(ELogLevels::off),
+      m_doThreadLog(false)
+  {};
+  CLogChannelRegistrySingleton(const CLogChannelRegistrySingleton&) = delete;
+  CLogChannelRegistrySingleton& operator=(const CLogChannelRegistrySingleton&) = delete;
+
+  std::string getFormatting(std::string a_channel, ELogLevels) const;
+
+  /* The global instance */
+  static Ptr m_pInstance;
+
+  FilterMap m_filters;
+  ELogLevels m_defaultLevel;
+  bool m_doThreadLog;
+
+  typedef std::lock_guard<std::mutex> TLock;
+  std::mutex m_mutex;
+
+  typedef std::reference_wrapper<std::basic_ostream<char>> TStreamRef;
+  std::vector<TStreamRef> m_sinks;
+
+  typedef decltype(boost::this_thread::get_id()) TThreadID;
+  typedef std::map<TThreadID, unsigned> ThreadIndentMap;
+  ThreadIndentMap m_indents;
+
+};  // end class CLogChannelRegistrySingleton
+
+/** \brief This class is used to add a Start/End block to a log */
+class CLogScope : private boost::noncopyable
+{
+public:
+  CLogScope(const std::string& a_logName,
+            ELogLevels a_level,
+            const std::string& a_msg);
+  virtual ~CLogScope();
+private:
+  std::string m_logName;
+  ELogLevels m_level;
+  std::string m_msg;
+};  // end class CLogScope
+
+/** \brief Struct to time execution of a block */
+struct CLogScopedTimer : private boost::noncopyable
+{
+  CLogScopedTimer(const std::string& a_logName,
+                  ELogLevels a_level,
+                  const std::string& a_msg);
+  virtual ~CLogScopedTimer();
+private:
+  std::string m_logName;
+  ELogLevels m_level;
+  std::string m_msg;
+  decltype(std::chrono::high_resolution_clock::now()) m_t0;
+};  // end class CLogScopedTimer
+
+/** \brief Struct to act as a proxy for logging indentation */
+struct CLogScopedIndent
+{
+  CLogScopedIndent();
+  ~CLogScopedIndent();
+};  // end class CLogScopedIndent
+
+/** \brief Initiate a log stream */
+void InitLogStream(std::basic_ostream<char>& a_stream);
+
+/** \brief Open a file and return a shared_ptr to it */
+std::shared_ptr<std::ofstream> InitLogFile(const std::string& a_filename);
+
+} // end namespace detail
+
+} // end namespace logging
+
+/*-- Detail Macros ----------------------------------------------------------*/
+
+#define ALOG_LEVEL_IMPL(channel, level, msg)\
+  do {if (level == logging::detail::ELogLevels::off) {\
+    throw std::runtime_error("Logging to 'off' is not allowed");\
+  } else if (logging::detail::CLogChannelRegistrySingleton\
+    ::instance()->filter(channel, level)) {\
+    logging::detail::CLogChannelRegistrySingleton\
+      ::instance()->log( channel, level,\
+        static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str());\
+  }} while(0)
+
+#define ALOG_CHANNEL_IMPL(channel, level, msg)\
+  ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg)
+
+#define ALOG_SCOPED_BLOCK_IMPL(channel, level, msg)\
+  logging::detail::CLogScope _logScope(\
+    channel, logging::detail::ELogLevels:: level,\
+    static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
+
+#define ALOG_SCOPED_TIMER_IMPL(channel, level, msg)\
+  logging::detail::CLogScopedTimer _logTimer(\
+    channel, logging::detail::ELogLevels:: level,\
+    static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
+
+#ifdef ALOG_SCOPED_FUNCTIONS
+#define _ALOG_FUNCTION BOOST_CURRENT_FUNCTION
+#else
+#define _ALOG_FUNCTION __FUNCTION__
+#endif
+
+#define ALOG_FUNCTION_IMPL(channel, level, msg)\
+  ALOG_SCOPED_BLOCK_IMPL(channel, level, "" << _ALOG_FUNCTION << "( " << msg << " )");\
+  ALOG_SCOPED_INDENT()
+
+#define ALOG_IS_ENABLED_IMPL(channel, level)\
+  logging::detail::CLogChannelRegistrySingleton::instance()->filter(\
+    channel, logging::detail::ELogLevels:: level)
+
+/*-- Setup Macros -----------------------------------------------------------*/
+
+/* These macros are designed to be the only used interface to the logging
+ * infrastructure. This allows compile-time removal of all logging for
+ * performance by defining DISABLE_LOGGING */
+ 
+ /** \brief Set up logging for an executable
+  *
+  * This setup macro should be called once per executable to configure logging
+  * for the duration of execution. If re-configuration is needed, use
+  * ALOG_RESET (such as in unit tests). This macro will configure logging to
+  * log to a file if specified and/or to the screen if specified, and will set
+  * the default level filter as well as channel specific filters.
+  *
+  * \param filename - The name for the log file. If empty, no file log is used
+  * \param toScreen - If true, a stream log to std::cout is initialized
+  * \param defaultLevel - The level to use by default when filtering log lines
+  * \param filterSpec - A string specifying the filters to use for specific
+  *   channels in the form "CH1:lvl1,CH2:lvl2"
+  */
+#ifndef DISABLE_LOGGING
+#define ALOG_SETUP(filename, toScreen, defaultLevel, filterSpec)\
+  std::shared_ptr<std::ofstream> __logFile;\
+  logging::detail::CLogChannelRegistrySingleton\
+    ::instance()->setupFilters(filterSpec, defaultLevel);\
+  if (not std::string(filename).empty())\
+    __logFile = logging::detail::InitLogFile(filename);\
+  if (toScreen) logging::detail::InitLogStream(std::cout)
+#else
+#define ALOG_SETUP(filename, toScreen, defaultLevel, filterSpec)
+#endif
+
+#ifndef DISABLE_LOGGING
+#define ALOG_ENABLE_THREAD_ID()\
+  logging::detail::CLogChannelRegistrySingleton::instance()->enableThreadID()
+#else
+#define ALOG_ENABLE_THREAD_ID()
+#endif
+
+#ifndef DISABLE_LOGGING
+#define ALOG_DISABLE_THREAD_ID()\
+  logging::detail::CLogChannelRegistrySingleton::instance()->disableThreadID()
+#else
+#define ALOG_DISABLE_THREAD_ID()
+#endif
+
+#ifndef DISABLE_LOGGING
+#define ALOG_RESET()\
+  logging::detail::CLogChannelRegistrySingleton\
+    ::instance()->reset()
+#else
+#define ALOG_RESET()
+#endif
+
+
+/** Define a member function that will be used with the XXXthis macros */
+#ifndef DISABLE_LOGGING
+#define ALOG_USE_CHANNEL(channel) \
+  inline static std::string getLogChannel()\
+  { static const std::string l_channel = #channel;\
+    return l_channel; }
+#else
+#define ALOG_USE_CHANNEL(channel)
+#endif
+
+/** Define a free function that will be used with the XXXthis macros. This
+ * should only be used in a main compilation unit */
+#ifndef DISABLE_LOGGING
+#define ALOG_USE_CHANNEL_FREE(channel) \
+  inline std::string getLogChannel()\
+  { static const std::string l_channel = #channel;\
+    return l_channel; }
+#else
+#define ALOG_USE_CHANNEL_FREE(channel)
+#endif
+
+/*-- Log Macros -------------------------------------------------------------*/
+
+/** Log a line on the given channel at the given level */
+#ifndef DISABLE_LOGGING
+#define ALOG(channel, level, msg) ALOG_CHANNEL_IMPL(#channel, level, msg)
+#else
+#define ALOG(channel, level, msg)
+#endif
+
+/** Log a line on the class' native channel at the given level */
+#ifndef DISABLE_LOGGING
+#define ALOGthis(level, msg) ALOG_CHANNEL_IMPL(getLogChannel(), level, msg)
+#else
+#define ALOGthis(level, msg)
+#endif
+
+/** Log a line that explicitly includes the thread id regardless of the global
+ * setting */
+#ifndef DISABLE_LOGGING
+#define ALOG_THREAD(channel, level, msg)\
+  ALOG(channel, level, "[" << boost::this_thread::get_id() << "] " << msg)
+#else
+#define ALOG_THREAD(channel, level, msg)
+#endif
+
+/** Log a line that includes the current thread's thread id to the class'
+ * native channel */
+#ifndef DISABLE_LOGGING
+#define ALOG_THREADthis(level, msg)\
+  { auto& sngl = logging::detail::CLogChannelRegistrySingleton::instance();\
+    bool currentlyEnabled = sngl->threadIDEnabled();\
+    if (not currentlyEnabled) sngl->enableThreadID();\
+    ALOGthis(level, msg);\
+    if (not currentlyEnabled) sngl->disableThreadID(); }
+#else
+#define ALOG_THREADthis(level, msg)
+#endif
+
+/** Set up a Start/End block of logging based on the scope. Note that only a
+ * single call to ALOG_SCOPED_BLOCK may be made within a given scope */
+#ifndef DISABLE_LOGGING
+#define ALOG_SCOPED_BLOCK(channel, level, msg)\
+  ALOG_SCOPED_BLOCK_IMPL(#channel, level, msg)
+#else
+#define ALOG_SCOPED_BLOCK(channel, level, msg)
+#endif
+
+/** Set up a Start/End block of logging based on the scope using class' native
+ * channel */
+#ifndef DISABLE_LOGGING
+#define ALOG_SCOPED_BLOCKthis(level, msg)\
+  ALOG_SCOPED_BLOCK_IMPL(getLogChannel(), level, msg)
+#else
+#define ALOG_SCOPED_BLOCKthis(level, msg)
+#endif
+
+/** Set up a timer that will time the work done in the current scope and
+ * report the duration upon scope completion */
+#ifndef DISABLE_LOGGING
+#define ALOG_SCOPED_TIMER(channel, level, msg)\
+  ALOG_SCOPED_TIMER_IMPL(#channel, level, msg)
+#else
+#define ALOG_SCOPED_TIMER(channel, level, msg)
+#endif
+
+/** Set up a timer that will time the work done in the current scope and
+ * report the duration upon scope completion using current class' native
+ * channel */
+#ifndef DISABLE_LOGGING
+#define ALOG_SCOPED_TIMERthis(level, msg)\
+  ALOG_SCOPED_TIMER_IMPL(getLogChannel(), level, msg)
+#else
+#define ALOG_SCOPED_TIMERthis(level, msg)
+#endif
+
+/** Add a level of indentation to the current scope */
+#ifndef DISABLE_LOGGING
+#define ALOG_SCOPED_INDENT() logging::detail::CLogScopedIndent __alog_scoped_indent__
+#else
+#define ALOG_SCOPED_INDENT()
+#endif
+
+/** Add a Start/End indented block with the current function name on trace */
+#ifndef DISABLE_LOGGING
+#define ALOG_FUNCTION(channel, msg) ALOG_FUNCTION_IMPL(#channel, trace, msg)
+#else
+#define ALOG_FUNCTION(channel, msg)
+#endif
+
+/** Add a Start/End indented block with the current function name on trace
+ * using native channel */
+#ifndef DISABLE_LOGGING
+#define ALOG_FUNCTIONthis(msg) ALOG_FUNCTION_IMPL(getLogChannel(), trace, msg)
+#else
+#define ALOG_FUNCTIONthis(msg)
+#endif
+
+/** Add a Start/End indented block with the current function name on designated
+ * level. Used for lower-level functions that log on debug levels */
+#ifndef DISABLE_LOGGING
+#define ALOG_DETAIL_FUNCTION(channel, level, msg) ALOG_FUNCTION_IMPL(#channel, level, msg)
+#else
+#define ALOG_DETAIL_FUNCTION(channel, level, msg)
+#endif
+
+/** Add a Start/End indented block with the current function name on designated
+ * level on the native channel. Used for lower-level functions that log on
+ * debug levels */
+#ifndef DISABLE_LOGGING
+#define ALOG_DETAIL_FUNCTIONthis(level, msg) ALOG_FUNCTION_IMPL(getLogChannel(), level, msg)
+#else
+#define ALOG_DETAIL_FUNCTIONthis(level, msg)
+#endif
+
+/** This macro sends a warning to cerr and to the the log */
+#define ALOG_WARNING(msg)\
+  ALOG(WARN, warning, msg);\
+  std::cerr << "WARNING: " << msg << std::endl
+
+/** Resolve to a statement which is true if the given channel/level is enabled
+ * and false otherwise */
+#ifndef DISABLE_LOGGING
+#define ALOG_IS_ENABLED(channel, level) ALOG_IS_ENABLED_IMPL(#channel, level)
+#else
+#define ALOG_IS_ENABLED(channel, level) false
+#endif
+
+/** Resolve to a statement which is true if the given level is enabled for the
+ * native channel and false otherwise */
+#ifndef DISABLE_LOGGING
+#define ALOG_IS_ENABLEDthis(level) ALOG_IS_ENABLED_IMPL(getLogChannel(), level)
+#else
+#define ALOG_IS_ENABLEDthis(level) false
+#endif
