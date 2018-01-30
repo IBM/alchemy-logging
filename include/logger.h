@@ -369,17 +369,17 @@ detail::ELogLevels ParseLevel(const std::string&);
 #endif
 
 #ifndef DISABLE_LOGGING
-#define ALOG_USE_STD_FORMATTER(name)\
-  logging::detail::UseStdFormatter();
+#define ALOG_USE_STD_FORMATTER()\
+  logging::detail::UseStdFormatter()
 #else
-#define ALOG_USE_STD_FORMATTER(name)
+#define ALOG_USE_STD_FORMATTER()
 #endif
 
 #ifndef DISABLE_LOGGING
-#define ALOG_USE_JSON_FORMATTER(name)\
-  logging::detail::UseJSONFormatter();
+#define ALOG_USE_JSON_FORMATTER()\
+  logging::detail::UseJSONFormatter()
 #else
-#define ALOG_USE_JSON_FORMATTER(name)
+#define ALOG_USE_JSON_FORMATTER()
 #endif
 
 #ifndef DISABLE_LOGGING
