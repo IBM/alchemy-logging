@@ -1,5 +1,21 @@
-// (C) Copyright IBM Corp. 2015
-/* (C) Copyright IBM Corp. 2015
+/*  *
+ * IBM Confidential
+ * OCO Source Materials
+ *
+ * 5737-C06
+ * (C) Copyright IBM Corp. 2017 All Rights Reserved.
+ *
+ * The source code for this program is not published or otherwise
+ * divested of its trade secrets, irrespective of what has been
+ * deposited with the U.S. Copyright Office.
+
+ * US Government Users Restricted Rights - Use, duplication or
+ * disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+
+ *
+ *  */
+
+/*
  *
  * File description: logger.h
  * Author information: Gabe Hart ghart@us.ibm.com
@@ -7,16 +23,18 @@
 #pragma once
 
 #include <string>
+#include <sstream>
 #include <unordered_map>
 #include <memory>
 #include <functional>
 #include <mutex>
 #include <fstream>
 #include <chrono>
+#include <thread>
+#include <vector>
+#include <map>
 
-#include <boost/current_function.hpp>
-#include <boost/thread/thread.hpp>
-
+#include <nlohmann/json.hpp>
 
 /* \brief This tool provides a thread-safe logging environment
  *
@@ -36,6 +54,8 @@ namespace logging
 {
 namespace detail
 {
+
+/*-- Types and Constants -----------------------------------------------------*/
 
 /** The maximum length of a channel name when printed to the log. Note that
  * channel names may be longer than this in the code, but only this many
@@ -62,7 +82,56 @@ enum ELogLevels
 };
 std::ostream& operator<<(std::ostream&, const detail::ELogLevels&);
 
-/** \brief This class a singleton used to aggregate logging channels */
+/** \brief This struct encapsulates the full content of a log statement */
+struct CLogEntry
+{
+  CLogEntry(const std::string& a_channel,
+            const ELogLevels   a_level,
+            const std::string& a_message,
+            nlohmann::json a_mapData = {});
+  std::string     channel;
+  ELogLevels      level;
+  std::string     message;
+  std::string     timestamp;
+  std::string     serviceName;
+  unsigned        nIndent;
+  std::thread::id threadId;
+  nlohmann::json  mapData;
+};  // end CLogEntry
+
+/*-- Formatters --------------------------------------------------------------*/
+
+/** \brief This class abstracts the process of formatting a log statement */
+class CLogFormatterBase
+{
+public:
+
+  typedef std::shared_ptr<CLogFormatterBase> Ptr;
+
+  /** \brief The main function needed to format a log entry */
+  virtual std::vector<std::string> formatEntry(const CLogEntry&) const = 0;
+
+};  // end CLogFormatterBase
+
+/** \brief Standard log formatter for easily readible logs */
+class CStdLogFormatter : public CLogFormatterBase
+{
+public:
+  virtual std::vector<std::string> formatEntry(const CLogEntry&) const override;
+private:
+  std::string getHeader(const CLogEntry&) const;
+};  // end CStdLogFormatter
+
+/** \brief JSON log formatter for structured log output */
+class CJSONLogFormatter : public CLogFormatterBase
+{
+public:
+  virtual std::vector<std::string> formatEntry(const CLogEntry&) const override;
+};  // end CJSONLogFormatter
+
+/*-- Core Singleton ----------------------------------------------------------*/
+
+/** \brief This class is a singleton used to aggregate logging channels */
 class CLogChannelRegistrySingleton
 {
 public:
@@ -79,9 +148,16 @@ public:
   /** Add a stream as a sink. It must stay in scope outside of this instance */
   void addSink(std::basic_ostream<char>& a_sink);
 
+  /** Set the output formatter */
+  void setFormatter(const CLogFormatterBase::Ptr&);
+
   /** Enable/disable thread id logging */
   void enableThreadID();
   void disableThreadID();
+
+  /** Set the service name to use */
+  void setServiceName(const std::string&);
+  const std::string& getServiceName() const { return m_serviceName; }
 
   /** Determine whether ID threading is currently enabled */
   bool threadIDEnabled() const { return m_doThreadLog; }
@@ -94,13 +170,17 @@ public:
    * done before this is called in ALOG, so this function does no filtering. */
   void log(const std::string& a_channel,
            ELogLevels a_level,
-           const std::string& a_msg);
+           const std::string& a_msg,
+           nlohmann::json a_mapData);
 
   /** Add a level of indentation for the current thread */
   void addIndent();
 
   /** Remove a level of indentation for the current thread */
   void removeIndent();
+
+  /** Get the indent level for the current thread */
+  unsigned getIndent() const;
 
   /** Clear the current filters and sinks and set the default level to off */
   void reset();
@@ -116,31 +196,34 @@ private:
   CLogChannelRegistrySingleton(const CLogChannelRegistrySingleton&) = delete;
   CLogChannelRegistrySingleton& operator=(const CLogChannelRegistrySingleton&) = delete;
 
-  std::string getFormatting(std::string a_channel, ELogLevels) const;
-
   /* The global instance */
   static Ptr m_pInstance;
 
   FilterMap m_filters;
   ELogLevels m_defaultLevel;
   bool m_doThreadLog;
+  std::string m_serviceName;
 
   typedef std::lock_guard<std::mutex> TLock;
   std::mutex m_mutex;
 
   typedef std::reference_wrapper<std::basic_ostream<char>> TStreamRef;
   std::vector<TStreamRef> m_sinks;
+  CLogFormatterBase::Ptr m_formatter;
 
-  typedef decltype(boost::this_thread::get_id()) TThreadID;
+  typedef std::thread::id TThreadID;
   typedef std::map<TThreadID, unsigned> ThreadIndentMap;
   ThreadIndentMap m_indents;
 
 };  // end class CLogChannelRegistrySingleton
 
+/*-- Scope Classes -----------------------------------------------------------*/
+
 /** \brief This class is used to add a Start/End block to a log */
-class CLogScope : private boost::noncopyable
+class CLogScope
 {
 public:
+  CLogScope(const CLogScope&) = delete;
   CLogScope(const std::string& a_logName,
             ELogLevels a_level,
             const std::string& a_msg);
@@ -152,8 +235,9 @@ private:
 };  // end class CLogScope
 
 /** \brief Struct to time execution of a block */
-struct CLogScopedTimer : private boost::noncopyable
+struct CLogScopedTimer
 {
+  CLogScopedTimer(const CLogScopedTimer&) = delete;
   CLogScopedTimer(const std::string& a_logName,
                   ELogLevels a_level,
                   const std::string& a_msg);
@@ -178,22 +262,38 @@ void InitLogStream(std::basic_ostream<char>& a_stream);
 /** \brief Open a file and return a shared_ptr to it */
 std::shared_ptr<std::ofstream> InitLogFile(const std::string& a_filename);
 
+/** \brief Use the standard log formatter */
+void UseStdFormatter();
+
+/** \brief Use the JSON log formatter */
+void UseJSONFormatter();
+
+/** \brief Get the human readible (lowercase, full length) level string */
+std::string LevelToHumanString(const detail::ELogLevels&);
+
+/** \brief Parse a log level from a string */
+detail::ELogLevels ParseLevel(const std::string&);
+
 } // end namespace detail
 
 } // end namespace logging
 
-/*-- Detail Macros ----------------------------------------------------------*/
+/*-- Detail Macros -----------------------------------------------------------*/
 
-#define ALOG_LEVEL_IMPL(channel, level, msg)\
+#define ALOG_LEVEL_IMPL(channel, level, msg, map)\
   do {if (logging::detail::CLogChannelRegistrySingleton\
     ::instance()->filter(channel, level)) {\
     logging::detail::CLogChannelRegistrySingleton\
       ::instance()->log( channel, level,\
-        static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str());\
+        static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str(), \
+        map);\
   }} while(0)
 
 #define ALOG_CHANNEL_IMPL(channel, level, msg)\
-  ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg)
+  ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
+
+#define ALOG_MAP_IMPL(channel, level, map)\
+  ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, "", map)
 
 #define ALOG_SCOPED_BLOCK_IMPL(channel, level, msg)\
   logging::detail::CLogScope _logScope(\
@@ -205,11 +305,7 @@ std::shared_ptr<std::ofstream> InitLogFile(const std::string& a_filename);
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
 
-#ifdef ALOG_SCOPED_FUNCTIONS
-#define _ALOG_FUNCTION BOOST_CURRENT_FUNCTION
-#else
 #define _ALOG_FUNCTION __FUNCTION__
-#endif
 
 #define ALOG_FUNCTION_IMPL(channel, level, msg)\
   ALOG_SCOPED_BLOCK_IMPL(channel, level, "" << _ALOG_FUNCTION << "( " << msg << " )");\
@@ -219,7 +315,7 @@ std::shared_ptr<std::ofstream> InitLogFile(const std::string& a_filename);
   logging::detail::CLogChannelRegistrySingleton::instance()->filter(\
     channel, logging::detail::ELogLevels:: level)
 
-/*-- Setup Macros -----------------------------------------------------------*/
+/*-- Setup Macros ------------------------------------------------------------*/
 
 /* These macros are designed to be the only used interface to the logging
  * infrastructure. This allows compile-time removal of all logging for
@@ -266,6 +362,27 @@ std::shared_ptr<std::ofstream> InitLogFile(const std::string& a_filename);
 #endif
 
 #ifndef DISABLE_LOGGING
+#define ALOG_SERVICE_NAME(name)\
+  logging::detail::CLogChannelRegistrySingleton::instance()->setServiceName(name)
+#else
+#define ALOG_SERVICE_NAME(name)
+#endif
+
+#ifndef DISABLE_LOGGING
+#define ALOG_USE_STD_FORMATTER(name)\
+  logging::detail::UseStdFormatter();
+#else
+#define ALOG_USE_STD_FORMATTER(name)
+#endif
+
+#ifndef DISABLE_LOGGING
+#define ALOG_USE_JSON_FORMATTER(name)\
+  logging::detail::UseJSONFormatter();
+#else
+#define ALOG_USE_JSON_FORMATTER(name)
+#endif
+
+#ifndef DISABLE_LOGGING
 #define ALOG_RESET()\
   logging::detail::CLogChannelRegistrySingleton\
     ::instance()->reset()
@@ -295,7 +412,7 @@ std::shared_ptr<std::ofstream> InitLogFile(const std::string& a_filename);
 #define ALOG_USE_CHANNEL_FREE(channel)
 #endif
 
-/*-- Log Macros -------------------------------------------------------------*/
+/*-- Log Macros --------------------------------------------------------------*/
 
 /** Log a line on the given channel at the given level */
 #ifndef DISABLE_LOGGING
@@ -311,11 +428,25 @@ std::shared_ptr<std::ofstream> InitLogFile(const std::string& a_filename);
 #define ALOGthis(level, msg)
 #endif
 
+/** Log an arbitrary key/value structure on the given channel/level */
+#ifndef DISABLE_LOGGING
+#define ALOG_MAP(channel, level, map) ALOG_MAP_IMPL(#channel, level, map)
+#else
+#define ALOG_MAP(channel, level, map)
+#endif
+
+/** Log an arbitrary key/value structure on the class' native channel */
+#ifndef DISABLE_LOGGING
+#define ALOG_MAPthis(level, map) ALOG_MAP_IMPL(getLogChannel(), level, map)
+#else
+#define ALOG_MAPthis(level, map)
+#endif
+
 /** Log a line that explicitly includes the thread id regardless of the global
  * setting */
 #ifndef DISABLE_LOGGING
 #define ALOG_THREAD(channel, level, msg)\
-  ALOG(channel, level, "[" << boost::this_thread::get_id() << "] " << msg)
+  ALOG(channel, level, "[" << std::this_thread::get_id() << "] " << msg)
 #else
 #define ALOG_THREAD(channel, level, msg)
 #endif
