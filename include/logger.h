@@ -173,6 +173,12 @@ public:
            const std::string& a_msg,
            nlohmann::json a_mapData);
 
+  /** Send the given string to all sinks with proper formatting. Filtering is
+   * done before this is called in ALOG, so this function does no filtering. */
+  void log(const std::string& a_channel,
+           ELogLevels a_level,
+           const std::wstring& a_msg);
+
   /** Add a level of indentation for the current thread */
   void addIndent();
 

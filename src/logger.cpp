@@ -27,6 +27,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include <boost/locale/encoding_utf.hpp>
+
 using json = nlohmann::json;
 
 namespace logging
@@ -85,6 +87,12 @@ std::string getTimestamp()
   char timestamp[20]; // Timestamp will always be 20 characters long
   std::strftime(timestamp, sizeof(timestamp), "%Y/%m/%d %H:%M:%S", std::localtime(&t));
   return std::string(timestamp);
+}
+
+// CITE: https://stackoverflow.com/questions/15615136/is-codecvt-not-a-std-header
+std::string wstring_to_utf8(const std::wstring& str)
+{
+  return boost::locale::conv::utf_to_utf<char>(str.c_str(), str.c_str() + str.size());
 }
 
 } // end anon namespace
@@ -374,6 +382,13 @@ void CLogChannelRegistrySingleton::log(const std::string& a_channel,
       sink.get() << line << std::flush;
     }
   }
+}
+
+void CLogChannelRegistrySingleton::log(const std::string& a_channel,
+                                       ELogLevels a_level,
+                                       const std::wstring& a_msg)
+{
+  log(a_channel, a_level, wstring_to_utf8(a_msg));
 }
 
 void CLogChannelRegistrySingleton::addIndent()
