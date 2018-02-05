@@ -289,11 +289,22 @@ detail::ELogLevels ParseLevel(const std::string&);
         map);\
   }} while(0)
 
+#define ALOGW_LEVEL_IMPL(channel, level, msg)\
+  do {if (logging::detail::CLogChannelRegistrySingleton\
+    ::instance()->filter(channel, level)) {\
+    logging::detail::CLogChannelRegistrySingleton\
+      ::instance()->log( channel, level,\
+        static_cast<std::wostringstream&>(std::wostringstream().flush() << msg).str());\
+  }} while(0)
+
 #define ALOG_CHANNEL_IMPL(channel, level, msg)\
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
 
 #define ALOG_MAP_IMPL(channel, level, map)\
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, "", map)
+
+#define ALOGW_CHANNEL_IMPL(channel, level, msg)\
+  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg)
 
 #define ALOG_SCOPED_BLOCK_IMPL(channel, level, msg)\
   logging::detail::CLogScope _logScope(\
@@ -440,6 +451,19 @@ detail::ELogLevels ParseLevel(const std::string&);
 #define ALOG_MAPthis(level, map) ALOG_MAP_IMPL(getLogChannel(), level, map)
 #else
 #define ALOG_MAPthis(level, map)
+
+/** Log a wchar line on the given channel at the given level */
+#ifndef DISABLE_LOGGING
+#define ALOGW(channel, level, msg) ALOGW_CHANNEL_IMPL(#channel, level, msg)
+#else
+#define ALOGW(channel, level, msg)
+#endif
+
+/** Log a wchar line on the class' native channel at the given level */
+#ifndef DISABLE_LOGGING
+#define ALOGWthis(level, msg) ALOGW_CHANNEL_IMPL(getLogChannel(), level, msg)
+#else
+#define ALOGWthis(level, msg)
 #endif
 
 /** Log a line that explicitly includes the thread id regardless of the global
