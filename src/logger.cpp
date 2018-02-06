@@ -386,9 +386,10 @@ void CLogChannelRegistrySingleton::log(const std::string& a_channel,
 
 void CLogChannelRegistrySingleton::log(const std::string& a_channel,
                                        ELogLevels a_level,
-                                       const std::wstring& a_msg)
+                                       const std::wstring& a_msg,
+                                       json a_mapData)
 {
-  log(a_channel, a_level, wstring_to_utf8(a_msg));
+  log(a_channel, a_level, wstring_to_utf8(a_msg), a_mapData);
 }
 
 void CLogChannelRegistrySingleton::addIndent()

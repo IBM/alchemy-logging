@@ -177,7 +177,8 @@ public:
    * done before this is called in ALOG, so this function does no filtering. */
   void log(const std::string& a_channel,
            ELogLevels a_level,
-           const std::wstring& a_msg);
+           const std::wstring& a_msg,
+           nlohmann::json a_mapData);
 
   /** Add a level of indentation for the current thread */
   void addIndent();
@@ -295,7 +296,7 @@ detail::ELogLevels ParseLevel(const std::string&);
         map);\
   }} while(0)
 
-#define ALOGW_LEVEL_IMPL(channel, level, msg)\
+#define ALOGW_LEVEL_IMPL(channel, level, msg, map)\
   do {if (logging::detail::CLogChannelRegistrySingleton\
     ::instance()->filter(channel, level)) {\
     logging::detail::CLogChannelRegistrySingleton\
@@ -457,6 +458,7 @@ detail::ELogLevels ParseLevel(const std::string&);
 #define ALOG_MAPthis(level, map) ALOG_MAP_IMPL(getLogChannel(), level, map)
 #else
 #define ALOG_MAPthis(level, map)
+#endif
 
 /** Log a wchar line on the given channel at the given level */
 #ifndef DISABLE_LOGGING
