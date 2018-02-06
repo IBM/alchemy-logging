@@ -27,9 +27,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include <boost/algorithm/string/join.hpp>
 #include <boost/locale/encoding_utf.hpp>
-
-using json = nlohmann::json;
 
 namespace logging
 {
@@ -93,6 +92,116 @@ std::string getTimestamp()
 std::string wstring_to_utf8(const std::wstring& str)
 {
   return boost::locale::conv::utf_to_utf<char>(str.c_str(), str.c_str() + str.size());
+}
+
+// Forward-declare pretty-print function for circular dependency with visitor
+void addPrettyPrintMap(
+  const jsonparser::TObject& a_map,
+  const std::string& a_format,
+  const unsigned a_indent,
+  const bool a_addNewlines,
+  std::vector<std::string>& a_out);
+
+// Visitor for pretty-printing json map values
+class CJsonValueVisitor : public boost::static_visitor<std::string>
+{
+public:
+
+  CJsonValueVisitor(const std::string& a_format, unsigned a_indent)
+    : m_format(a_format), m_indent(a_indent)
+  {}
+
+  // std::string
+  std::string operator()(const std::string& a_val) const
+  {
+    std::stringstream ss;
+    ss << "\"" << a_val << "\"";
+    return ss.str();
+  }
+
+  // double
+  std::string operator()(const double& a_val) const
+  {
+    std::stringstream ss;
+    ss << a_val;
+    return ss.str();
+  }
+
+  // int64_t
+  std::string operator()(const int64_t& a_val) const
+  {
+    std::stringstream ss;
+    ss << a_val;
+    return ss.str();
+  }
+
+  // bool
+  std::string operator()(const bool& a_val) const
+  {
+    std::stringstream ss;
+    ss << (a_val ? "true": "false");
+    return ss.str();
+  }
+
+  // TNull
+  std::string operator()(const jsonparser::TNull&) const
+  {
+    return "null";
+  }
+
+  // array
+  std::string operator()(const jsonparser::TArray& a_val) const
+  {
+    std::stringstream ss;
+    ss << "[";
+    std::vector<std::string> vals;
+    CJsonValueVisitor visitor(m_format, m_indent+1);
+    for (const auto& entry : a_val)
+    {
+      vals.push_back(boost::apply_visitor(visitor, entry));
+    }
+    ss << boost::algorithm::join(vals, ",");
+    ss << "]";
+    return ss.str();
+  }
+
+  // map
+  std::string operator()(const jsonparser::TObject& a_val) const
+  {
+    std::vector<std::string> lines;
+    addPrettyPrintMap(a_val, m_format, m_indent+1, false, lines);
+    return "\n" + boost::algorithm::join(lines, "\n");
+  }
+
+private:
+  const std::string m_format;
+  const unsigned m_indent;
+};
+
+// Pretty-printing for maps
+void addPrettyPrintMap(
+  const jsonparser::TObject& a_map,
+  const std::string& a_format,
+  const unsigned a_indent,
+  const bool a_addNewlines,
+  std::vector<std::string>& a_out)
+{
+  CJsonValueVisitor visitor(a_format, a_indent);
+  for (const auto& entry : a_map)
+  {
+    std::stringstream ss;
+    ss << a_format;
+    for (unsigned i = 0; i < a_indent; ++i)
+    {
+      ss << logging::detail::INDENT_VALUE;
+    }
+    ss << entry.first << ": " << boost::apply_visitor(visitor, entry.second);
+    if (a_addNewlines)
+    {
+      ss << "\n";
+    }
+    a_out.push_back(ss.str());
+  }
 }
 
 } // end anon namespace
@@ -181,7 +290,7 @@ ELogLevels ParseLevel(const std::string& a_str)
 CLogEntry::CLogEntry(const std::string& a_channel,
                      const ELogLevels a_level,
                      const std::string& a_message,
-                     json a_mapData)
+                     jsonparser::TObject a_mapData)
   : channel(a_channel),
     level(a_level),
     message(a_message),
@@ -213,12 +322,10 @@ std::vector<std::string> CStdLogFormatter::formatEntry(const CLogEntry& a_entry)
     out.push_back(ss.str());
   }
 
-  // Add map data liens
-  for (auto iter = a_entry.mapData.begin(); iter != a_entry.mapData.end(); ++iter)
+  // Add map data lines
+  if (not a_entry.mapData.empty())
   {
-    std::stringstream ss;
-    ss << format << iter.key() << ": " << iter.value() << std::endl << std::flush;
-    out.push_back(ss.str());
+    addPrettyPrintMap(a_entry.mapData, format, 0, true, out);
   }
 
   return out;
@@ -263,13 +370,13 @@ std::vector<std::string> CJSONLogFormatter::formatEntry(const CLogEntry& a_entry
 {
 
   // Start with the arbitrary key/val map
-  json j = a_entry.mapData;
+  jsonparser::TObject j = a_entry.mapData;
 
   // Add standard fields
   j["channel"] = a_entry.channel;
   j["level_str"] = LevelToHumanString(a_entry.level);
   j["timestamp"] = a_entry.timestamp;
-  j["num_indent"] = a_entry.nIndent;
+  j["num_indent"] = static_cast<int64_t>(a_entry.nIndent);
 
   // Add message if present
   if (not a_entry.message.empty())
@@ -291,8 +398,8 @@ std::vector<std::string> CJSONLogFormatter::formatEntry(const CLogEntry& a_entry
     j["service_name"] = a_entry.serviceName;
   }
 
-  // Serialize as output
-  return { j.dump() + "\n" };
+  // Serialize as output (pretty=false)
+  return { jsonparser::Serialize(j, false) + "\n" };
 }
 
 // CLogChannelRegistrySingleton ////////////////////////////////////////////////
@@ -362,7 +469,7 @@ bool CLogChannelRegistrySingleton::filter(const std::string& a_channel,
 void CLogChannelRegistrySingleton::log(const std::string& a_channel,
                                        ELogLevels a_level,
                                        const std::string& a_msg,
-                                       json a_mapData)
+                                       jsonparser::TObject a_mapData)
 {
   // Make sure formatter is set
   if (not m_formatter)
@@ -387,7 +494,7 @@ void CLogChannelRegistrySingleton::log(const std::string& a_channel,
 void CLogChannelRegistrySingleton::log(const std::string& a_channel,
                                        ELogLevels a_level,
                                        const std::wstring& a_msg,
-                                       json a_mapData)
+                                       jsonparser::TObject a_mapData)
 {
   log(a_channel, a_level, wstring_to_utf8(a_msg), a_mapData);
 }

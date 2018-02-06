@@ -34,7 +34,7 @@
 #include <vector>
 #include <map>
 
-#include <nlohmann/json.hpp>
+#include <jsonparser/typedefs.h>
 
 /* \brief This tool provides a thread-safe logging environment
  *
@@ -88,15 +88,15 @@ struct CLogEntry
   CLogEntry(const std::string& a_channel,
             const ELogLevels   a_level,
             const std::string& a_message,
-            nlohmann::json a_mapData = {});
-  std::string     channel;
-  ELogLevels      level;
-  std::string     message;
-  std::string     timestamp;
-  std::string     serviceName;
-  unsigned        nIndent;
-  std::thread::id threadId;
-  nlohmann::json  mapData;
+            jsonparser::TObject a_mapData = {});
+  std::string         channel;
+  ELogLevels          level;
+  std::string         message;
+  std::string         timestamp;
+  std::string         serviceName;
+  unsigned            nIndent;
+  std::thread::id     threadId;
+  jsonparser::TObject mapData;
 };  // end CLogEntry
 
 /*-- Formatters --------------------------------------------------------------*/
@@ -171,14 +171,14 @@ public:
   void log(const std::string& a_channel,
            ELogLevels a_level,
            const std::string& a_msg,
-           nlohmann::json a_mapData);
+           jsonparser::TObject a_mapData);
 
   /** Send the given string to all sinks with proper formatting. Filtering is
    * done before this is called in ALOG, so this function does no filtering. */
   void log(const std::string& a_channel,
            ELogLevels a_level,
            const std::wstring& a_msg,
-           nlohmann::json a_mapData);
+           jsonparser::TObject a_mapData);
 
   /** Add a level of indentation for the current thread */
   void addIndent();
@@ -292,8 +292,7 @@ detail::ELogLevels ParseLevel(const std::string&);
     ::instance()->filter(channel, level)) {\
     logging::detail::CLogChannelRegistrySingleton\
       ::instance()->log( channel, level,\
-        static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str(), \
-        map);\
+        static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str(), map);\
   }} while(0)
 
 #define ALOGW_LEVEL_IMPL(channel, level, msg, map)\
@@ -301,7 +300,7 @@ detail::ELogLevels ParseLevel(const std::string&);
     ::instance()->filter(channel, level)) {\
     logging::detail::CLogChannelRegistrySingleton\
       ::instance()->log( channel, level,\
-        static_cast<std::wostringstream&>(std::wostringstream().flush() << msg).str());\
+        static_cast<std::wostringstream&>(std::wostringstream().flush() << msg).str(), map);\
   }} while(0)
 
 #define ALOG_CHANNEL_IMPL(channel, level, msg)\
@@ -311,7 +310,7 @@ detail::ELogLevels ParseLevel(const std::string&);
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, "", map)
 
 #define ALOGW_CHANNEL_IMPL(channel, level, msg)\
-  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg)
+  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
 
 #define ALOG_SCOPED_BLOCK_IMPL(channel, level, msg)\
   logging::detail::CLogScope _logScope(\
