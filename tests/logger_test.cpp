@@ -22,9 +22,9 @@
 #include <stdlib.h>
 #include <functional>
 
-#include <nlohmann/json.hpp>
+#include <boost/regex.hpp>
 
-using json = nlohmann::json;
+namespace jp = jsonparser;
 
 namespace test
 {
@@ -76,7 +76,7 @@ struct CParsedLogEntry
   std::string                 channel;
   logging::detail::ELogLevels level;
   std::string                 message;
-  json                        mapData;
+  jp::TObject                 mapData;
   std::string                 timestamp;
   std::string                 serviceName;
   unsigned                    nIndent;
@@ -89,7 +89,7 @@ struct CParsedLogEntry
   CParsedLogEntry(const std::string& ch,
                   logging::detail::ELogLevels lvl,
                   const std::string& msg,
-                  json md = {},
+                  jp::TObject md = {},
                   unsigned indt = 0,
                   const std::string& svcNm = "",
                   bool hasTID = false)
@@ -107,9 +107,9 @@ struct CParsedLogEntry
 // Parse a line of plain-text logging into a CParsedLogEntry (null if parse failed)
 std::shared_ptr<CParsedLogEntry> parseStdLine(const std::string& a_line)
 {
-  std::regex re("^([0-9/]* [0-9:]*) ([^\\]]*)\\[([^:]*):([^\\]:]*):?([^\\]\\s]*)\\] ([\\s]*)([^\\s].*)\n?$");
-  std::smatch m;
-  std::regex_match(a_line, m, re);
+  boost::regex re("^([0-9/]* [0-9:]*) ([^\\]]*)\\[([^:]*):([^\\]:]*):?([^\\]\\s]*)\\] ([\\s]*)([^\\s].*)\n?$");
+  boost::smatch m;
+  boost::regex_match(a_line, m, re);
   if (m.size() != 8)
   {
     return {};
@@ -126,9 +126,9 @@ std::shared_ptr<CParsedLogEntry> parseStdLine(const std::string& a_line)
     out->serviceName = m[2];
     if (not out->serviceName.empty())
     {
-      std::regex snRe("<([^>]*)> ");
-      std::smatch snM;
-      std::regex_match(out->serviceName, snM, snRe);
+      boost::regex snRe("<([^>]*)> ");
+      boost::smatch snM;
+      boost::regex_match(out->serviceName, snM, snRe);
       if (snM.size() == 2)
       {
         out->serviceName = snM[1];
@@ -168,7 +168,8 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
   std::shared_ptr<CParsedLogEntry> out(new CParsedLogEntry());
 
   // Parse into json
-  json j = json::parse(a_line);
+  auto jRaw = jp::Deserialize(a_line);
+  auto j = boost::get<jp::TObject>(jRaw);
 
   // timestamp
   {
@@ -180,7 +181,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     }
     else
     {
-      out->timestamp = iter.value();
+      out->timestamp = boost::get<std::string>(iter->second);
     }
   }
 
@@ -189,7 +190,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     auto iter = j.find("service_name");
     if (iter != j.end())
     {
-      out->serviceName = iter.value();
+      out->serviceName = boost::get<std::string>(iter->second);
     }
   }
 
@@ -203,7 +204,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     }
     else
     {
-      out->channel = iter.value();
+      out->channel = boost::get<std::string>(iter->second);
     }
   }
 
@@ -217,7 +218,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     }
     else
     {
-      out->level = logging::detail::ParseLevel(iter.value());
+      out->level = logging::detail::ParseLevel(boost::get<std::string>(iter->second));
     }
   }
 
@@ -226,7 +227,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     auto iter = j.find("thread_id");
     if (iter != j.end())
     {
-      out->threadId = iter.value();
+      out->threadId = boost::get<std::string>(iter->second);
     }
   }
 
@@ -240,7 +241,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     }
     else
     {
-      out->nIndent = iter.value();
+      out->nIndent = static_cast<unsigned>(boost::get<int64_t>(iter->second));
     }
   }
 
@@ -249,7 +250,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     auto iter = j.find("message");
     if (iter != j.end())
     {
-      out->message = iter.value();
+      out->message = boost::get<std::string>(iter->second);
     }
   }
 
@@ -265,6 +266,76 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
   }
 
   return out;
+}
+
+template<typename T>
+bool compareVariantType(const jp::TJsonValue& a, const jp::TJsonValue& b)
+{
+  try
+  {
+    return boost::get<T>(a) == boost::get<T>(b);
+  }
+  catch (boost::bad_get)
+  {
+    return false;
+  }
+}
+
+// Compare two TJsonValue objects
+bool jsValEqual(const jp::TJsonValue& a, const jp::TJsonValue& b)
+{
+  // Equality operator types
+  if (compareVariantType<double> (a, b)) return true;
+  if (compareVariantType<int64_t>(a, b)) return true;
+  if (compareVariantType<bool>   (a, b)) return true;
+
+  // std::string
+  try
+  {
+    return boost::get<std::string>(a).compare(boost::get<std::string>(b)) == 0;
+  }
+  catch (boost::bad_get) {}
+
+  // TNull
+  try
+  {
+    boost::get<jp::TNull>(a);
+    boost::get<jp::TNull>(b);
+    return true;
+  }
+  catch (boost::bad_get) {}
+
+  // array
+  try
+  {
+    const auto& a1 = boost::get<jp::TArray>(a);
+    const auto& a2 = boost::get<jp::TArray>(b);
+    if (a1.size() != a2.size()) return false;
+    for (unsigned i = 0; i < a1.size(); ++i)
+    {
+      if (not jsValEqual(a1[i], a2[i])) return false;
+    }
+    return true;
+  }
+  catch (boost::bad_get) {}
+
+  // map
+  try
+  {
+    const auto& m1 = boost::get<jp::TObject>(a);
+    const auto& m2 = boost::get<jp::TObject>(b);
+    if (m1.size() != m2.size()) return false;
+    for (const auto& entry : m1)
+    {
+      const auto& m2Iter = m2.find(entry.first);
+      if (m2Iter == m2.end()) return false;
+      else if (not jsValEqual(entry.second, m2Iter->second)) return false;
+    }
+    return true;
+  }
+  catch (boost::bad_get) {}
+
+  return false;
 }
 
 // Compare two parsed entries
@@ -341,28 +412,27 @@ bool entriesMatch(const CParsedLogEntry& exp,
   }
   for (auto eIter = exp.mapData.begin(); eIter != exp.mapData.end(); ++eIter)
   {
-    const auto gIter = got.mapData.find(eIter.key());
+    const auto gIter = got.mapData.find(eIter->first);
     if (gIter == got.mapData.end())
     {
-      if (verbose) std::cerr << "Missing expected mapData key [" << eIter.key() << "]" << std::endl;
+      if (verbose) std::cerr << "Missing expected mapData key [" << eIter->first << "]" << std::endl;
       result = false;
     }
-    else if (gIter.value() != eIter.value())
+    else if (not jsValEqual(gIter->second, eIter->second))
     {
       if (verbose)
       {
-        std::cerr << "Value mismatch for mapData key [" << eIter.key() << "]. Got ["
-          << gIter.value() << "], expected [" << eIter.value() << "]" << std::endl;
+        std::cerr << "Value mismatch for mapData key [" << eIter->first << "].[" << std::endl;
       }
       result = false;
     }
   }
   for (auto gIter = got.mapData.begin(); gIter != got.mapData.end(); ++gIter)
   {
-    const auto eIter = exp.mapData.find(gIter.key());
+    const auto eIter = exp.mapData.find(gIter->first);
     if (eIter == exp.mapData.end())
     {
-      if (verbose) std::cerr << "Got unexpected mapData key [" << gIter.key() << "]" << std::endl;
+      if (verbose) std::cerr << "Got unexpected mapData key [" << gIter->first << "]" << std::endl;
       result = false;
     }
   }
@@ -393,6 +463,7 @@ bool verifyLinesImpl(TLogParseFn parse,
   if (lines.size() != expEntries.size())
   {
     std::cerr << "Size mismatch. Expected " << expEntries.size() << ", Got " << lines.size() << std::endl;
+    std::cerr << logString;
     return false;
   }
 
@@ -479,8 +550,36 @@ void loggedFn()
   ALOG(TEST, info, "Some logging...");
 }
 
-// Tests ///////////////////////////////////////////////////////////////////////
+jp::TObject jsonExample1()
+{
+  jp::TObject j;
+  j["string_key"] = std::string("foo");
+  j["int_key"] = 1l;
+  j["bool_key"] = true;
+  j["double_key"] = -3.1415;
+  j["null_key"] = jp::TNull();
+  return j;
+}
 
+jp::TObject jsonExample2()
+{
+  jp::TObject j;
+  j["foo"] = std::string("bar");
+  j["baz"] = jp::TArray{1l, 2l, 3l};
+  j["bat"] = jp::TObject{
+    std::make_pair(
+      std::string("buz"),
+      jp::TJsonValue(std::string("biz"))
+    ),
+    std::make_pair(
+      std::string("first"),
+      jp::TJsonValue(int64_t(2))
+    ),
+  };
+  return j;
+}
+
+// Tests ///////////////////////////////////////////////////////////////////////
 // Test Suite Wrapper
 ALCHEMY_TEST_SUITE(CAlogTest);
 
@@ -754,18 +853,33 @@ TEST_F(CAlogTest, Map)
   InitLogStream(ss);
 
   // Log two map data lines
-  json j1 = {{"string_key", "foo"}, {"int_key", 1}};
-  json j2 = {{"foo", "bar"}, {"baz", {1,2,3}}};
+  auto j1 = jsonExample1();
+  auto j2 = jsonExample2();
+  ALOG(TEST, info, "Hi there BEFORE a map");
   ALOG_MAP(TEST, info, j1);
   ALOG_MAP(TEST, info, j2);
+  ALOG(TEST, info, "Hi there AFTER a map");
 
   // Verify the result
   std::cout << ss.str() << std::endl;
   EXPECT_TRUE(verifyStdLines(ss.str(), std::vector<CParsedLogEntry>{
+    CParsedLogEntry("TEST ", ELogLevels::info, "Hi there BEFORE a map"),
+
+    // j1
     CParsedLogEntry("TEST ", ELogLevels::info, "string_key: \"foo\""),
     CParsedLogEntry("TEST ", ELogLevels::info, "int_key: 1"),
+    CParsedLogEntry("TEST ", ELogLevels::info, "bool_key: true"),
+    CParsedLogEntry("TEST ", ELogLevels::info, "null_key: null"),
+    CParsedLogEntry("TEST ", ELogLevels::info, "double_key: -3.1415"),
+
+    // j2
     CParsedLogEntry("TEST ", ELogLevels::info, "foo: \"bar\""),
     CParsedLogEntry("TEST ", ELogLevels::info, "baz: [1,2,3]"),
+    CParsedLogEntry("TEST ", ELogLevels::info, "bat: "),
+    CParsedLogEntry("TEST ", ELogLevels::info, "buz: \"biz\"", {}, 1),
+    CParsedLogEntry("TEST ", ELogLevels::info, "first: 2", {}, 1),
+
+    CParsedLogEntry("TEST ", ELogLevels::info, "Hi there AFTER a map"),
   }, true, true));
 }
 
@@ -843,8 +957,8 @@ TEST_F(CAlogTest, JSONFormatterMapData)
   UseJSONFormatter();
 
   // Log two map data lines
-  json j1 = {{"string_key", "foo"}, {"int_key", 1}};
-  json j2 = {{"foo", "bar"}, {"baz", {1,2,3}}};
+  auto j1 = jsonExample1();
+  auto j2 = jsonExample2();
   ALOG_MAP(TEST, info, j1);
   ALOG_MAP(TEST, info, j2);
 
