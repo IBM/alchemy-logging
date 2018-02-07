@@ -884,6 +884,28 @@ TEST_F(CAlogTest, Map)
 }
 
 ////////
+// Test ALOGW
+////////
+TEST_F(CAlogTest, WideChar)
+{
+  std::stringstream ss;
+  CLogChannelRegistrySingleton::instance()->setupFilters("", "debug");
+  InitLogStream(ss);
+
+  // Log a line on TEST that is at the filter level
+  // => YES
+  std::wstring line1 = L"ﺏﺍﺭﺎﻛ ﺃﻮﺑﺎﻣﺍ ﺮﺌﻴﺳﺍ ﻞﻟﻭﻼﻳﺎﺗ ﺎﻠﻤﺘﺣﺩﺓ";
+  ALOGW(TEST, debug, line1);
+
+  // Verify that it was logged
+  std::string result = ss.str();
+  std::cout << result << std::endl;
+  EXPECT_FALSE(result.empty());
+}
+
+//// JSON Tests ////////////////////////////////////////////////////////////////
+
+////////
 // Test ALOG_USE_JSON_FORMATTER
 ////////
 TEST_F(CAlogTest, JSONFormatter)
