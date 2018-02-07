@@ -884,6 +884,60 @@ TEST_F(CAlogTest, Map)
 }
 
 ////////
+// Test ALOG_ADJUST_LEVELS
+////////
+TEST_F(CAlogTest, AdjustLevels)
+{
+  std::stringstream ss;
+  CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:info", "off");
+  InitLogStream(ss);
+
+  // Log a line on TEST that is at the filter level
+  // => YES
+  std::string line1 = "Line on TEST at debug";
+  ALOG(TEST, debug, line1);
+
+  // Log a line on FOO that is above the filter level
+  // => NO
+  std::string line2 = "Line on FOO at debug4";
+  ALOG(FOO, debug4, line2);
+
+  // Log a line on BAR that is above the default level
+  // => NO
+  std::string line3 = "Line on BAR at warning";
+  ALOG(BAR, warning, line3);
+
+  // Verify the results
+  EXPECT_TRUE(verifyStdLines(ss.str(), std::vector<CParsedLogEntry>{
+    CParsedLogEntry("TEST ", ELogLevels::debug, line1),
+  }));
+  std::cout << ss.str() << std::endl;
+  ss.str("");
+
+  // Adjust the levels
+  ALOG_ADJUST_LEVELS("warning", "FOO:debug4,TEST:off");
+
+  // Log a line on TEST that is filtered out
+  // => NO
+  ALOG(TEST, debug, line1);
+
+  // Log a line on FOO that is enabled with new filter
+  // => YES
+  ALOG(FOO, debug4, line2);
+
+  // Log a line on BAR that is at the new default level
+  // => YES
+  ALOG(BAR, warning, line3);
+
+  // Verify the results
+  EXPECT_TRUE(verifyStdLines(ss.str(), std::vector<CParsedLogEntry>{
+    CParsedLogEntry("FOO  ", ELogLevels::debug4, line2),
+    CParsedLogEntry("BAR  ", ELogLevels::warning, line3),
+  }));
+  std::cout << ss.str() << std::endl;
+}
+
+////////
 // Test ALOGW
 ////////
 TEST_F(CAlogTest, WideChar)

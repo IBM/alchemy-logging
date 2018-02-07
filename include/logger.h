@@ -365,6 +365,14 @@ detail::ELogLevels ParseLevel(const std::string&);
 #endif
 
 #ifndef DISABLE_LOGGING
+#define ALOG_ADJUST_LEVELS(defaultLevel, filterSpec)\
+  logging::detail::CLogChannelRegistrySingleton\
+    ::instance()->setupFilters(filterSpec, defaultLevel)
+#else
+#define ALOG_ADJUST_LEVELS(defaultLevel, filterSpec)
+#endif
+
+#ifndef DISABLE_LOGGING
 #define ALOG_ENABLE_THREAD_ID()\
   logging::detail::CLogChannelRegistrySingleton::instance()->enableThreadID()
 #else
