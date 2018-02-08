@@ -372,7 +372,7 @@ func JSONToLogEntry(jsString string) (*LogEntry, error) {
 	}
 
 	// Check required entries
-	for _, k := range []string{"channel", "level_str", "message", "timestamp", "num_indent"} {
+	for _, k := range []string{"channel", "level_str", "timestamp", "num_indent"} {
 		if _, ok := entryMap[k]; !ok {
 			return nil, fmt.Errorf("Missing required field '%s'", k)
 		}
@@ -440,8 +440,16 @@ func JSONToLogEntry(jsString string) (*LogEntry, error) {
 			}
 		case "thread_id":
 
-			// thread_id
-			if numVal, ok := v.(json.Number); !ok {
+			// Check as string (from c++ ALog)
+			if strVal, ok := v.(string); ok {
+				if intVal, err := strconv.ParseUint(strVal, 10, 64); nil != err {
+					outErr = fmt.Errorf("Couldn't parse string thread_id")
+				} else {
+					uintVal := uint64(intVal)
+					le.GoroutineID = &uintVal
+				}
+			} else if numVal, ok := v.(json.Number); !ok {
+				// thread_id
 				outErr = fmt.Errorf("Bad type for '%s' - %v", k, reflect.TypeOf(v))
 			} else if intVal, err := numVal.Int64(); nil != err {
 				outErr = fmt.Errorf("Wrong number type for '%s' - %s", k, numVal.String())
