@@ -57,6 +57,7 @@ func main() {
 		} else {
 			if outlines, err := alog.JSONToPlainText(line); nil != err {
 				fmt.Printf("Error converting line [%s]\n", line)
+				fmt.Printf("%v\n", err)
 			} else {
 				for _, outline := range outlines {
 					bufWriter.WriteString(outline)
