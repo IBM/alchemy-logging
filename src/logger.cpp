@@ -427,7 +427,7 @@ void CLogChannelRegistrySingleton::setupFilters(const std::string& a_filterSpec,
 void CLogChannelRegistrySingleton::addSink(std::basic_ostream<char>& a_sink)
 {
   TLock lock(m_mutex);
-  m_sinks.push_back(TStreamRef(a_sink));
+  m_sinks.emplace_back(CSink(TStreamRef(a_sink)));
 }
 
 void CLogChannelRegistrySingleton::setFormatter(const CLogFormatterBase::Ptr& a_formatter)
@@ -486,7 +486,8 @@ void CLogChannelRegistrySingleton::log(const std::string& a_channel,
     // Log to each sink
     for (auto& sink : m_sinks)
     {
-      sink.get() << line << std::flush;
+      TLock l_lock(*sink.m);
+      sink.sink.get() << line << std::flush;
     }
   }
 }

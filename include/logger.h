@@ -215,7 +215,13 @@ private:
   std::mutex m_mutex;
 
   typedef std::reference_wrapper<std::basic_ostream<char>> TStreamRef;
-  std::vector<TStreamRef> m_sinks;
+  struct CSink
+  {
+    TStreamRef sink;
+    std::shared_ptr<std::mutex> m;
+    CSink(const TStreamRef& s) : sink(s), m(new std::mutex()) {}
+  };
+  std::vector<CSink> m_sinks;
   CLogFormatterBase::Ptr m_formatter;
 
   typedef std::thread::id TThreadID;
