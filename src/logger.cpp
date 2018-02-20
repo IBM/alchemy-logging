@@ -631,14 +631,26 @@ CLogScopedTimer::~CLogScopedTimer()
 }
 // CLogScopedIndent ////////////////////////////////////////////////////////////
 
-CLogScopedIndent::CLogScopedIndent()
+CLogScopedIndent::CLogScopedIndent() : m_enabled(true)
 {
   CLogChannelRegistrySingleton::instance()->addIndent();
 }
 
+CLogScopedIndent::CLogScopedIndent(const std::string& a_logName, ELogLevels a_level)
+  : m_enabled(CLogChannelRegistrySingleton::instance()->filter(a_logName, a_level))
+{
+  if (m_enabled)
+  {
+    CLogChannelRegistrySingleton::instance()->addIndent();
+  }
+}
+
 CLogScopedIndent::~CLogScopedIndent()
 {
-  CLogChannelRegistrySingleton::instance()->removeIndent();
+  if (m_enabled)
+  {
+    CLogChannelRegistrySingleton::instance()->removeIndent();
+  }
 }
 
 // Init Functions //////////////////////////////////////////////////////////////

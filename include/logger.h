@@ -266,7 +266,12 @@ private:
 struct CLogScopedIndent
 {
   CLogScopedIndent();
+  CLogScopedIndent(const std::string& a_logName,
+                   ELogLevels a_level);
   ~CLogScopedIndent();
+
+private:
+  const bool m_enabled;
 };  // end class CLogScopedIndent
 
 /** \brief Initiate a log stream */
@@ -332,7 +337,7 @@ detail::ELogLevels ParseLevel(const std::string&);
 
 #define ALOG_FUNCTION_IMPL(channel, level, msg)\
   ALOG_SCOPED_BLOCK_IMPL(channel, level, "" << _ALOG_FUNCTION << "( " << msg << " )");\
-  ALOG_SCOPED_INDENT()
+  ALOG_SCOPED_INDENT_IF(channel, level)
 
 #define ALOG_IS_ENABLED_IMPL(channel, level)\
   logging::detail::CLogChannelRegistrySingleton::instance()->filter(\
@@ -551,6 +556,23 @@ detail::ELogLevels ParseLevel(const std::string&);
 #define ALOG_SCOPED_INDENT() logging::detail::CLogScopedIndent __alog_scoped_indent__
 #else
 #define ALOG_SCOPED_INDENT()
+#endif
+
+/** Add a level of indentation to the current scope if the given channel/level
+ * is enabled */
+#ifndef DISABLE_LOGGING
+#define ALOG_SCOPED_INDENT_IF(channel, level) \
+  logging::detail::CLogScopedIndent __alog_scoped_indent__(channel, logging::detail::ELogLevels::  level)
+#else
+#define ALOG_SCOPED_INDENT_IF(channel, level)
+#endif
+
+/** Add a level of indentation to the current scope if the given level is
+ * enabled for the configured channel */
+#ifndef DISABLE_LOGGING
+#define ALOG_SCOPED_INDENT_IFthis(level) logging::detail::CLogScopedIndent __alog_scoped_indent__
+#else
+#define ALOG_SCOPED_INDENT_IFthis(level)
 #endif
 
 /** Add a Start/End indented block with the current function name on trace */
