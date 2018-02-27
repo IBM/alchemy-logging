@@ -884,6 +884,54 @@ TEST_F(CAlogTest, Map)
 }
 
 ////////
+// Test ALOG_SCOPED_METADATA
+////////
+TEST_F(CAlogTest, ScopedMetadata)
+{
+  std::stringstream ss;
+  CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:info", "off");
+  InitLogStream(ss);
+
+  // Outer scope
+  {
+    ALOG_SCOPED_METADATA("foo", "string_val");
+    ALOG(TEST, debug, "Line with outer metadata BEFORE");
+
+    // Inner scope
+    {
+      ALOG_SCOPED_METADATA("bar", 123);
+      ALOG(FOO, info, "Line with inner metadata");
+    }
+    ALOG(TEST, debug, "Line with outer metadata AFTER");
+  }
+  ALOG(TEST, info, "Line with no metadata");
+
+  // Verify results at given levels
+  std::cout << ss.str() << std::endl;
+  EXPECT_TRUE(verifyStdLines(ss.str(), std::vector<CParsedLogEntry>{
+
+    // Outer scope BEFORE
+    CParsedLogEntry("TEST ", ELogLevels::debug, "Line with outer metadata BEFORE"),
+    CParsedLogEntry("TEST ", ELogLevels::debug, "metadata: "),
+    CParsedLogEntry("TEST ", ELogLevels::debug, "foo: \"string_val\"", {}, 1),
+
+    // Inner scope
+    CParsedLogEntry("FOO  ", ELogLevels::info, "Line with inner metadata"),
+    CParsedLogEntry("FOO  ", ELogLevels::info, "metadata: "),
+    CParsedLogEntry("FOO  ", ELogLevels::info, "foo: \"string_val\"", {}, 1),
+    CParsedLogEntry("FOO  ", ELogLevels::info, "bar: 123", {}, 1),
+
+    // Outer scope AFTER
+    CParsedLogEntry("TEST ", ELogLevels::debug, "Line with outer metadata AFTER"),
+    CParsedLogEntry("TEST ", ELogLevels::debug, "metadata: "),
+    CParsedLogEntry("TEST ", ELogLevels::debug, "foo: \"string_val\"", {}, 1),
+
+    // Final line
+    CParsedLogEntry("TEST ", ELogLevels::info, "Line with no metadata")
+  }, true, true));
+}
+
+////////
 // Test ALOG_ADJUST_LEVELS
 ////////
 TEST_F(CAlogTest, AdjustLevels)
@@ -1044,6 +1092,61 @@ TEST_F(CAlogTest, JSONFormatterMapData)
     CParsedLogEntry("TEST", ELogLevels::info, "", j1),
     CParsedLogEntry("TEST", ELogLevels::info, "", j2),
   }));
+}
+
+////////
+// Test ALOG_SCOPED_METADATA with json formatting
+////////
+TEST_F(CAlogTest, JSONScopedMetadata)
+{
+  std::stringstream ss;
+  CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:info", "off");
+  InitLogStream(ss);
+  UseJSONFormatter();
+
+  // Outer scope
+  {
+    ALOG_SCOPED_METADATA("foo", "string_val");
+    ALOG(TEST, debug, "Line with outer metadata BEFORE");
+
+    // Inner scope
+    {
+      ALOG_SCOPED_METADATA("bar", 123);
+      ALOG(FOO, info, "Line with inner metadata");
+    }
+    ALOG(TEST, debug, "Line with outer metadata AFTER");
+  }
+  ALOG(TEST, info, "Line with no metadata");
+
+  // Verify results at given levels
+  std::cout << ss.str() << std::endl;
+  EXPECT_TRUE(verifyJSONLines(ss.str(), std::vector<CParsedLogEntry>{
+
+    // Outer scope BEFORE
+    CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata BEFORE", {
+      std::make_pair("metadata", jsonparser::TObject{
+        std::make_pair("foo", logging::detail::toMetadata("string_val"))
+      })
+    }),
+
+    // Inner scope
+    CParsedLogEntry("FOO", ELogLevels::info, "Line with inner metadata", {
+      std::make_pair("metadata", jsonparser::TObject{
+        std::make_pair("foo", logging::detail::toMetadata("string_val")),
+        std::make_pair("bar", logging::detail::toMetadata(123))
+      })
+    }),
+
+    // Outer scope AFTER
+    CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata AFTER", {
+      std::make_pair("metadata", jsonparser::TObject{
+        std::make_pair("foo", logging::detail::toMetadata("string_val"))
+      })
+    }),
+
+    // Final line
+    CParsedLogEntry("TEST", ELogLevels::info, "Line with no metadata")
+  }, true, true));
 }
 
 } // end namespace test
