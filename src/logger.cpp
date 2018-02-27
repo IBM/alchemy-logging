@@ -477,6 +477,14 @@ void CLogChannelRegistrySingleton::log(const std::string& a_channel,
     return;
   }
 
+  // Add metadata if present
+  const auto& tid = std::this_thread::get_id();
+  const auto iter = m_metadata.find(tid);
+  if (iter != m_metadata.end())
+  {
+    a_mapData["metadata"] = iter->second;
+  }
+
   // Create the CLogEntry instance
   CLogEntry entry(a_channel, a_level, a_msg, std::move(a_mapData));
 
@@ -503,7 +511,7 @@ void CLogChannelRegistrySingleton::log(const std::string& a_channel,
 void CLogChannelRegistrySingleton::addIndent()
 {
   TLock lock(m_mutex);
-  auto tid = std::this_thread::get_id();
+  const auto& tid = std::this_thread::get_id();
   auto iter = m_indents.find(tid);
   if (iter == m_indents.end())
   {
@@ -518,8 +526,8 @@ void CLogChannelRegistrySingleton::addIndent()
 void CLogChannelRegistrySingleton::removeIndent()
 {
   TLock lock(m_mutex);
-  auto tid = std::this_thread::get_id();
-  auto iter = m_indents.find(tid);
+  const auto& tid = std::this_thread::get_id();
+  const auto iter = m_indents.find(tid);
   if (iter != m_indents.end() and iter->second > 0)
   {
     --(iter->second);
@@ -532,7 +540,7 @@ void CLogChannelRegistrySingleton::removeIndent()
 
 unsigned CLogChannelRegistrySingleton::getIndent() const
 {
-  auto tid = std::this_thread::get_id();
+  const auto& tid = std::this_thread::get_id();
   auto iter = m_indents.find(tid);
   if (iter == m_indents.end())
   {
@@ -541,6 +549,69 @@ unsigned CLogChannelRegistrySingleton::getIndent() const
   else
   {
     return iter->second;
+  }
+}
+
+void CLogChannelRegistrySingleton::addMetadata(const std::string& a_key,
+                                               const jsonparser::TJsonValue& a_value)
+{
+  auto entry = std::make_pair(a_key, a_value);
+  const auto& tid = std::this_thread::get_id();
+  const auto iter = m_metadata.find(tid);
+  if (iter == m_metadata.end())
+  {
+    jsonparser::TObject threadMD;
+    threadMD.insert(std::move(entry));
+    m_metadata.insert(iter, std::make_pair(tid, threadMD));
+  }
+  else
+  {
+    iter->second.insert(std::move(entry));
+  }
+}
+
+void CLogChannelRegistrySingleton::removeMetadata(const std::string& a_key)
+{
+  const auto& tid = std::this_thread::get_id();
+  const auto tidIter = m_metadata.find(tid);
+  if (tidIter != m_metadata.end())
+  {
+    auto entryIter = tidIter->second.find(a_key);
+    if (entryIter != tidIter->second.end())
+    {
+      tidIter->second.erase(entryIter);
+      if (tidIter->second.empty())
+      {
+        m_metadata.erase(tidIter);
+      }
+    }
+  }
+}
+
+void CLogChannelRegistrySingleton::clearMetadata()
+{
+  const auto tid = std::this_thread::get_id();
+  const auto iter = m_metadata.find(tid);
+  if (iter != m_metadata.end())
+  {
+    m_metadata.erase(iter);
+  }
+}
+
+const jsonparser::TObject&
+CLogChannelRegistrySingleton::getMetadata() const
+{
+  const auto tid = std::this_thread::get_id();
+  const auto iter = m_metadata.find(tid);
+  if (iter != m_metadata.end())
+  {
+    return iter->second;
+  }
+  else
+  {
+    // Global singleton for empty metadata
+    static const jsonparser::TObject s_emptyMetadata;
+    return s_emptyMetadata;
   }
 }
 
@@ -629,6 +700,7 @@ CLogScopedTimer::~CLogScopedTimer()
     ALOG_LEVEL_IMPL(m_logName, m_level, ss.str(), {});
   }
 }
+
 // CLogScopedIndent ////////////////////////////////////////////////////////////
 
 CLogScopedIndent::CLogScopedIndent() : m_enabled(true)
@@ -651,6 +723,20 @@ CLogScopedIndent::~CLogScopedIndent()
   {
     CLogChannelRegistrySingleton::instance()->removeIndent();
   }
+}
+
+// CLogScopedMetadata //////////////////////////////////////////////////////////
+
+CLogScopedMetadata::CLogScopedMetadata(const std::string& a_key,
+                                       const jsonparser::TJsonValue& a_val)
+  : m_key(a_key)
+{
+  CLogChannelRegistrySingleton::instance()->addMetadata(a_key, a_val);
+}
+
+CLogScopedMetadata::~CLogScopedMetadata()
+{
+  CLogChannelRegistrySingleton::instance()->removeMetadata(m_key);
 }
 
 // Init Functions //////////////////////////////////////////////////////////////

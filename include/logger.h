@@ -189,6 +189,18 @@ public:
   /** Get the indent level for the current thread */
   unsigned getIndent() const;
 
+  /** Add a key to the metadata for the current thread */
+  void addMetadata(const std::string& a_key, const jsonparser::TJsonValue& a_value);
+
+  /** Remove a key from the metadata for the current thread */
+  void removeMetadata(const std::string& a_key);
+
+  /** Clear the metadata for the current thread */
+  void clearMetadata();
+
+  /** Get a view into the current metadata dict for the current thread */
+  const jsonparser::TObject& getMetadata() const;
+
   /** Clear the current filters and sinks and set the default level to off */
   void reset();
 
@@ -224,9 +236,11 @@ private:
   std::vector<CSink> m_sinks;
   CLogFormatterBase::Ptr m_formatter;
 
-  typedef std::thread::id TThreadID;
-  typedef std::map<TThreadID, unsigned> ThreadIndentMap;
-  ThreadIndentMap m_indents;
+  typedef std::thread::id                          TThreadID;
+  typedef std::map<TThreadID, unsigned>            ThreadIndentMap;
+  typedef std::map<TThreadID, jsonparser::TObject> ThreadMetadataMap;
+  ThreadIndentMap   m_indents;
+  ThreadMetadataMap m_metadata;
 
 };  // end class CLogChannelRegistrySingleton
 
@@ -274,6 +288,15 @@ private:
   const bool m_enabled;
 };  // end class CLogScopedIndent
 
+/** \brief Struct to scope metadata entries */
+struct CLogScopedMetadata
+{
+  CLogScopedMetadata(const std::string&, const jsonparser::TJsonValue&);
+  ~CLogScopedMetadata();
+private:
+  std::string m_key;
+};  // end class CLogScopedMetadata
+
 /** \brief Initiate a log stream */
 void InitLogStream(std::basic_ostream<char>& a_stream);
 
@@ -291,6 +314,33 @@ std::string LevelToHumanString(const detail::ELogLevels&);
 
 /** \brief Parse a log level from a string */
 detail::ELogLevels ParseLevel(const std::string&);
+
+/*-- Detail Helpers ----------------------------------------------------------*/
+
+/** Helper for converting raw values to metadata */
+template<typename T>
+inline jsonparser::TJsonValue toMetadata(T v)
+{ return jsonparser::TJsonValue(v); }
+
+template<>
+inline jsonparser::TJsonValue toMetadata(int v)
+{ return jsonparser::TJsonValue(int64_t(v)); }
+
+template<>
+inline jsonparser::TJsonValue toMetadata(long v)
+{ return jsonparser::TJsonValue(int64_t(v)); }
+
+template<>
+inline jsonparser::TJsonValue toMetadata(unsigned v)
+{ return jsonparser::TJsonValue(int64_t(v)); }
+
+template<>
+inline jsonparser::TJsonValue toMetadata(unsigned long v)
+{ return jsonparser::TJsonValue(int64_t(v)); }
+
+template<>
+inline jsonparser::TJsonValue toMetadata(const char* v)
+{ return jsonparser::TJsonValue(std::string(v)); }
 
 } // end namespace detail
 
@@ -332,6 +382,10 @@ detail::ELogLevels ParseLevel(const std::string&);
   logging::detail::CLogScopedTimer _logTimer(\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
+
+#define ALOG_SCOPED_METADATA_IMPL(key, value)\
+  logging::detail::CLogScopedMetadata _logMDScope(key,\
+    logging::detail::toMetadata(value));
 
 #define _ALOG_FUNCTION __FUNCTION__
 
@@ -549,6 +603,15 @@ detail::ELogLevels ParseLevel(const std::string&);
   ALOG_SCOPED_TIMER_IMPL(getLogChannel(), level, msg)
 #else
 #define ALOG_SCOPED_TIMERthis(level, msg)
+#endif
+
+/** Set up a metadata scope that will add a key to the metadata that will be
+ * removed when the current scope closes */
+#ifndef DISABLE_LOGGING
+#define ALOG_SCOPED_METADATA(key, value)\
+  ALOG_SCOPED_METADATA_IMPL(key, value)
+#else
+#define ALOG_SCOPED_METADATA(key, value)
 #endif
 
 /** Add a level of indentation to the current scope */
