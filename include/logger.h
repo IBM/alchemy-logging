@@ -374,17 +374,17 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
   ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
 
 #define ALOG_SCOPED_BLOCK_IMPL(channel, level, msg)\
-  logging::detail::CLogScope _logScope(\
+  logging::detail::CLogScope _logScope##__FILE__##__LINE__(\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
 
 #define ALOG_SCOPED_TIMER_IMPL(channel, level, msg)\
-  logging::detail::CLogScopedTimer _logTimer(\
+  logging::detail::CLogScopedTimer _logTimer##__FILE__##__LINE__(\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
 
 #define ALOG_SCOPED_METADATA_IMPL(key, value)\
-  logging::detail::CLogScopedMetadata _logMDScope(key,\
+  logging::detail::CLogScopedMetadata _logMDScope##__FILE__##__LINE__(key,\
     logging::detail::toMetadata(value));
 
 #define _ALOG_FUNCTION __FUNCTION__
