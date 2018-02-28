@@ -412,7 +412,7 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 /* These macros are designed to be the only used interface to the logging
  * infrastructure. This allows compile-time removal of all logging for
  * performance by defining DISABLE_LOGGING */
- 
+
  /** \brief Set up logging for an executable
   *
   * This setup macro should be called once per executable to configure logging
