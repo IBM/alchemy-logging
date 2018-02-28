@@ -891,6 +891,7 @@ TEST_F(CAlogTest, ScopedMetadata)
   std::stringstream ss;
   CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:info", "off");
   InitLogStream(ss);
+  CLogChannelRegistrySingleton::instance()->enableMetadata();
 
   // Outer scope
   {
@@ -1039,6 +1040,7 @@ TEST_F(CAlogTest, JSONFormatter)
   std::stringstream ss;
   CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:info", "info");
   InitLogStream(ss);
+  CLogChannelRegistrySingleton::instance()->enableMetadata();
   UseJSONFormatter();
 
   // Log two lines
