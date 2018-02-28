@@ -570,34 +570,42 @@ unsigned CLogChannelRegistrySingleton::getIndent() const
 void CLogChannelRegistrySingleton::addMetadata(const std::string& a_key,
                                                const jsonparser::TJsonValue& a_value)
 {
-  auto entry = std::make_pair(a_key, a_value);
-  const auto& tid = std::this_thread::get_id();
-  const auto iter = m_metadata.find(tid);
-  if (iter == m_metadata.end())
+  if (m_doMetadata)
   {
-    jsonparser::TObject threadMD;
-    threadMD.insert(std::move(entry));
-    m_metadata.insert(iter, std::make_pair(tid, threadMD));
-  }
-  else
-  {
-    iter->second.insert(std::move(entry));
+    TLock lock(m_mutex);
+    auto entry = std::make_pair(a_key, a_value);
+    const auto& tid = std::this_thread::get_id();
+    const auto iter = m_metadata.find(tid);
+    if (iter == m_metadata.end())
+    {
+      jsonparser::TObject threadMD;
+      threadMD.insert(std::move(entry));
+      m_metadata.insert(iter, std::make_pair(tid, threadMD));
+    }
+    else
+    {
+      iter->second.insert(std::move(entry));
+    }
   }
 }
 
 void CLogChannelRegistrySingleton::removeMetadata(const std::string& a_key)
 {
-  const auto& tid = std::this_thread::get_id();
-  const auto tidIter = m_metadata.find(tid);
-  if (tidIter != m_metadata.end())
+  if (m_doMetadata)
   {
-    auto entryIter = tidIter->second.find(a_key);
-    if (entryIter != tidIter->second.end())
+    TLock lock(m_mutex);
+    const auto& tid = std::this_thread::get_id();
+    const auto tidIter = m_metadata.find(tid);
+    if (tidIter != m_metadata.end())
     {
-      tidIter->second.erase(entryIter);
-      if (tidIter->second.empty())
+      auto entryIter = tidIter->second.find(a_key);
+      if (entryIter != tidIter->second.end())
       {
-        m_metadata.erase(tidIter);
+        tidIter->second.erase(entryIter);
+        if (tidIter->second.empty())
+        {
+          m_metadata.erase(tidIter);
+        }
       }
     }
   }
@@ -605,11 +613,15 @@ void CLogChannelRegistrySingleton::removeMetadata(const std::string& a_key)
 
 void CLogChannelRegistrySingleton::clearMetadata()
 {
-  const auto tid = std::this_thread::get_id();
-  const auto iter = m_metadata.find(tid);
-  if (iter != m_metadata.end())
+  if (m_doMetadata)
   {
-    m_metadata.erase(iter);
+    TLock lock(m_mutex);
+    const auto tid = std::this_thread::get_id();
+    const auto iter = m_metadata.find(tid);
+    if (iter != m_metadata.end())
+    {
+      m_metadata.erase(iter);
+    }
   }
 }
 
