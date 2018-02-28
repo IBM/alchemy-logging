@@ -348,6 +348,12 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 
 /*-- Detail Macros -----------------------------------------------------------*/
 
+// CITE: https://stackoverflow.com/questions/1082192/how-to-generate-random-variable-names-in-c-using-macros/1082211
+#define PP_CAT(a, b) PP_CAT_I(a, b)
+#define PP_CAT_I(a, b) PP_CAT_II(~, a ## b)
+#define PP_CAT_II(p, res) res
+#define ALOG_UNIQUE_VAR_NAME_IMPL(base) PP_CAT(base, __LINE__)
+
 #define ALOG_LEVEL_IMPL(channel, level, msg, map)\
   do {if (logging::detail::CLogChannelRegistrySingleton\
     ::instance()->filter(channel, level)) {\
@@ -374,24 +380,28 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
   ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
 
 #define ALOG_SCOPED_BLOCK_IMPL(channel, level, msg)\
-  logging::detail::CLogScope _logScope##__FILE__##__LINE__(\
+  logging::detail::CLogScope ALOG_UNIQUE_VAR_NAME_IMPL(_logScope) (\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
 
 #define ALOG_SCOPED_TIMER_IMPL(channel, level, msg)\
-  logging::detail::CLogScopedTimer _logTimer##__FILE__##__LINE__(\
+  logging::detail::CLogScopedTimer ALOG_UNIQUE_VAR_NAME_IMPL(_logTimer) (\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
 
 #define ALOG_SCOPED_METADATA_IMPL(key, value)\
-  logging::detail::CLogScopedMetadata _logMDScope##__FILE__##__LINE__(key,\
+  logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (key,\
     logging::detail::toMetadata(value));
+
+#define ALOG_SCOPED_INDENT_IF_IMPL(channel, level) \
+  logging::detail::CLogScopedIndent ALOG_UNIQUE_VAR_NAME_IMPL(__alog_scoped_indent__)(\
+    channel, logging::detail::ELogLevels::  level)
 
 #define _ALOG_FUNCTION __FUNCTION__
 
 #define ALOG_FUNCTION_IMPL(channel, level, msg)\
   ALOG_SCOPED_BLOCK_IMPL(channel, level, "" << _ALOG_FUNCTION << "( " << msg << " )");\
-  ALOG_SCOPED_INDENT_IF(channel, level)
+  ALOG_SCOPED_INDENT_IF_IMPL(channel, level)
 
 #define ALOG_IS_ENABLED_IMPL(channel, level)\
   logging::detail::CLogChannelRegistrySingleton::instance()->filter(\
@@ -616,7 +626,8 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 
 /** Add a level of indentation to the current scope */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_INDENT() logging::detail::CLogScopedIndent __alog_scoped_indent__
+#define ALOG_SCOPED_INDENT() logging::detail::CLogScopedIndent \
+  ALOG_UNIQUE_VAR_NAME_IMPL(__alog_scoped_indent__)
 #else
 #define ALOG_SCOPED_INDENT()
 #endif
@@ -624,8 +635,7 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 /** Add a level of indentation to the current scope if the given channel/level
  * is enabled */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_INDENT_IF(channel, level) \
-  logging::detail::CLogScopedIndent __alog_scoped_indent__(channel, logging::detail::ELogLevels::  level)
+#define ALOG_SCOPED_INDENT_IF(channel, level) ALOG_SCOPED_INDENT_IF_IMPL(#channel, level)
 #else
 #define ALOG_SCOPED_INDENT_IF(channel, level)
 #endif
@@ -633,7 +643,7 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 /** Add a level of indentation to the current scope if the given level is
  * enabled for the configured channel */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_INDENT_IFthis(level) logging::detail::CLogScopedIndent __alog_scoped_indent__
+#define ALOG_SCOPED_INDENT_IFthis(level) ALOG_SCOPED_INDENT_IF_IMPL(getLogChannel(), level)
 #else
 #define ALOG_SCOPED_INDENT_IFthis(level)
 #endif

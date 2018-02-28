@@ -932,6 +932,30 @@ TEST_F(CAlogTest, ScopedMetadata)
 }
 
 ////////
+// Test that multiple scope objects can be created in the same scope
+// NOTE: If this compiles, it passes since the point is to ensure unique names
+////////
+TEST_F(CAlogTest, MultiScope)
+{
+  std::stringstream ss;
+  CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:info", "off");
+  InitLogStream(ss);
+
+  {
+    ALOG_SCOPED_INDENT();
+    ALOG_SCOPED_INDENT();
+    ALOG_SCOPED_INDENT_IF(TEST, info);
+    ALOG_SCOPED_INDENT_IF(FOO, info);
+    ALOG_SCOPED_BLOCK(TEST, info, "Scoped block 1");
+    ALOG_SCOPED_BLOCK(FOO, info, "Scoped block 2");
+    ALOG_SCOPED_TIMER(TEST, info, "Scoped timer 1");
+    ALOG_SCOPED_TIMER(FOO, info, "Scoped timer 2");
+    ALOG_SCOPED_METADATA("foo", "bar");
+    ALOG_SCOPED_METADATA("baz", "bat");
+  }
+}
+
+////////
 // Test ALOG_ADJUST_LEVELS
 ////////
 TEST_F(CAlogTest, AdjustLevels)
