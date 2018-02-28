@@ -448,6 +448,18 @@ void CLogChannelRegistrySingleton::disableThreadID()
   m_doThreadLog = false;
 }
 
+void CLogChannelRegistrySingleton::enableMetadata()
+{
+  TLock lock(m_mutex);
+  m_doMetadata = true;
+}
+
+void CLogChannelRegistrySingleton::disableMetadata()
+{
+  TLock lock(m_mutex);
+  m_doMetadata = false;
+}
+
 void CLogChannelRegistrySingleton::setServiceName(const std::string& a_serviceName)
 {
   TLock lock(m_mutex);
@@ -478,11 +490,14 @@ void CLogChannelRegistrySingleton::log(const std::string& a_channel,
   }
 
   // Add metadata if present
-  const auto& tid = std::this_thread::get_id();
-  const auto iter = m_metadata.find(tid);
-  if (iter != m_metadata.end())
+  if (m_doMetadata)
   {
-    a_mapData["metadata"] = iter->second;
+    const auto& tid = std::this_thread::get_id();
+    const auto iter = m_metadata.find(tid);
+    if (iter != m_metadata.end())
+    {
+      a_mapData["metadata"] = iter->second;
+    }
   }
 
   // Create the CLogEntry instance

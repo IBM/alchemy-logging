@@ -155,12 +155,19 @@ public:
   void enableThreadID();
   void disableThreadID();
 
+  /** Determine whether ID threading is currently enabled */
+  bool threadIDEnabled() const { return m_doThreadLog; }
+
+  /** Enable/disable metadata logging */
+  void enableMetadata();
+  void disableMetadata();
+
+  /** Determine whether metadata is currently enabled */
+  bool metadataEnabled() const { return m_doMetadata; }
+
   /** Set the service name to use */
   void setServiceName(const std::string&);
   const std::string& getServiceName() const { return m_serviceName; }
-
-  /** Determine whether ID threading is currently enabled */
-  bool threadIDEnabled() const { return m_doThreadLog; }
 
   /** Filter based on the channel and level. This is public so that it can be
    * run before pushing the message content to a stringstream in the macro */
@@ -210,7 +217,8 @@ private:
    * operator make this a singleton */
   CLogChannelRegistrySingleton()
     : m_defaultLevel(ELogLevels::off),
-      m_doThreadLog(false)
+      m_doThreadLog(false),
+      m_doMetadata(false)
   {};
   CLogChannelRegistrySingleton(const CLogChannelRegistrySingleton&) = delete;
   CLogChannelRegistrySingleton& operator=(const CLogChannelRegistrySingleton&) = delete;
@@ -221,6 +229,7 @@ private:
   FilterMap m_filters;
   ELogLevels m_defaultLevel;
   bool m_doThreadLog;
+  bool m_doMetadata;
   std::string m_serviceName;
 
   typedef std::lock_guard<std::mutex> TLock;
@@ -459,6 +468,20 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
   logging::detail::CLogChannelRegistrySingleton::instance()->disableThreadID()
 #else
 #define ALOG_DISABLE_THREAD_ID()
+#endif
+
+#ifndef DISABLE_LOGGING
+#define ALOG_ENABLE_METADATA()\
+  logging::detail::CLogChannelRegistrySingleton::instance()->enableMetadata()
+#else
+#define ALOG_ENABLE_METADATA()
+#endif
+
+#ifndef DISABLE_LOGGING
+#define ALOG_DISABLE_METADATA()\
+  logging::detail::CLogChannelRegistrySingleton::instance()->disableMetadata()
+#else
+#define ALOG_DISABLE_METADATA()
 #endif
 
 #ifndef DISABLE_LOGGING
