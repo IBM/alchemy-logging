@@ -73,3 +73,38 @@ def foo():
   ch.info("Hello Logging World! I am %d years old", age)
 ```
 
+**NOTE**: In this (python) implementation, this is simply a wrapper around `logging.getLogger()`
+
+## LogScope and FnLog
+One of the most common uses for logging is to note when a certain block of code starts and ends. To facilitate this, `alog` has the concept of the `LogScope`. A `LogScope` is a simple object which logs a `"START:"` statement at creation time and a `"END:"` statement at destruction time. All logging statements which occur between creation and close will be indented, making for a highly readable log, even with very verbose logging. Here's a simple example of `LogScope`:
+
+```py
+import alog
+
+ch = alog.use_channel("DEMO")
+
+def foo(age):
+  ch.info("Hello Logging World! I am %d years old", age)
+  if True:
+    scope = alog.LogScope(ch.debug, "This is my own personal scope bubble")
+    ch.debug("Hey! I'm walking here!")
+    del scope
+```
+
+**NOTE**: Since scoping is permeable in python, if you create nested `LogScope` instances, you must explicitly delete them when the scope closes.
+
+The most common use of `LogScope` is to log the begin and end of a function. To help with this, `alog` provides the `FnLog` object. This is a wrapper around `LogScope` which determines the name of the function being called and adds it to the log statements automatically. For example:
+
+```py
+import alog
+
+ch = alog.use_channel("DEMO")
+
+def foo(age):
+  _ = alog.FnLog(ch.trace, "%d", age)
+  do_foo()
+
+def do_foo():
+  _ = alog.FnLog(ch.debug)
+  ch.debug("Down in the weeds")
+```
