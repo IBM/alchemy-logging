@@ -281,6 +281,13 @@ def configure(default_level, filters="", formatter='pretty'):
     l.propagate = False
     l.addHandler(handler)
 
+def use_channel(channel):
+  """
+  Interface wrapper for python alog implementation to keep consistency with
+  other languages
+  """
+  return logging.getLogger(channel)
+
 ## Convenience Helpers #########################################################
 
 class ScopedLog(object):
