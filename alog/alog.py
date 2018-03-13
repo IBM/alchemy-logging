@@ -100,11 +100,9 @@ class AlogJsonFormatter(AlogFormatterBase):
     :return the jsonified string representation of the record
     :rtype str
     """
-    record.message = record.getMessage().replace('\n', '\t')
+    record.message = record.getMessage()
     record.asctime = self.formatTime(record, self.datefmt)
-    if record.exc_text:
-      record.exc_text = record.exc_text.replace('\n', '\t')
-    elif record.exc_info:
+    if record.exc_info:
       record.exc_text = self.formatException(record.exc_info)
     if record.stack_info:
       record.stack_info = self.formatStack(record.stack_info)
@@ -332,5 +330,7 @@ if __name__ == '__main__':
 
   logging.info("TEST info")
   foo("bar")
-  logging.getLogger("FOO").debug2("Debug2 line %d", 10)
+  use_channel("FOO").debug2("Debug2 line %d", 10)
+  use_channel("BAR").debug4("""Large, deep debugging entry with multiple
+lines of text!""")
 
