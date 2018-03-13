@@ -35,10 +35,18 @@ The `alog.Config()` function allows both the default level and filters to be set
 import alog
 
 if __name__ == '__main__':
-  alog.configure(default_level='info', level_filters='FOO:debug,BAR:off')
+  alog.configure(default_level='info', filters='FOO:debug,BAR:off')
 ```
 
 In this example, the channel `"FOO"` is set to the `debug` level, the channel `"BAR"` is fully disabled, and all other channels are set to use the `INFO` level.
+
+## Output Formatting
+There are two default output formats supported by `alog`: Pretty and json. To configure the output format, use the `formatter` argument to `alog.configure`. The valid options are:
+
+* `pretty`: Easily visible logging for quick visual parsing
+* `json`: Formatted logging for systemic log data creation
+
+Since `alog` is simply a wrapper around the standard python `logging` package, you can also add your own formatters using the standard mechanisms provided in that package.
 
 ## Logging Functions
 For each log level, there are two functions you can use to create log lines: The standard `logging` package function (with additional functions for higher debug levels), or the corresponding `alog.<level>` function. The former will always log to the `MAIN` channel while the later requires that
