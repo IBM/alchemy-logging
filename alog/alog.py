@@ -15,8 +15,8 @@ END_COPYRIGHT
 """
 
 import json
+import traceback
 import logging
-import logging.config
 from datetime import datetime
 from os import environ
 
@@ -26,6 +26,10 @@ class AlogFormatterBase(logging.Formatter):
   """
   Base class with common functionality for alog formatters
   """
+
+  def __init__(self):
+    self._indent = 0
+    logging.Formatter.__init__(self)
 
   def formatTime(self, record, datefmt=None):
     """
@@ -37,6 +41,19 @@ class AlogFormatterBase(logging.Formatter):
     """
     return datetime.utcfromtimestamp(record.created).isoformat()
 
+  def indent(self):
+    """
+    Add a level of indentation
+    """
+    self._indent += 1
+
+  def deindent(self):
+    """
+    Remove a level of indentation
+    """
+    if self._indent > 0:
+      self._indent -= 1
+
 DEFAULT_APP_VERSION = "1.0-SNAPSHOT-local"
 class AlogJsonFormatter(AlogFormatterBase):
   """
@@ -46,6 +63,9 @@ class AlogJsonFormatter(AlogFormatterBase):
   _FIELDS_TO_PRINT = ['name', 'levelname', 'asctime', 'message', 'exc_text',
     'region-id', 'org-id', 'tran-id', 'watson-txn-id', 'channel']
   _app_version = environ.get("SERVICE_VERSION", DEFAULT_APP_VERSION)
+
+  def __init__(self):
+    AlogFormatterBase.__init__(self)
 
   @staticmethod
   def _map_to_common_key_name(log_record_keyname):
@@ -89,14 +109,20 @@ class AlogJsonFormatter(AlogFormatterBase):
     if record.stack_info:
       record.stack_info = self.formatStack(record.stack_info)
     log_record = self._extract_fields_from_record_as_dict(record)
+
     # Add app-version field to all log records
     log_record['app-version'] = self._app_version
+
+    # Add indent to all log records
+    log_record['num_indent'] = self._indent
+
     return json.dumps(log_record, sort_keys=True)
 
 class AlogPrettyFormatter(AlogFormatterBase):
   """
   Log formatter that pretty-prints lines for easy visibility
   """
+  _INDENT = "  "
   _CHANNEL_PRINT_LEN = 5
   _LEVEL_MAP = {
     "critical": "FATL",
@@ -111,6 +137,9 @@ class AlogPrettyFormatter(AlogFormatterBase):
     "debug3": "DBG3",
     "debug4": "DBG4",
   }
+
+  def __init__(self):
+    AlogFormatterBase.__init__(self)
 
   def _make_header(self, timestamp, channel, level):
     """
@@ -139,11 +168,12 @@ class AlogPrettyFormatter(AlogFormatterBase):
     channel = record.name
     timestamp = self.formatTime(record, self.datefmt)
     header = self._make_header(timestamp, channel, level)
-    formatted = '\n'.join(['%s %s' % (header, line) for line in record.getMessage().split('\n')])
+    formatted = '\n'.join(['%s %s%s' % (header, self._INDENT*self._indent, line) for line in record.getMessage().split('\n')])
     return formatted
 
 ## Constants ###################################################################
 
+# Global maps from name <-> level
 g_alog_level_to_name = dict([(val, name.lower()) for (val, name) in logging._levelToName.items()] + [
   (60, "off"),
   (9, "debug1"),
@@ -153,7 +183,13 @@ g_alog_level_to_name = dict([(val, name.lower()) for (val, name) in logging._lev
 ])
 g_alog_name_to_level = dict([(n, l) for (l, n) in g_alog_level_to_name.items()])
 
-## Core ########################################################################
+# Global map of valid formatters
+g_alog_formatters = {
+  "json":   AlogJsonFormatter,
+  "pretty": AlogPrettyFormatter,
+}
+
+## Implementation Details ######################################################
 
 g_alog_formatter = None
 
@@ -162,12 +198,55 @@ def _add_new_level(name, value):
   setattr(logging.Logger, name, lambda self, msg, *args, **kwargs: self.log(value, msg, *args, **kwargs))
   setattr(logging, name, lambda self, msg, *args, **kwargs: self.log(value, msg, *args, **kwargs))
 
-def configure(default_level, filters="", formatter=AlogPrettyFormatter):
+def _setup_formatter(formatter):
+  # Get the formatter class
+  fmt_class = g_alog_formatters.get(formatter, None)
+  if fmt_class is None:
+    logging.warning("Invalid formatter: %s. Falling back to pretty", formatter)
+    fmt_class = AlogPrettyFormatter
 
   # Set up the formatter if different type
   global g_alog_formatter
-  if type(g_alog_formatter) != formatter:
-    g_alog_formatter = formatter()
+  if type(g_alog_formatter) != fmt_class:
+    g_alog_formatter = fmt_class()
+
+def _parse_filters(filters):
+  ch_map = {}
+  if len(filters):
+    for entry in filters.split(','):
+      if len(entry):
+        parts = entry.split(':')
+        if len(parts) != 2:
+          logging.warning("Invalid filter entry [%s]", entry)
+        else:
+          ch, level_name = parts
+          level = g_alog_name_to_level.get(level_name, None)
+          if level is None:
+            logging.warning("Invalid level [%s] for channel [%s]", level_name, ch)
+          else:
+            ch_map[ch] = level_name
+      else:
+        logging.warning("Invalid filter entry [%s]", entry)
+  return ch_map
+
+## Core ########################################################################
+
+def configure(default_level, filters="", formatter='pretty'):
+  """
+  Top-level configuration function for the alog module. This function configures
+  the logging package to use the given default level and overwrites the levels
+  for all filters as specified. It can also configure the formatter type.
+
+  :param default_level (str) - This is the level that will be enabled for a
+    given channel when a specific level has not been set in the filters.
+  :param filters (str/dict) - This is a mapping from channel name to level that
+    allows levels to be set on a per-channel basis. If a string, it is formatted
+    as "CHAN:info,FOO:debug". If a dict, it should map from channel string to
+    level string
+  """
+
+  # Set up the formatter if different type
+  _setup_formatter(formatter)
 
   # Set up root handler if not already set
   if not len(logging.root.handlers):
@@ -191,38 +270,60 @@ def configure(default_level, filters="", formatter=AlogPrettyFormatter):
     logging.warning("Invalid default_level [%s]", default_level)
 
   # Add level filters by name
-  if len(filters):
-    for entry in filters.split(','):
-      if len(entry):
-        parts = entry.split(':')
-        if len(parts) != 2:
-          logging.warning("Invalid filter entry [%s]", entry)
-        else:
-          ch, level_name = parts
-          level = g_alog_name_to_level.get(level_name, None)
-          if level is None:
-            logging.warning("Invalid level [%s] for channel [%s]", level_name, ch)
-          else:
-            handler = logging.StreamHandler()
-            handler.setFormatter(g_alog_formatter)
-            handler.setLevel(level)
-            l = logging.getLogger(ch)
-            l.setLevel(level)
-            l.propagate = False
-            l.addHandler(handler)
-      else:
-        logging.warning("Invalid filter entry [%s]", entry)
+  # NOTE: All levels assumed valid after call to _parse_filters
+  for ch, level_name in _parse_filters(filters).items():
+    level = g_alog_name_to_level[level_name]
+    handler = logging.StreamHandler()
+    handler.setFormatter(g_alog_formatter)
+    handler.setLevel(level)
+    l = logging.getLogger(ch)
+    l.setLevel(level)
+    l.propagate = False
+    l.addHandler(handler)
+
+## Convenience Helpers #########################################################
+
+class ScopedLog(object):
+  """
+  Scoped logging class that adds BEGIN/END lines and indents lines logged in
+  the scope
+  """
+  def __init__(self, log_fn, x=""):
+    self.log_fn = log_fn
+    self.x = x
+    self.log_fn("BEGIN: %s" % str(self.x))
+    global g_alog_formatter
+    g_alog_formatter.indent()
+  def __del__(self):
+    global g_alog_formatter
+    g_alog_formatter.deindent()
+    self.log_fn("END: %s" % str(self.x))
+
+class TraceLog(ScopedLog):
+  """
+  Scoped log class that adds the function name to the BEGIN/END lines
+  """
+  def __init__(self, log_fn, x=""):
+    fn_name = traceback.format_stack()[-2].strip().split(',')[2].split(' ')[2].strip()
+    ScopedLog.__init__(self, log_fn, "%s(%s)" % (fn_name, x))
 
 
 ## Testing #####################################################################
+
+def foo(val):
+  ch = logging.getLogger("FOO")
+  _=TraceLog(ch.info)
+  ch.debug3("This is a test")
+  ch.info("Log with %s val", val)
 
 if __name__ == '__main__':
   import sys
   default_level = sys.argv[1] if len(sys.argv) > 1 else "info"
   filters = sys.argv[2] if len(sys.argv) > 2 else ""
-  use_json = len(sys.argv) > 3
-  formatter = AlogJsonFormatter if use_json else AlogPrettyFormatter
+  formatter = sys.argv[3] if len(sys.argv) > 3 else "pretty"
   configure(default_level=default_level, filters=filters, formatter=formatter)
 
   logging.info("TEST info")
+  foo("bar")
   logging.getLogger("FOO").debug2("Debug2 line %d", 10)
+
