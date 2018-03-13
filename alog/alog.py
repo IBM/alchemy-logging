@@ -206,7 +206,7 @@ def configure(default_level, filters="", formatter=AlogPrettyFormatter):
             handler = logging.StreamHandler()
             handler.setFormatter(g_alog_formatter)
             handler.setLevel(level)
-            l = logging.getLogger(name)
+            l = logging.getLogger(ch)
             l.setLevel(level)
             l.propagate = False
             l.addHandler(handler)
