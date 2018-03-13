@@ -304,7 +304,7 @@ class ScopedLog(object):
     g_alog_formatter.deindent()
     self.log_fn("END: %s" % str(self.x))
 
-class TraceLog(ScopedLog):
+class FnLog(ScopedLog):
   """
   Scoped log class that adds the function name to the BEGIN/END lines
   """
@@ -317,9 +317,13 @@ class TraceLog(ScopedLog):
 
 def foo(val):
   ch = logging.getLogger("FOO")
-  _=TraceLog(ch.info)
+  fn_scope = FnLog(ch.info)
   ch.debug3("This is a test")
-  ch.info("Log with %s val", val)
+  if True:
+    inner_scope = ScopedLog(ch.debug, "inner")
+    ch.info("Log with %s val", val)
+    del inner_scope
+  ch.info("Log outside inner scope")
 
 if __name__ == '__main__':
   import sys
