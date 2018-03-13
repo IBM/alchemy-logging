@@ -157,11 +157,10 @@ g_alog_name_to_level = dict([(n, l) for (l, n) in g_alog_level_to_name.items()])
 
 g_alog_formatter = None
 
-class _level_wrapper(object):
-  def __init__(self, level):
-    self.level = level
-  def __call__(self, slf, msg, *args, **kwargs):
-    slf.log(msg, *args, **kwargs)
+def _add_new_level(name, value):
+  logging.addLevelName(value, name.upper())
+  setattr(logging.Logger, name, lambda self, msg, *args, **kwargs: self.log(value, msg, *args, **kwargs))
+  setattr(logging, name, lambda self, msg, *args, **kwargs: self.log(value, msg, *args, **kwargs))
 
 def configure(default_level, filters="", formatter=AlogPrettyFormatter):
 
@@ -179,12 +178,8 @@ def configure(default_level, filters="", formatter=AlogPrettyFormatter):
 
   # Add custom low levels
   for level, name in g_alog_level_to_name.items():
-    if not hasattr(logging.Logger, name) and name != "off":
-      logging.addLevelName(level, name.upper())
-      setattr(logging.Logger, name, _level_wrapper(level))
-      setattr(logging.Logger, name, _level_wrapper(level))
-      # setattr(logging.Logger, name, lambda self, msg, *args, **kwargs: self.log(level, msg, *args, **kwargs))
-      # setattr(logging, name, lambda msg, *args, **kwargs: logging.root.log(level, msg, *args, **kwargs))
+    if not hasattr(logging.Logger, name) and name not in ["off", "notset"]:
+      _add_new_level(name, level)
 
   # Set default level
   default_level_val = g_alog_name_to_level.get(default_level, None)
