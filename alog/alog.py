@@ -194,7 +194,7 @@ g_alog_formatter = None
 def _add_new_level(name, value):
   logging.addLevelName(value, name.upper())
   setattr(logging.Logger, name, lambda self, msg, *args, **kwargs: self.log(value, msg, *args, **kwargs))
-  setattr(logging, name, lambda self, msg, *args, **kwargs: self.log(value, msg, *args, **kwargs))
+  setattr(logging, name, lambda msg, *args, **kwargs: logging.log(value, msg, *args, **kwargs))
 
 def _setup_formatter(formatter):
   # Get the formatter class
