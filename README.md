@@ -1,6 +1,13 @@
 # Alchemy Log (alog)
 The `alog` framework provides tunable logging with easy-to-use defaults and power-user capabilities. The mantra of `alog` is **"Log Early And Often"**. To accomplish this goal, `alog` makes it easy to enable verbose logging at develop/debug time and trim the verbosity at production run time.
 
+## Setup
+To use the `alog` module, simply install it with `pip`:
+
+```sh
+pip install git+ssh://git@github.ibm.com/watson-nlu/alog-py.git --upgrade
+```
+
 ## Channels and Levels
 The primary components of the system are **channels** and **levels** which allow for each log statement to be enabled or disabled when appropriate.
 
