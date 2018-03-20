@@ -293,24 +293,26 @@ class ScopedLog(object):
   Scoped logging class that adds BEGIN/END lines and indents lines logged in
   the scope
   """
-  def __init__(self, log_fn, x=""):
+  def __init__(self, log_fn, format_str="", *args):
     self.log_fn = log_fn
-    self.x = x
-    self.log_fn("BEGIN: %s" % str(self.x))
+    self.format_str = format_str
+    self.args = args
+    self.log_fn("BEGIN: " + str(self.format_str), *self.args)
     global g_alog_formatter
     g_alog_formatter.indent()
   def __del__(self):
     global g_alog_formatter
     g_alog_formatter.deindent()
-    self.log_fn("END: %s" % str(self.x))
+    self.log_fn("END: " + str(self.format_str), *self.args)
 
 class FnLog(ScopedLog):
   """
   Scoped log class that adds the function name to the BEGIN/END lines
   """
-  def __init__(self, log_fn, x=""):
+  def __init__(self, log_fn, format_str="", *args):
     fn_name = traceback.format_stack()[-2].strip().split(',')[2].split(' ')[2].strip()
-    ScopedLog.__init__(self, log_fn, "%s(%s)" % (fn_name, x))
+    format_str = "%s(" + format_str + ")"
+    ScopedLog.__init__(self, log_fn, format_str, fn_name, *args)
 
 
 ## Testing #####################################################################
