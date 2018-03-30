@@ -70,13 +70,13 @@ class AlogJsonFormatter(AlogFormatterBase):
   @staticmethod
   def _map_to_common_key_name(log_record_keyname):
     if log_record_keyname == 'levelname':
-      return 'level'
+      return 'level_str'
     elif log_record_keyname == 'asctime':
       return 'timestamp'
     elif log_record_keyname == 'exc_text':
       return 'exception'
     elif log_record_keyname == 'name':
-      return 'logger_name'
+      return 'channel'
     else:
       return log_record_keyname
 
