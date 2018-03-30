@@ -89,8 +89,10 @@ class AlogJsonFormatter(AlogFormatterBase):
       into a dictionary
     :rtype dict
     """
-    return {self._map_to_common_key_name(field_name): getattr(record, field_name) for field_name in
+    out = {self._map_to_common_key_name(field_name): getattr(record, field_name) for field_name in
           self._FIELDS_TO_PRINT if hasattr(record, field_name)}
+    out["level_str"] = out["level_str"].lower()
+    return out
 
   def format(self, record):
     """
