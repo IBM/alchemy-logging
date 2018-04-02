@@ -70,13 +70,13 @@ class AlogJsonFormatter(AlogFormatterBase):
   @staticmethod
   def _map_to_common_key_name(log_record_keyname):
     if log_record_keyname == 'levelname':
-      return 'level'
+      return 'level_str'
     elif log_record_keyname == 'asctime':
       return 'timestamp'
     elif log_record_keyname == 'exc_text':
       return 'exception'
     elif log_record_keyname == 'name':
-      return 'logger_name'
+      return 'channel'
     else:
       return log_record_keyname
 
@@ -89,8 +89,10 @@ class AlogJsonFormatter(AlogFormatterBase):
       into a dictionary
     :rtype dict
     """
-    return {self._map_to_common_key_name(field_name): getattr(record, field_name) for field_name in
+    out = {self._map_to_common_key_name(field_name): getattr(record, field_name) for field_name in
           self._FIELDS_TO_PRINT if hasattr(record, field_name)}
+    out["level_str"] = out["level_str"].lower()
+    return out
 
   def format(self, record):
     """
