@@ -255,6 +255,8 @@ private:
 
 /*-- Scope Classes -----------------------------------------------------------*/
 
+typedef std::shared_ptr<const jsonparser::TObject> TScopeLogMapPtr;
+
 /** \brief This class is used to add a Start/End block to a log */
 class CLogScope
 {
@@ -262,12 +264,14 @@ public:
   CLogScope(const CLogScope&) = delete;
   CLogScope(const std::string& a_channelName,
             ELogLevels a_level,
-            const std::string& a_msg);
+            const std::string& a_msg,
+            const TScopeLogMapPtr& a_mapDataPtr = nullptr);
   virtual ~CLogScope();
 private:
-  std::string m_channelName;
-  ELogLevels m_level;
-  std::string m_msg;
+  const std::string     m_channelName;
+  const ELogLevels      m_level;
+  const std::string     m_msg;
+  const TScopeLogMapPtr m_mapDataPtr;
 };  // end class CLogScope
 
 /** \brief Struct to time execution of a block */
@@ -276,12 +280,14 @@ struct CLogScopedTimer
   CLogScopedTimer(const CLogScopedTimer&) = delete;
   CLogScopedTimer(const std::string& a_channelName,
                   ELogLevels a_level,
-                  const std::string& a_msg);
+                  const std::string& a_msg,
+                  const TScopeLogMapPtr& a_mapDataPtr = nullptr);
   virtual ~CLogScopedTimer();
 private:
-  std::string m_channelName;
-  ELogLevels m_level;
-  std::string m_msg;
+  const std::string     m_channelName;
+  const ELogLevels      m_level;
+  const std::string     m_msg;
+  const TScopeLogMapPtr m_mapDataPtr;
   decltype(std::chrono::high_resolution_clock::now()) m_t0;
 };  // end class CLogScopedTimer
 
@@ -391,15 +397,38 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #define ALOGW_CHANNEL_IMPL(channel, level, msg)\
   ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
 
-#define ALOG_SCOPED_BLOCK_IMPL(channel, level, msg)\
-  logging::detail::CLogScope ALOG_UNIQUE_VAR_NAME_IMPL(_logScope) (\
+
+
+
+
+// Each of the scope macros can take an optional "mapDataPtr" argument at the
+// end in order to add mapping information that changes between start and end.
+// In order to enable this, we need the old NARGS trick:
+// https://stackoverflow.com/questions/27765387/distributing-an-argument-in-a-variadic-macro
+#define NARGS(...) NARGS_(__VA_ARGS__, _MAP, _NO_MAP, 0)
+#define NARGS_(_2, _1, N, ...) N
+
+#define CONC(A, B) CONC_(A, B)
+#define CONC_(A, B) A##B
+
+#define _SCOPE_WRAPPER_WITH_MAP(scopeType, channel, level, msg, map) \
+  logging::detail:: scopeType ALOG_UNIQUE_VAR_NAME_IMPL(scopeType) (\
+    channel, logging::detail::ELogLevels:: level,\
+    static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str(), map)
+#define _SCOPE_WRAPPER_WITH_NO_MAP(scopeType, channel, level, msg) \
+  logging::detail:: scopeType ALOG_UNIQUE_VAR_NAME_IMPL(scopeType) (\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
 
-#define ALOG_SCOPED_TIMER_IMPL(channel, level, msg)\
-  logging::detail::CLogScopedTimer ALOG_UNIQUE_VAR_NAME_IMPL(_logTimer) (\
-    channel, logging::detail::ELogLevels:: level,\
-    static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
+#define _SCOPE_WRAPPER(scopeType, channel, level, ...) \
+  CONC(_SCOPE_WRAPPER_WITH, NARGS(__VA_ARGS__)) (scopeType, channel, level, __VA_ARGS__)
+
+#define ALOG_SCOPED_BLOCK_IMPL(channel, level, ...)\
+  _SCOPE_WRAPPER(CLogScope, channel, level, __VA_ARGS__)
+
+#define ALOG_SCOPED_TIMER_IMPL(channel, level, ...)\
+  _SCOPE_WRAPPER(CLogScopedTimer, channel, level, __VA_ARGS__)
+
 
 #define ALOG_SCOPED_METADATA_IMPL(key, value)\
   logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (key,\
@@ -607,38 +636,38 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 /** Set up a Start/End block of logging based on the scope. Note that only a
  * single call to ALOG_SCOPED_BLOCK may be made within a given scope */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_BLOCK(channel, level, msg)\
-  ALOG_SCOPED_BLOCK_IMPL(#channel, level, msg)
+#define ALOG_SCOPED_BLOCK(channel, level, ...)\
+  ALOG_SCOPED_BLOCK_IMPL(#channel, level, __VA_ARGS__)
 #else
-#define ALOG_SCOPED_BLOCK(channel, level, msg)
+#define ALOG_SCOPED_BLOCK(channel, level, ...)
 #endif
 
 /** Set up a Start/End block of logging based on the scope using class' native
  * channel */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_BLOCKthis(level, msg)\
-  ALOG_SCOPED_BLOCK_IMPL(getLogChannel(), level, msg)
+#define ALOG_SCOPED_BLOCKthis(level, ...)\
+  ALOG_SCOPED_BLOCK_IMPL(getLogChannel(), level, __VA_ARGS__)
 #else
-#define ALOG_SCOPED_BLOCKthis(level, msg)
+#define ALOG_SCOPED_BLOCKthis(level, ...)
 #endif
 
 /** Set up a timer that will time the work done in the current scope and
  * report the duration upon scope completion */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_TIMER(channel, level, msg)\
-  ALOG_SCOPED_TIMER_IMPL(#channel, level, msg)
+#define ALOG_SCOPED_TIMER(channel, level, ...)\
+  ALOG_SCOPED_TIMER_IMPL(#channel, level, __VA_ARGS__)
 #else
-#define ALOG_SCOPED_TIMER(channel, level, msg)
+#define ALOG_SCOPED_TIMER(channel, level, ...)
 #endif
 
 /** Set up a timer that will time the work done in the current scope and
  * report the duration upon scope completion using current class' native
  * channel */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_TIMERthis(level, msg)\
-  ALOG_SCOPED_TIMER_IMPL(getLogChannel(), level, msg)
+#define ALOG_SCOPED_TIMERthis(level, ...)\
+  ALOG_SCOPED_TIMER_IMPL(getLogChannel(), level, __VA_ARGS__)
 #else
-#define ALOG_SCOPED_TIMERthis(level, msg)
+#define ALOG_SCOPED_TIMERthis(level, ...)
 #endif
 
 /** Set up a metadata scope that will add a key to the metadata that will be

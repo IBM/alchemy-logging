@@ -38,6 +38,9 @@ namespace logging
 namespace
 {
 
+// Static empty map data to allow reference semantics for non-empty maps
+static const jsonparser::TObject s_emptyMapData;
+
 // Implement string splitting to avoid boost dependency:
 // CITE: http://stackoverflow.com/questions/236129/split-a-string-in-c
 template<typename Out>
@@ -658,27 +661,51 @@ void CLogChannelRegistrySingleton::reset()
 
 CLogScope::CLogScope(const std::string& a_channelName,
                    ELogLevels a_level,
+<<<<<<< HEAD
                    const std::string& a_msg)
   : m_channelName(a_channelName),
+=======
+                   const std::string& a_msg,
+                   const TScopeLogMapPtr& a_mapDataPtr)
+  : m_logName(a_logName),
+>>>>>>> add_scoped_metadata_logging: Add ability to add map data to scopes
     m_level(a_level),
-    m_msg(a_msg)
+    m_msg(a_msg),
+    m_mapDataPtr(a_mapDataPtr)
 {
+<<<<<<< HEAD
   ALOG_LEVEL_IMPL(m_channelName, m_level, "Start: " << m_msg, {});
+=======
+  const jsonparser::TObject& l_mapData = m_mapDataPtr ? *m_mapDataPtr : s_emptyMapData;
+  ALOG_LEVEL_IMPL(m_logName, m_level, "Start: " << m_msg, l_mapData);
+>>>>>>> add_scoped_metadata_logging: Add ability to add map data to scopes
 }
 
 CLogScope::~CLogScope()
 {
+<<<<<<< HEAD
   ALOG_LEVEL_IMPL(m_channelName, m_level, "End: " << m_msg, {});
+=======
+  const jsonparser::TObject& l_mapData = m_mapDataPtr ? *m_mapDataPtr : s_emptyMapData;
+  ALOG_LEVEL_IMPL(m_logName, m_level, "End: " << m_msg, l_mapData);
+>>>>>>> add_scoped_metadata_logging: Add ability to add map data to scopes
 }
 
 // CLogScopedTimer /////////////////////////////////////////////////////////////
 
 CLogScopedTimer::CLogScopedTimer(const std::string& a_channelName,
                                  ELogLevels a_level,
+<<<<<<< HEAD
                                  const std::string& a_msg)
   : m_channelName(a_channelName),
+=======
+                                 const std::string& a_msg,
+                                 const TScopeLogMapPtr& a_mapDataPtr)
+  : m_logName(a_logName),
+>>>>>>> add_scoped_metadata_logging: Add ability to add map data to scopes
     m_level(a_level),
     m_msg(a_msg),
+    m_mapDataPtr(a_mapDataPtr),
     m_t0()
 {
   if (logging::detail::CLogChannelRegistrySingleton::instance()->filter(m_channelName, m_level))
@@ -724,7 +751,13 @@ CLogScopedTimer::~CLogScopedTimer()
     // Stream the message
     std::stringstream ss;
     ss << m_msg << val << suffix;
-    ALOG_LEVEL_IMPL(m_channelName, m_level, ss.str(), {std::make_pair("time_ns", logging::detail::toMetadata(val))});
+    jsonparser::TObject mapOut;
+    if (m_mapDataPtr)
+    {
+      mapOut = *m_mapDataPtr;
+    }
+    mapOut["time_ns"] = logging::detail::toMetadata(val);
+    ALOG_LEVEL_IMPL(m_channelName, m_level, ss.str(), mapOut);
   }
 }
 

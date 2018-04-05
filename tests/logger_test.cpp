@@ -418,7 +418,7 @@ bool entriesMatch(const CParsedLogEntry& exp,
       if (verbose) std::cerr << "Missing expected mapData key [" << eIter->first << "]" << std::endl;
       result = false;
     }
-    else if (not jsValEqual(gIter->second, eIter->second))
+    else if (checkMessage and not jsValEqual(gIter->second, eIter->second))
     {
       if (verbose)
       {
@@ -749,6 +749,42 @@ TEST_F(CAlogTest, LogScope)
     CParsedLogEntry("TEST ", ELogLevels::debug, "Interim logging!"),
     CParsedLogEntry("TEST ", ELogLevels::debug, "End: Testing 1 with streaming"),
   }));
+}
+
+////////
+// Test ALOG_SCOPED_BLOCK with map data
+////////
+TEST_F(CAlogTest, LogScopeWithMap)
+{
+  std::stringstream ss;
+  CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:info", "info");
+  InitLogStream(ss);
+
+  // Start/end lines with map data that changes between start and end
+  {
+    // Set up a scope log with a mutable key/val map
+    std::shared_ptr<jsonparser::TObject> map(new jsonparser::TObject());
+    map->insert(std::make_pair("foo", logging::detail::toMetadata("bar")));
+    ALOG_SCOPED_BLOCK(TEST, debug, "Test with map", map);
+
+    // Update the content of the map before the scope closes
+    (*map)["foo"] = logging::detail::toMetadata("baz");
+    map->insert(std::make_pair("buz", logging::detail::toMetadata(123)));
+  }
+
+  // Verify the number of lines
+  std::cout << ss.str() << std::endl;
+  EXPECT_TRUE(verifyStdLines(ss.str(), std::vector<CParsedLogEntry>{
+
+    // Start
+    CParsedLogEntry("TEST ", ELogLevels::debug, "Start: Test with map"),
+    CParsedLogEntry("TEST ", ELogLevels::debug, "foo: \"bar\""),
+
+    // End
+    CParsedLogEntry("TEST ", ELogLevels::debug, "End: Test with map"),
+    CParsedLogEntry("TEST ", ELogLevels::debug, "foo: \"baz\""),
+    CParsedLogEntry("TEST ", ELogLevels::debug, "buz: 123"),
+  }, true, true));
 }
 
 ////////
@@ -1173,6 +1209,52 @@ TEST_F(CAlogTest, JSONScopedMetadata)
     // Final line
     CParsedLogEntry("TEST", ELogLevels::info, "Line with no metadata")
   }, true, true));
+}
+
+////////
+// Test ALOG_SCOPED_TIMER with json formatting
+////////
+TEST_F(CAlogTest, JSONScopedTimer)
+{
+  std::stringstream ss;
+  CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:info", "off");
+  InitLogStream(ss);
+  UseJSONFormatter();
+
+  // Outer scope
+  {
+    ALOG_SCOPED_TIMER(TEST, info, "Outer Block Completed in: ");
+    // Inner Scope with map data
+    {
+      std::shared_ptr<jsonparser::TObject> mapDataPtr(new jsonparser::TObject());
+      mapDataPtr->insert(std::make_pair("mutable", logging::detail::toMetadata("A")));
+      ALOG_SCOPED_TIMER(TEST, debug, "Inner block with map data and a stream " << 123, mapDataPtr);
+
+      ALOG(FOO, info, "Hi from FOO");
+      mapDataPtr->insert(std::make_pair("added_later", logging::detail::toMetadata(456)));
+      (*mapDataPtr)["mutable"] = logging::detail::toMetadata("B");
+    }
+  }
+
+  // Verify results at given levels (ignore messages due to time values)
+  std::cout << ss.str() << std::endl;
+  EXPECT_TRUE(verifyJSONLines(ss.str(), std::vector<CParsedLogEntry>{
+
+    // Inner scope log line
+    CParsedLogEntry("FOO", ELogLevels::info, ""),
+
+    // Inner scope timer completion
+    CParsedLogEntry("TEST", ELogLevels::debug, "", {
+      std::make_pair("mutable", logging::detail::toMetadata("B")),
+      std::make_pair("added_later", logging::detail::toMetadata(456)),
+      std::make_pair("time_ns", logging::detail::toMetadata(0)) // Huh...
+    }),
+
+    // Outer scope timer completion
+    CParsedLogEntry("TEST", ELogLevels::info, "", {
+      std::make_pair("time_ns", logging::detail::toMetadata(0)) // Huh...
+    }),
+  }, false, true));
 }
 
 } // end namespace test
