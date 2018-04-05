@@ -724,7 +724,7 @@ CLogScopedTimer::~CLogScopedTimer()
     // Stream the message
     std::stringstream ss;
     ss << m_msg << val << suffix;
-    ALOG_LEVEL_IMPL(m_channelName, m_level, ss.str(), {});
+    ALOG_LEVEL_IMPL(m_channelName, m_level, ss.str(), {std::make_pair("time_ns", logging::detail::toMetadata(val))});
   }
 }
 
