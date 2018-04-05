@@ -397,10 +397,6 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #define ALOGW_CHANNEL_IMPL(channel, level, msg)\
   ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
 
-
-
-
-
 // Each of the scope macros can take an optional "mapDataPtr" argument at the
 // end in order to add mapping information that changes between start and end.
 // In order to enable this, we need the old NARGS trick:
@@ -755,3 +751,7 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #else
 #define ALOG_IS_ENABLEDthis(level) false
 #endif
+
+/** Convert a value for use in map data. Note that this will be called inside
+ * regular code, so it cannot be compiled out. **/
+#define ALOG_MAP_VALUE(val) logging::detail::toMetadata(val)

@@ -764,12 +764,12 @@ TEST_F(CAlogTest, LogScopeWithMap)
   {
     // Set up a scope log with a mutable key/val map
     std::shared_ptr<jsonparser::TObject> map(new jsonparser::TObject());
-    map->insert(std::make_pair("foo", logging::detail::toMetadata("bar")));
+    map->insert(std::make_pair("foo", ALOG_MAP_VALUE("bar")));
     ALOG_SCOPED_BLOCK(TEST, debug, "Test with map", map);
 
     // Update the content of the map before the scope closes
-    (*map)["foo"] = logging::detail::toMetadata("baz");
-    map->insert(std::make_pair("buz", logging::detail::toMetadata(123)));
+    (*map)["foo"] = ALOG_MAP_VALUE("baz");
+    map->insert(std::make_pair("buz", ALOG_MAP_VALUE(123)));
   }
 
   // Verify the number of lines
@@ -1187,22 +1187,22 @@ TEST_F(CAlogTest, JSONScopedMetadata)
     // Outer scope BEFORE
     CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata BEFORE", {
       std::make_pair("metadata", jsonparser::TObject{
-        std::make_pair("foo", logging::detail::toMetadata("string_val"))
+        std::make_pair("foo", ALOG_MAP_VALUE("string_val"))
       })
     }),
 
     // Inner scope
     CParsedLogEntry("FOO", ELogLevels::info, "Line with inner metadata", {
       std::make_pair("metadata", jsonparser::TObject{
-        std::make_pair("foo", logging::detail::toMetadata("string_val")),
-        std::make_pair("bar", logging::detail::toMetadata(123))
+        std::make_pair("foo", ALOG_MAP_VALUE("string_val")),
+        std::make_pair("bar", ALOG_MAP_VALUE(123))
       })
     }),
 
     // Outer scope AFTER
     CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata AFTER", {
       std::make_pair("metadata", jsonparser::TObject{
-        std::make_pair("foo", logging::detail::toMetadata("string_val"))
+        std::make_pair("foo", ALOG_MAP_VALUE("string_val"))
       })
     }),
 
@@ -1227,12 +1227,12 @@ TEST_F(CAlogTest, JSONScopedTimer)
     // Inner Scope with map data
     {
       std::shared_ptr<jsonparser::TObject> mapDataPtr(new jsonparser::TObject());
-      mapDataPtr->insert(std::make_pair("mutable", logging::detail::toMetadata("A")));
+      mapDataPtr->insert(std::make_pair("mutable", ALOG_MAP_VALUE("A")));
       ALOG_SCOPED_TIMER(TEST, debug, "Inner block with map data and a stream " << 123, mapDataPtr);
 
       ALOG(FOO, info, "Hi from FOO");
-      mapDataPtr->insert(std::make_pair("added_later", logging::detail::toMetadata(456)));
-      (*mapDataPtr)["mutable"] = logging::detail::toMetadata("B");
+      mapDataPtr->insert(std::make_pair("added_later", ALOG_MAP_VALUE(456)));
+      (*mapDataPtr)["mutable"] = ALOG_MAP_VALUE("B");
     }
   }
 
@@ -1245,14 +1245,14 @@ TEST_F(CAlogTest, JSONScopedTimer)
 
     // Inner scope timer completion
     CParsedLogEntry("TEST", ELogLevels::debug, "", {
-      std::make_pair("mutable", logging::detail::toMetadata("B")),
-      std::make_pair("added_later", logging::detail::toMetadata(456)),
-      std::make_pair("time_ns", logging::detail::toMetadata(0)) // Huh...
+      std::make_pair("mutable", ALOG_MAP_VALUE("B")),
+      std::make_pair("added_later", ALOG_MAP_VALUE(456)),
+      std::make_pair("time_ns", ALOG_MAP_VALUE(0)) // Huh...
     }),
 
     // Outer scope timer completion
     CParsedLogEntry("TEST", ELogLevels::info, "", {
-      std::make_pair("time_ns", logging::detail::toMetadata(0)) // Huh...
+      std::make_pair("time_ns", ALOG_MAP_VALUE(0)) // Huh...
     }),
   }, false, true));
 }
