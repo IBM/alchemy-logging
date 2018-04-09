@@ -727,6 +727,9 @@ CLogScopedTimer::~CLogScopedTimer()
     val = std::chrono::duration_cast<std::chrono::nanoseconds>(t1-m_t0).count();
     suffix = "ns";
 
+    // Hang onto ns for metadata
+    float ns_val = val;
+
     // [100000000] => seconds
     if (val >= 100000000)
     {
@@ -756,7 +759,7 @@ CLogScopedTimer::~CLogScopedTimer()
     {
       mapOut = *m_mapDataPtr;
     }
-    mapOut["time_ns"] = logging::detail::toMetadata(val);
+    mapOut["time_ns"] = logging::detail::toMetadata(ns_val);
     ALOG_LEVEL_IMPL(m_channelName, m_level, ss.str(), mapOut);
   }
 }
