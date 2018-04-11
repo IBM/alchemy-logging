@@ -1295,12 +1295,12 @@ TEST_F(CAlogTest, JSONScopedTimer)
     CParsedLogEntry("TEST", ELogLevels::debug, "", {
       std::make_pair("mutable", ALOG_MAP_VALUE("B")),
       std::make_pair("added_later", ALOG_MAP_VALUE(456)),
-      std::make_pair("time_ns", ALOG_MAP_VALUE(0)) // Huh...
+      std::make_pair("duration_ms", ALOG_MAP_VALUE(0)) // Huh...
     }),
 
     // Outer scope timer completion
     CParsedLogEntry("TEST", ELogLevels::info, "", {
-      std::make_pair("time_ns", ALOG_MAP_VALUE(0)) // Huh...
+      std::make_pair("duration_ms", ALOG_MAP_VALUE(0)) // Huh...
     }),
   }, false, true));
 }

@@ -661,48 +661,30 @@ void CLogChannelRegistrySingleton::reset()
 
 CLogScope::CLogScope(const std::string& a_channelName,
                    ELogLevels a_level,
-<<<<<<< HEAD
-                   const std::string& a_msg)
-  : m_channelName(a_channelName),
-=======
                    const std::string& a_msg,
                    const TScopeLogMapPtr& a_mapDataPtr)
-  : m_logName(a_logName),
->>>>>>> add_scoped_metadata_logging: Add ability to add map data to scopes
+  : m_channelName(a_channelName),
     m_level(a_level),
     m_msg(a_msg),
     m_mapDataPtr(a_mapDataPtr)
 {
-<<<<<<< HEAD
-  ALOG_LEVEL_IMPL(m_channelName, m_level, "Start: " << m_msg, {});
-=======
   const jsonparser::TObject& l_mapData = m_mapDataPtr ? *m_mapDataPtr : s_emptyMapData;
-  ALOG_LEVEL_IMPL(m_logName, m_level, "Start: " << m_msg, l_mapData);
->>>>>>> add_scoped_metadata_logging: Add ability to add map data to scopes
+  ALOG_LEVEL_IMPL(m_channelName, m_level, "Start: " << m_msg, l_mapData);
 }
 
 CLogScope::~CLogScope()
 {
-<<<<<<< HEAD
-  ALOG_LEVEL_IMPL(m_channelName, m_level, "End: " << m_msg, {});
-=======
   const jsonparser::TObject& l_mapData = m_mapDataPtr ? *m_mapDataPtr : s_emptyMapData;
-  ALOG_LEVEL_IMPL(m_logName, m_level, "End: " << m_msg, l_mapData);
->>>>>>> add_scoped_metadata_logging: Add ability to add map data to scopes
+  ALOG_LEVEL_IMPL(m_channelName, m_level, "End: " << m_msg, l_mapData);
 }
 
 // CLogScopedTimer /////////////////////////////////////////////////////////////
 
 CLogScopedTimer::CLogScopedTimer(const std::string& a_channelName,
                                  ELogLevels a_level,
-<<<<<<< HEAD
-                                 const std::string& a_msg)
-  : m_channelName(a_channelName),
-=======
                                  const std::string& a_msg,
                                  const TScopeLogMapPtr& a_mapDataPtr)
-  : m_logName(a_logName),
->>>>>>> add_scoped_metadata_logging: Add ability to add map data to scopes
+  : m_channelName(a_channelName),
     m_level(a_level),
     m_msg(a_msg),
     m_mapDataPtr(a_mapDataPtr),
@@ -726,9 +708,6 @@ CLogScopedTimer::~CLogScopedTimer()
     // Start with ns
     val = std::chrono::duration_cast<std::chrono::nanoseconds>(t1-m_t0).count();
     suffix = "ns";
-
-    // Hang onto ns for metadata
-    float ns_val = val;
 
     // [100000000] => seconds
     if (val >= 100000000)
@@ -759,7 +738,10 @@ CLogScopedTimer::~CLogScopedTimer()
     {
       mapOut = *m_mapDataPtr;
     }
-    mapOut["time_ns"] = logging::detail::toMetadata(ns_val);
+
+    // Add the duration in milliseconds
+    mapOut["duration_ms"] = logging::detail::toMetadata(
+      std::chrono::duration<float, std::ratio<1,1000>>(t1-m_t0).count());
     ALOG_LEVEL_IMPL(m_channelName, m_level, ss.str(), mapOut);
   }
 }
