@@ -417,7 +417,7 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #define ALOG_MAP_IMPL(channel, level, map)\
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, "", map)
 
-// Some of the scope calls take a mapDataPtr as an optional last argument
+// All of the scope calls take a mapDataPtr as an optional last argument
 #define _SCOPE_WRAPPER_WITH_MAP(scopeType, channel, level, msg, map) \
   logging::detail:: scopeType ALOG_UNIQUE_VAR_NAME_IMPL(scopeType) (\
     channel, logging::detail::ELogLevels:: level,\
@@ -435,24 +435,29 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #define ALOG_SCOPED_TIMER_IMPL(channel, level, ...)\
   _SCOPE_WRAPPER(CLogScopedTimer, channel, level, __VA_ARGS__)
 
-
-#define ALOG_SCOPED_METADATA_IMPL(key, value)\
-  logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (key,\
-    logging::detail::toMetadata(value));
-
-#define ALOG_SCOPED_INDENT_IF_IMPL(channel, level) \
-  logging::detail::CLogScopedIndent ALOG_UNIQUE_VAR_NAME_IMPL(__alog_scoped_indent__)(\
-    channel, logging::detail::ELogLevels::  level)
-
 #define _ALOG_FUNCTION __FUNCTION__
 
-#define ALOG_FUNCTION_IMPL(channel, level, msg)\
+#define _ALOG_FUNCTION_IMPL_WITH_MAP(channel, level, msg, map)\
+  ALOG_SCOPED_BLOCK_IMPL(channel, level, "" << _ALOG_FUNCTION << "( " << msg << " )", map);\
+  ALOG_SCOPED_INDENT_IF_IMPL(channel, level)
+#define _ALOG_FUNCTION_IMPL_WITH_NO_MAP(channel, level, msg)\
   ALOG_SCOPED_BLOCK_IMPL(channel, level, "" << _ALOG_FUNCTION << "( " << msg << " )");\
   ALOG_SCOPED_INDENT_IF_IMPL(channel, level)
+#define ALOG_FUNCTION_IMPL(channel, level, ...)\
+  CONC(_ALOG_FUNCTION_IMPL_WITH, NARGS(__VA_ARGS__)) (channel, level, __VA_ARGS__)
 
 #define ALOG_IS_ENABLED_IMPL(channel, level)\
   logging::detail::CLogChannelRegistrySingleton::instance()->filter(\
     channel, logging::detail::ELogLevels:: level)
+
+// Non-logging scope objects
+#define ALOG_SCOPED_METADATA_IMPL(key, value)\
+  logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (key,\
+    logging::detail::toMetadata(value));
+#define ALOG_SCOPED_INDENT_IF_IMPL(channel, level) \
+  logging::detail::CLogScopedIndent ALOG_UNIQUE_VAR_NAME_IMPL(__alog_scoped_indent__)(\
+    channel, logging::detail::ELogLevels::  level)
+
 
 /*-- Setup Macros ------------------------------------------------------------*/
 
@@ -711,34 +716,34 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 
 /** Add a Start/End indented block with the current function name on trace */
 #ifndef DISABLE_LOGGING
-#define ALOG_FUNCTION(channel, msg) ALOG_FUNCTION_IMPL(#channel, trace, msg)
+#define ALOG_FUNCTION(channel, ...) ALOG_FUNCTION_IMPL(#channel, trace, __VA_ARGS__)
 #else
-#define ALOG_FUNCTION(channel, msg)
+#define ALOG_FUNCTION(channel, ...)
 #endif
 
 /** Add a Start/End indented block with the current function name on trace
  * using native channel */
 #ifndef DISABLE_LOGGING
-#define ALOG_FUNCTIONthis(msg) ALOG_FUNCTION_IMPL(getLogChannel(), trace, msg)
+#define ALOG_FUNCTIONthis(...) ALOG_FUNCTION_IMPL(getLogChannel(), trace, __VA_ARGS__)
 #else
-#define ALOG_FUNCTIONthis(msg)
+#define ALOG_FUNCTIONthis(...)
 #endif
 
 /** Add a Start/End indented block with the current function name on designated
  * level. Used for lower-level functions that log on debug levels */
 #ifndef DISABLE_LOGGING
-#define ALOG_DETAIL_FUNCTION(channel, level, msg) ALOG_FUNCTION_IMPL(#channel, level, msg)
+#define ALOG_DETAIL_FUNCTION(channel, level, ...) ALOG_FUNCTION_IMPL(#channel, level, __VA_ARGS__)
 #else
-#define ALOG_DETAIL_FUNCTION(channel, level, msg)
+#define ALOG_DETAIL_FUNCTION(channel, level, ...)
 #endif
 
 /** Add a Start/End indented block with the current function name on designated
  * level on the native channel. Used for lower-level functions that log on
  * debug levels */
 #ifndef DISABLE_LOGGING
-#define ALOG_DETAIL_FUNCTIONthis(level, msg) ALOG_FUNCTION_IMPL(getLogChannel(), level, msg)
+#define ALOG_DETAIL_FUNCTIONthis(level, ...) ALOG_FUNCTION_IMPL(getLogChannel(), level, __VA_ARGS__)
 #else
-#define ALOG_DETAIL_FUNCTIONthis(level, msg)
+#define ALOG_DETAIL_FUNCTIONthis(level, ...)
 #endif
 
 /** This macro sends a warning to cerr and to the the log */

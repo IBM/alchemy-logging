@@ -550,6 +550,14 @@ void loggedFn()
   ALOG(TEST, info, "Some logging...");
 }
 
+void loggedMapFn()
+{
+  std::shared_ptr<jsonparser::TObject> mapPtr(new jsonparser::TObject());
+  ALOG_FUNCTION(TEST, 1 << " testing...", mapPtr);
+  mapPtr->insert(std::make_pair("foo", ALOG_MAP_VALUE("bar")));
+  ALOG(TEST, info, "Some logging...");
+}
+
 jp::TObject jsonExample1()
 {
   jp::TObject j;
@@ -878,6 +886,28 @@ TEST_F(CAlogTest, FunctionBlock)
     CParsedLogEntry("TEST ", ELogLevels::info, "", {}, 1),
     CParsedLogEntry("TEST ", ELogLevels::trace, "", {}, 0),
   }, false));
+}
+
+////////
+// Test ALOG_FUNCTION with a map
+////////
+TEST_F(CAlogTest, FunctionBlockWithMap)
+{
+  std::stringstream ss;
+  CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:info", "info");
+  InitLogStream(ss);
+
+  // Test free function
+  loggedMapFn();
+
+  // Verify the result
+  std::cout << ss.str() << std::endl;
+  EXPECT_TRUE(verifyStdLines(ss.str(), std::vector<CParsedLogEntry>{
+    CParsedLogEntry("TEST ", ELogLevels::trace, "Start: loggedMapFn( 1 testing... )", {}, 0),
+    CParsedLogEntry("TEST ", ELogLevels::info, "Some logging...", {}, 1),
+    CParsedLogEntry("TEST ", ELogLevels::trace, "End: loggedMapFn( 1 testing... )", {}, 0),
+    CParsedLogEntry("TEST ", ELogLevels::trace, "foo: \"bar\"", {}, 0),
+  }));
 }
 
 ////////
