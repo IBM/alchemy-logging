@@ -552,7 +552,7 @@ void loggedFn()
 
 void loggedMapFn()
 {
-  std::shared_ptr<jsonparser::TObject> mapPtr(new jsonparser::TObject());
+  std::shared_ptr<jp::TObject> mapPtr(new jp::TObject());
   ALOG_FUNCTION(TEST, 1 << " testing...", mapPtr);
   mapPtr->insert(std::make_pair("foo", ALOG_MAP_VALUE("bar")));
   ALOG(TEST, info, "Some logging...");
@@ -722,7 +722,7 @@ TEST_F(CAlogTest, LoggingMsgAndMap)
 
   // Log a line on BAR with both a message and key/val map
   std::string line1 = "Line on BAR at info";
-  ALOG(BAR, info, line1, jsonparser::TObject{
+  ALOG(BAR, info, line1, jp::TObject{
     std::make_pair("foo", ALOG_MAP_VALUE(123))
   });
 
@@ -794,7 +794,7 @@ TEST_F(CAlogTest, LogScopeWithMap)
   // Start/end lines with map data that changes between start and end
   {
     // Set up a scope log with a mutable key/val map
-    std::shared_ptr<jsonparser::TObject> map(new jsonparser::TObject());
+    std::shared_ptr<jp::TObject> map(new jp::TObject());
     map->insert(std::make_pair("foo", ALOG_MAP_VALUE("bar")));
     ALOG_SCOPED_BLOCK(TEST, debug, "Test with map", map);
 
@@ -1220,7 +1220,7 @@ TEST_F(CAlogTest, JSONLoggingMsgAndMap)
 
   // Log a line on BAR with both a message and key/val map
   std::string line1 = "Line on BAR at info";
-  jsonparser::TObject map {
+  jp::TObject map {
     std::make_pair("foo", ALOG_MAP_VALUE(123)),
     std::make_pair("bar", ALOG_MAP_VALUE("baz"))
   };
@@ -1264,14 +1264,14 @@ TEST_F(CAlogTest, JSONScopedMetadata)
 
     // Outer scope BEFORE
     CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata BEFORE", {
-      std::make_pair("metadata", jsonparser::TObject{
+      std::make_pair("metadata", jp::TObject{
         std::make_pair("foo", ALOG_MAP_VALUE("string_val"))
       })
     }),
 
     // Inner scope
     CParsedLogEntry("FOO", ELogLevels::info, "Line with inner metadata", {
-      std::make_pair("metadata", jsonparser::TObject{
+      std::make_pair("metadata", jp::TObject{
         std::make_pair("foo", ALOG_MAP_VALUE("string_val")),
         std::make_pair("bar", ALOG_MAP_VALUE(123))
       })
@@ -1279,7 +1279,7 @@ TEST_F(CAlogTest, JSONScopedMetadata)
 
     // Outer scope AFTER
     CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata AFTER", {
-      std::make_pair("metadata", jsonparser::TObject{
+      std::make_pair("metadata", jp::TObject{
         std::make_pair("foo", ALOG_MAP_VALUE("string_val"))
       })
     }),
@@ -1304,7 +1304,7 @@ TEST_F(CAlogTest, JSONScopedTimer)
     ALOG_SCOPED_TIMER(TEST, info, "Outer Block Completed in: ");
     // Inner Scope with map data
     {
-      std::shared_ptr<jsonparser::TObject> mapDataPtr(new jsonparser::TObject());
+      std::shared_ptr<jp::TObject> mapDataPtr(new jp::TObject());
       mapDataPtr->insert(std::make_pair("mutable", ALOG_MAP_VALUE("A")));
       ALOG_SCOPED_TIMER(TEST, debug, "Inner block with map data and a stream " << 123, mapDataPtr);
 
