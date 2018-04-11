@@ -372,6 +372,14 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #define PP_CAT_II(p, res) res
 #define ALOG_UNIQUE_VAR_NAME_IMPL(base) PP_CAT(base, __LINE__)
 
+// Some of the public macros can take an optional final map argument to add key/
+// value data as needed. In order to enable this, we need the old NARGS trick:
+// https://stackoverflow.com/questions/27765387/distributing-an-argument-in-a-variadic-macro
+#define NARGS(...) NARGS_(__VA_ARGS__, _MAP, _NO_MAP, 0)
+#define NARGS_(_2, _1, N, ...) N
+#define CONC(A, B) CONC_(A, B)
+#define CONC_(A, B) A##B
+
 #define ALOG_LEVEL_IMPL(channel, level, msg, map)\
   do {if (logging::detail::CLogChannelRegistrySingleton\
     ::instance()->filter(channel, level)) {\
@@ -388,25 +396,28 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
         static_cast<std::wostringstream&>(std::wostringstream().flush() << msg).str(), map);\
   }} while(0)
 
-#define ALOG_CHANNEL_IMPL(channel, level, msg)\
+// The channel functions can take an optional map argument
+#define _ALOG_CHANNEL_IMPL_WITH_MAP(channel, level, msg, map) \
+  ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, map)
+#define _ALOG_CHANNEL_IMPL_WITH_NO_MAP(channel, level, msg) \
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
+#define _ALOG_CHANNEL_IMPL_WRAPPER(channel, level, ...) \
+
+#define _ALOGW_CHANNEL_IMPL_WITH_MAP(channel, level, msg, map) \
+  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, map)
+#define _ALOGW_CHANNEL_IMPL_WITH_NO_MAP(channel, level, msg) \
+  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
+
+#define ALOG_CHANNEL_IMPL(channel, level, ...)\
+  CONC(_ALOG_CHANNEL_IMPL_WITH, NARGS(__VA_ARGS__)) (channel, level, __VA_ARGS__)
+
+#define ALOGW_CHANNEL_IMPL(channel, level, ...)\
+  CONC(_ALOGW_CHANNEL_IMPL_WITH, NARGS(__VA_ARGS__)) (channel, level, __VA_ARGS__)
 
 #define ALOG_MAP_IMPL(channel, level, map)\
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, "", map)
 
-#define ALOGW_CHANNEL_IMPL(channel, level, msg)\
-  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
-
-// Each of the scope macros can take an optional "mapDataPtr" argument at the
-// end in order to add mapping information that changes between start and end.
-// In order to enable this, we need the old NARGS trick:
-// https://stackoverflow.com/questions/27765387/distributing-an-argument-in-a-variadic-macro
-#define NARGS(...) NARGS_(__VA_ARGS__, _MAP, _NO_MAP, 0)
-#define NARGS_(_2, _1, N, ...) N
-
-#define CONC(A, B) CONC_(A, B)
-#define CONC_(A, B) A##B
-
+// Some of the scope calls take a mapDataPtr as an optional last argument
 #define _SCOPE_WRAPPER_WITH_MAP(scopeType, channel, level, msg, map) \
   logging::detail:: scopeType ALOG_UNIQUE_VAR_NAME_IMPL(scopeType) (\
     channel, logging::detail::ELogLevels:: level,\
@@ -415,7 +426,6 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
   logging::detail:: scopeType ALOG_UNIQUE_VAR_NAME_IMPL(scopeType) (\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
-
 #define _SCOPE_WRAPPER(scopeType, channel, level, ...) \
   CONC(_SCOPE_WRAPPER_WITH, NARGS(__VA_ARGS__)) (scopeType, channel, level, __VA_ARGS__)
 
@@ -567,16 +577,30 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 
 /** Log a line on the given channel at the given level */
 #ifndef DISABLE_LOGGING
-#define ALOG(channel, level, msg) ALOG_CHANNEL_IMPL(#channel, level, msg)
+#define ALOG(channel, level, ...) ALOG_CHANNEL_IMPL(#channel, level, __VA_ARGS__)
 #else
-#define ALOG(channel, level, msg)
+#define ALOG(channel, level, ...)
 #endif
 
 /** Log a line on the class' native channel at the given level */
 #ifndef DISABLE_LOGGING
-#define ALOGthis(level, msg) ALOG_CHANNEL_IMPL(getLogChannel(), level, msg)
+#define ALOGthis(level, ...) ALOG_CHANNEL_IMPL(getLogChannel(), level, __VA_ARGS__)
 #else
-#define ALOGthis(level, msg)
+#define ALOGthis(level, ...)
+#endif
+
+/** Log a wchar line on the given channel at the given level */
+#ifndef DISABLE_LOGGING
+#define ALOGW(channel, level, ...) ALOGW_CHANNEL_IMPL(#channel, level, __VA_ARGS__)
+#else
+#define ALOGW(channel, level, ...)
+#endif
+
+/** Log a wchar line on the class' native channel at the given level */
+#ifndef DISABLE_LOGGING
+#define ALOGWthis(level, ...) ALOGW_CHANNEL_IMPL(getLogChannel(), level, __VA_ARGS__)
+#else
+#define ALOGWthis(level, ...)
 #endif
 
 /** Log an arbitrary key/value structure on the given channel/level */
@@ -591,20 +615,6 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #define ALOG_MAPthis(level, map) ALOG_MAP_IMPL(getLogChannel(), level, map)
 #else
 #define ALOG_MAPthis(level, map)
-#endif
-
-/** Log a wchar line on the given channel at the given level */
-#ifndef DISABLE_LOGGING
-#define ALOGW(channel, level, msg) ALOGW_CHANNEL_IMPL(#channel, level, msg)
-#else
-#define ALOGW(channel, level, msg)
-#endif
-
-/** Log a wchar line on the class' native channel at the given level */
-#ifndef DISABLE_LOGGING
-#define ALOGWthis(level, msg) ALOGW_CHANNEL_IMPL(getLogChannel(), level, msg)
-#else
-#define ALOGWthis(level, msg)
 #endif
 
 /** Log a line that explicitly includes the thread id regardless of the global

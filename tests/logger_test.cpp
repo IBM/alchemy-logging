@@ -704,6 +704,29 @@ TEST_F(CAlogTest, LoggingDefaultLevel)
 }
 
 ////////
+// Test log lines with messages and map data
+////////
+TEST_F(CAlogTest, LoggingMsgAndMap)
+{
+  std::stringstream ss;
+  CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:error", "info");
+  InitLogStream(ss);
+
+  // Log a line on BAR with both a message and key/val map
+  std::string line1 = "Line on BAR at info";
+  ALOG(BAR, info, line1, jsonparser::TObject{
+    std::make_pair("foo", ALOG_MAP_VALUE(123))
+  });
+
+  // Verify the number of lines
+  EXPECT_TRUE(verifyStdLines(ss.str(), std::vector<CParsedLogEntry>{
+    CParsedLogEntry("BAR  ", ELogLevels::info, line1),
+    CParsedLogEntry("BAR  ", ELogLevels::info, "foo: 123"),
+  }));
+  std::cout << ss.str() << std::endl;
+}
+
+////////
 // Test that off is not a valid log channel
 ////////
 TEST_F(CAlogTest, LoggingOff)
@@ -1153,6 +1176,31 @@ TEST_F(CAlogTest, JSONFormatterMapData)
     CParsedLogEntry("TEST", ELogLevels::info, "", j1),
     CParsedLogEntry("TEST", ELogLevels::info, "", j2),
   }));
+}
+
+////////
+// Test ALOG_USE_JSON_FORMATTER log lines with messages and map data
+////////
+TEST_F(CAlogTest, JSONLoggingMsgAndMap)
+{
+  std::stringstream ss;
+  CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:error", "info");
+  InitLogStream(ss);
+  UseJSONFormatter();
+
+  // Log a line on BAR with both a message and key/val map
+  std::string line1 = "Line on BAR at info";
+  jsonparser::TObject map {
+    std::make_pair("foo", ALOG_MAP_VALUE(123)),
+    std::make_pair("bar", ALOG_MAP_VALUE("baz"))
+  };
+  ALOG(BAR, info, line1, map);
+
+  // Verify the number of lines
+  EXPECT_TRUE(verifyJSONLines(ss.str(), std::vector<CParsedLogEntry>{
+    CParsedLogEntry("BAR", ELogLevels::info, line1, map),
+  }));
+  std::cout << ss.str() << std::endl;
 }
 
 ////////
