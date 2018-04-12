@@ -401,7 +401,6 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, map)
 #define _ALOG_CHANNEL_IMPL_WITH_NO_MAP(channel, level, msg) \
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
-#define _ALOG_CHANNEL_IMPL_WRAPPER(channel, level, ...) \
 
 #define _ALOGW_CHANNEL_IMPL_WITH_MAP(channel, level, msg, map) \
   ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, map)
