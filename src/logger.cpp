@@ -712,21 +712,21 @@ CLogScopedTimer::~CLogScopedTimer()
     // [100000000] => seconds
     if (val >= 100000000)
     {
-      val = std::chrono::duration<float, std::ratio<1,1>>(t1-m_t0).count();
+      val = std::chrono::duration_cast<std::chrono::seconds>(t1-m_t0).count();
       suffix = "s";
     }
 
     // [1000000] => milliseconds
     else if (val >= 1000000)
     {
-      val = std::chrono::duration<float, std::ratio<1,1000>>(t1-m_t0).count();
+      val = std::chrono::duration_cast<std::chrono::milliseconds>(t1-m_t0).count();
       suffix = "ms";
     }
 
     // [1000] => microseconds
     else if (val >= 1000)
     {
-      val = std::chrono::duration<float, std::ratio<1,1000000>>(t1-m_t0).count();
+      val = std::chrono::duration_cast<std::chrono::microseconds>(t1-m_t0).count();
       suffix = "us";
     }
 
@@ -741,7 +741,7 @@ CLogScopedTimer::~CLogScopedTimer()
 
     // Add the duration in milliseconds
     mapOut["duration_ms"] = logging::detail::toMetadata(
-      std::chrono::duration<float, std::ratio<1,1000>>(t1-m_t0).count());
+      std::chrono::duration_cast<std::chrono::milliseconds>(t1-m_t0).count());
     ALOG_LEVEL_IMPL(m_channelName, m_level, ss.str(), mapOut);
   }
 }
