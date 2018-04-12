@@ -624,23 +624,27 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 /** Log a line that explicitly includes the thread id regardless of the global
  * setting */
 #ifndef DISABLE_LOGGING
-#define ALOG_THREAD(channel, level, msg)\
-  ALOG(channel, level, "[" << std::this_thread::get_id() << "] " << msg)
+#define ALOG_THREAD(channel, level, ...)\
+  { auto& sngl = logging::detail::CLogChannelRegistrySingleton::instance();\
+    bool currentlyEnabled = sngl->threadIDEnabled();\
+    if (not currentlyEnabled) sngl->enableThreadID();\
+    ALOG(channel, level, __VA_ARGS__);\
+    if (not currentlyEnabled) sngl->disableThreadID(); }
 #else
-#define ALOG_THREAD(channel, level, msg)
+#define ALOG_THREAD(channel, level, ...)
 #endif
 
 /** Log a line that includes the current thread's thread id to the class'
  * native channel */
 #ifndef DISABLE_LOGGING
-#define ALOG_THREADthis(level, msg)\
+#define ALOG_THREADthis(level, ...)\
   { auto& sngl = logging::detail::CLogChannelRegistrySingleton::instance();\
     bool currentlyEnabled = sngl->threadIDEnabled();\
     if (not currentlyEnabled) sngl->enableThreadID();\
-    ALOGthis(level, msg);\
+    ALOGthis(level, __VA_ARGS__);\
     if (not currentlyEnabled) sngl->disableThreadID(); }
 #else
-#define ALOG_THREADthis(level, msg)
+#define ALOG_THREADthis(level, ...)
 #endif
 
 /** Set up a Start/End block of logging based on the scope. Note that only a
