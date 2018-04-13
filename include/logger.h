@@ -33,6 +33,7 @@
 #include <thread>
 #include <vector>
 #include <map>
+#include <iostream>
 
 #include <jsonparser/typedefs.h>
 
