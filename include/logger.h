@@ -155,12 +155,19 @@ public:
   void enableThreadID();
   void disableThreadID();
 
+  /** Determine whether ID threading is currently enabled */
+  bool threadIDEnabled() const { return m_doThreadLog; }
+
+  /** Enable/disable metadata logging */
+  void enableMetadata();
+  void disableMetadata();
+
+  /** Determine whether metadata is currently enabled */
+  bool metadataEnabled() const { return m_doMetadata; }
+
   /** Set the service name to use */
   void setServiceName(const std::string&);
   const std::string& getServiceName() const { return m_serviceName; }
-
-  /** Determine whether ID threading is currently enabled */
-  bool threadIDEnabled() const { return m_doThreadLog; }
 
   /** Filter based on the channel and level. This is public so that it can be
    * run before pushing the message content to a stringstream in the macro */
@@ -189,6 +196,18 @@ public:
   /** Get the indent level for the current thread */
   unsigned getIndent() const;
 
+  /** Add a key to the metadata for the current thread */
+  void addMetadata(const std::string& a_key, const jsonparser::TJsonValue& a_value);
+
+  /** Remove a key from the metadata for the current thread */
+  void removeMetadata(const std::string& a_key);
+
+  /** Clear the metadata for the current thread */
+  void clearMetadata();
+
+  /** Get a view into the current metadata dict for the current thread */
+  const jsonparser::TObject& getMetadata() const;
+
   /** Clear the current filters and sinks and set the default level to off */
   void reset();
 
@@ -198,7 +217,8 @@ private:
    * operator make this a singleton */
   CLogChannelRegistrySingleton()
     : m_defaultLevel(ELogLevels::off),
-      m_doThreadLog(false)
+      m_doThreadLog(false),
+      m_doMetadata(false)
   {};
   CLogChannelRegistrySingleton(const CLogChannelRegistrySingleton&) = delete;
   CLogChannelRegistrySingleton& operator=(const CLogChannelRegistrySingleton&) = delete;
@@ -209,6 +229,7 @@ private:
   FilterMap m_filters;
   ELogLevels m_defaultLevel;
   bool m_doThreadLog;
+  bool m_doMetadata;
   std::string m_serviceName;
 
   typedef std::lock_guard<std::mutex> TLock;
@@ -224,9 +245,11 @@ private:
   std::vector<CSink> m_sinks;
   CLogFormatterBase::Ptr m_formatter;
 
-  typedef std::thread::id TThreadID;
-  typedef std::map<TThreadID, unsigned> ThreadIndentMap;
-  ThreadIndentMap m_indents;
+  typedef std::thread::id                          TThreadID;
+  typedef std::map<TThreadID, unsigned>            ThreadIndentMap;
+  typedef std::map<TThreadID, jsonparser::TObject> ThreadMetadataMap;
+  ThreadIndentMap   m_indents;
+  ThreadMetadataMap m_metadata;
 
 };  // end class CLogChannelRegistrySingleton
 
@@ -237,12 +260,12 @@ class CLogScope
 {
 public:
   CLogScope(const CLogScope&) = delete;
-  CLogScope(const std::string& a_logName,
+  CLogScope(const std::string& a_channelName,
             ELogLevels a_level,
             const std::string& a_msg);
   virtual ~CLogScope();
 private:
-  std::string m_logName;
+  std::string m_channelName;
   ELogLevels m_level;
   std::string m_msg;
 };  // end class CLogScope
@@ -251,12 +274,12 @@ private:
 struct CLogScopedTimer
 {
   CLogScopedTimer(const CLogScopedTimer&) = delete;
-  CLogScopedTimer(const std::string& a_logName,
+  CLogScopedTimer(const std::string& a_channelName,
                   ELogLevels a_level,
                   const std::string& a_msg);
   virtual ~CLogScopedTimer();
 private:
-  std::string m_logName;
+  std::string m_channelName;
   ELogLevels m_level;
   std::string m_msg;
   decltype(std::chrono::high_resolution_clock::now()) m_t0;
@@ -266,8 +289,22 @@ private:
 struct CLogScopedIndent
 {
   CLogScopedIndent();
+  CLogScopedIndent(const std::string& a_channelName,
+                   ELogLevels a_level);
   ~CLogScopedIndent();
+
+private:
+  const bool m_enabled;
 };  // end class CLogScopedIndent
+
+/** \brief Struct to scope metadata entries */
+struct CLogScopedMetadata
+{
+  CLogScopedMetadata(const std::string&, const jsonparser::TJsonValue&);
+  ~CLogScopedMetadata();
+private:
+  std::string m_key;
+};  // end class CLogScopedMetadata
 
 /** \brief Initiate a log stream */
 void InitLogStream(std::basic_ostream<char>& a_stream);
@@ -287,11 +324,47 @@ std::string LevelToHumanString(const detail::ELogLevels&);
 /** \brief Parse a log level from a string */
 detail::ELogLevels ParseLevel(const std::string&);
 
+/*-- Detail Helpers ----------------------------------------------------------*/
+
+/** Helper for converting raw values to metadata */
+template<typename T>
+inline jsonparser::TJsonValue toMetadata(T v)
+{ return jsonparser::TJsonValue(v); }
+
+template<>
+inline jsonparser::TJsonValue toMetadata(int v)
+{ return jsonparser::TJsonValue(int64_t(v)); }
+
+template<>
+inline jsonparser::TJsonValue toMetadata(long v)
+{ return jsonparser::TJsonValue(int64_t(v)); }
+
+template<>
+inline jsonparser::TJsonValue toMetadata(unsigned v)
+{ return jsonparser::TJsonValue(int64_t(v)); }
+
+template<>
+inline jsonparser::TJsonValue toMetadata(unsigned long v)
+{ return jsonparser::TJsonValue(int64_t(v)); }
+
+template<>
+inline jsonparser::TJsonValue toMetadata(const char* v)
+{ return jsonparser::TJsonValue(std::string(v)); }
+
 } // end namespace detail
 
 } // end namespace logging
 
 /*-- Detail Macros -----------------------------------------------------------*/
+
+// CITE: https://stackoverflow.com/questions/1082192/how-to-generate-random-variable-names-in-c-using-macros/1082211
+// Note that this involves some black magic as noted by the above poster. It
+// seems to work and since it's a macro, it only has to work at conpile time, so
+// until such time that it stops compiling, we can trust it.
+#define PP_CAT(a, b) PP_CAT_I(a, b)
+#define PP_CAT_I(a, b) PP_CAT_II(~, a ## b)
+#define PP_CAT_II(p, res) res
+#define ALOG_UNIQUE_VAR_NAME_IMPL(base) PP_CAT(base, __LINE__)
 
 #define ALOG_LEVEL_IMPL(channel, level, msg, map)\
   do {if (logging::detail::CLogChannelRegistrySingleton\
@@ -319,20 +392,28 @@ detail::ELogLevels ParseLevel(const std::string&);
   ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
 
 #define ALOG_SCOPED_BLOCK_IMPL(channel, level, msg)\
-  logging::detail::CLogScope _logScope(\
+  logging::detail::CLogScope ALOG_UNIQUE_VAR_NAME_IMPL(_logScope) (\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
 
 #define ALOG_SCOPED_TIMER_IMPL(channel, level, msg)\
-  logging::detail::CLogScopedTimer _logTimer(\
+  logging::detail::CLogScopedTimer ALOG_UNIQUE_VAR_NAME_IMPL(_logTimer) (\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
+
+#define ALOG_SCOPED_METADATA_IMPL(key, value)\
+  logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (key,\
+    logging::detail::toMetadata(value));
+
+#define ALOG_SCOPED_INDENT_IF_IMPL(channel, level) \
+  logging::detail::CLogScopedIndent ALOG_UNIQUE_VAR_NAME_IMPL(__alog_scoped_indent__)(\
+    channel, logging::detail::ELogLevels::  level)
 
 #define _ALOG_FUNCTION __FUNCTION__
 
 #define ALOG_FUNCTION_IMPL(channel, level, msg)\
   ALOG_SCOPED_BLOCK_IMPL(channel, level, "" << _ALOG_FUNCTION << "( " << msg << " )");\
-  ALOG_SCOPED_INDENT()
+  ALOG_SCOPED_INDENT_IF_IMPL(channel, level)
 
 #define ALOG_IS_ENABLED_IMPL(channel, level)\
   logging::detail::CLogChannelRegistrySingleton::instance()->filter(\
@@ -343,7 +424,7 @@ detail::ELogLevels ParseLevel(const std::string&);
 /* These macros are designed to be the only used interface to the logging
  * infrastructure. This allows compile-time removal of all logging for
  * performance by defining DISABLE_LOGGING */
- 
+
  /** \brief Set up logging for an executable
   *
   * This setup macro should be called once per executable to configure logging
@@ -390,6 +471,20 @@ detail::ELogLevels ParseLevel(const std::string&);
   logging::detail::CLogChannelRegistrySingleton::instance()->disableThreadID()
 #else
 #define ALOG_DISABLE_THREAD_ID()
+#endif
+
+#ifndef DISABLE_LOGGING
+#define ALOG_ENABLE_METADATA()\
+  logging::detail::CLogChannelRegistrySingleton::instance()->enableMetadata()
+#else
+#define ALOG_ENABLE_METADATA()
+#endif
+
+#ifndef DISABLE_LOGGING
+#define ALOG_DISABLE_METADATA()\
+  logging::detail::CLogChannelRegistrySingleton::instance()->disableMetadata()
+#else
+#define ALOG_DISABLE_METADATA()
 #endif
 
 #ifndef DISABLE_LOGGING
@@ -546,11 +641,37 @@ detail::ELogLevels ParseLevel(const std::string&);
 #define ALOG_SCOPED_TIMERthis(level, msg)
 #endif
 
+/** Set up a metadata scope that will add a key to the metadata that will be
+ * removed when the current scope closes */
+#ifndef DISABLE_LOGGING
+#define ALOG_SCOPED_METADATA(key, value)\
+  ALOG_SCOPED_METADATA_IMPL(key, value)
+#else
+#define ALOG_SCOPED_METADATA(key, value)
+#endif
+
 /** Add a level of indentation to the current scope */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_INDENT() logging::detail::CLogScopedIndent __alog_scoped_indent__
+#define ALOG_SCOPED_INDENT() logging::detail::CLogScopedIndent \
+  ALOG_UNIQUE_VAR_NAME_IMPL(__alog_scoped_indent__)
 #else
 #define ALOG_SCOPED_INDENT()
+#endif
+
+/** Add a level of indentation to the current scope if the given channel/level
+ * is enabled */
+#ifndef DISABLE_LOGGING
+#define ALOG_SCOPED_INDENT_IF(channel, level) ALOG_SCOPED_INDENT_IF_IMPL(#channel, level)
+#else
+#define ALOG_SCOPED_INDENT_IF(channel, level)
+#endif
+
+/** Add a level of indentation to the current scope if the given level is
+ * enabled for the configured channel */
+#ifndef DISABLE_LOGGING
+#define ALOG_SCOPED_INDENT_IFthis(level) ALOG_SCOPED_INDENT_IF_IMPL(getLogChannel(), level)
+#else
+#define ALOG_SCOPED_INDENT_IFthis(level)
 #endif
 
 /** Add a Start/End indented block with the current function name on trace */
