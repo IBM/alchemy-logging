@@ -358,6 +358,9 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 /*-- Detail Macros -----------------------------------------------------------*/
 
 // CITE: https://stackoverflow.com/questions/1082192/how-to-generate-random-variable-names-in-c-using-macros/1082211
+// Note that this involves some black magic as noted by the above poster. It
+// seems to work and since it's a macro, it only has to work at conpile time, so
+// until such time that it stops compiling, we can trust it.
 #define PP_CAT(a, b) PP_CAT_I(a, b)
 #define PP_CAT_I(a, b) PP_CAT_II(~, a ## b)
 #define PP_CAT_II(p, res) res
