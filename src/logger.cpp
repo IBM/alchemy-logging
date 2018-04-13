@@ -656,32 +656,32 @@ void CLogChannelRegistrySingleton::reset()
 
 // CLogScope ///////////////////////////////////////////////////////////////////
 
-CLogScope::CLogScope(const std::string& a_logName,
+CLogScope::CLogScope(const std::string& a_channelName,
                    ELogLevels a_level,
                    const std::string& a_msg)
-  : m_logName(a_logName),
+  : m_channelName(a_channelName),
     m_level(a_level),
     m_msg(a_msg)
 {
-  ALOG_LEVEL_IMPL(m_logName, m_level, "Start: " << m_msg, {});
+  ALOG_LEVEL_IMPL(m_channelName, m_level, "Start: " << m_msg, {});
 }
 
 CLogScope::~CLogScope()
 {
-  ALOG_LEVEL_IMPL(m_logName, m_level, "End: " << m_msg, {});
+  ALOG_LEVEL_IMPL(m_channelName, m_level, "End: " << m_msg, {});
 }
 
 // CLogScopedTimer /////////////////////////////////////////////////////////////
 
-CLogScopedTimer::CLogScopedTimer(const std::string& a_logName,
+CLogScopedTimer::CLogScopedTimer(const std::string& a_channelName,
                                  ELogLevels a_level,
                                  const std::string& a_msg)
-  : m_logName(a_logName),
+  : m_channelName(a_channelName),
     m_level(a_level),
     m_msg(a_msg),
     m_t0()
 {
-  if (logging::detail::CLogChannelRegistrySingleton::instance()->filter(m_logName, m_level))
+  if (logging::detail::CLogChannelRegistrySingleton::instance()->filter(m_channelName, m_level))
   {
     m_t0 = std::chrono::high_resolution_clock::now();
   }
@@ -689,7 +689,7 @@ CLogScopedTimer::CLogScopedTimer(const std::string& a_logName,
 
 CLogScopedTimer::~CLogScopedTimer()
 {
-  if (logging::detail::CLogChannelRegistrySingleton::instance()->filter(m_logName, m_level))
+  if (logging::detail::CLogChannelRegistrySingleton::instance()->filter(m_channelName, m_level))
   {
     const auto t1 = std::chrono::high_resolution_clock::now();
 
@@ -724,7 +724,7 @@ CLogScopedTimer::~CLogScopedTimer()
     // Stream the message
     std::stringstream ss;
     ss << m_msg << val << suffix;
-    ALOG_LEVEL_IMPL(m_logName, m_level, ss.str(), {});
+    ALOG_LEVEL_IMPL(m_channelName, m_level, ss.str(), {});
   }
 }
 
@@ -735,8 +735,8 @@ CLogScopedIndent::CLogScopedIndent() : m_enabled(true)
   CLogChannelRegistrySingleton::instance()->addIndent();
 }
 
-CLogScopedIndent::CLogScopedIndent(const std::string& a_logName, ELogLevels a_level)
-  : m_enabled(CLogChannelRegistrySingleton::instance()->filter(a_logName, a_level))
+CLogScopedIndent::CLogScopedIndent(const std::string& a_channelName, ELogLevels a_level)
+  : m_enabled(CLogChannelRegistrySingleton::instance()->filter(a_channelName, a_level))
 {
   if (m_enabled)
   {

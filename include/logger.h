@@ -260,12 +260,12 @@ class CLogScope
 {
 public:
   CLogScope(const CLogScope&) = delete;
-  CLogScope(const std::string& a_logName,
+  CLogScope(const std::string& a_channelName,
             ELogLevels a_level,
             const std::string& a_msg);
   virtual ~CLogScope();
 private:
-  std::string m_logName;
+  std::string m_channelName;
   ELogLevels m_level;
   std::string m_msg;
 };  // end class CLogScope
@@ -274,12 +274,12 @@ private:
 struct CLogScopedTimer
 {
   CLogScopedTimer(const CLogScopedTimer&) = delete;
-  CLogScopedTimer(const std::string& a_logName,
+  CLogScopedTimer(const std::string& a_channelName,
                   ELogLevels a_level,
                   const std::string& a_msg);
   virtual ~CLogScopedTimer();
 private:
-  std::string m_logName;
+  std::string m_channelName;
   ELogLevels m_level;
   std::string m_msg;
   decltype(std::chrono::high_resolution_clock::now()) m_t0;
@@ -289,7 +289,7 @@ private:
 struct CLogScopedIndent
 {
   CLogScopedIndent();
-  CLogScopedIndent(const std::string& a_logName,
+  CLogScopedIndent(const std::string& a_channelName,
                    ELogLevels a_level);
   ~CLogScopedIndent();
 
