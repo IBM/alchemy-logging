@@ -2,7 +2,9 @@
 The `alog` framework provides tunable logging with easy-to-use defaults and power-user capabilities. The mantra of `alog` is **"Log Early And Often"**. To accomplish this goal, `alog` makes it easy to enable verbose logging at develop/debug time and trim the verbosity at production run time.
 
 ## Dependencies
-The `alog` library is intentionally light on dependencies. The only dependency necessary is the [nlohmann/json](https://github.com/nlohmann/json) library. That library is itself intentionally light and is integrated as a header-only that is included [directly](include/nlohmann/json.hpp).
+The `alog` library is intentionally light on dependencies. The only dependency necessary is the [JsonParser](https://github.ibm.com/alchemyapi-common/JsonParser/tree/master) library which itself depends on [rapidjson](https://github.com/Tencent/rapidjson).
+
+**NOTE**: An earlier version of the library used the [nlohmann/json](https://github.com/nlohmann/json) library which is a much nicer `json` interface, but due to the need to compile on `gcc 4.7.2` we moved to `JsonParser`.
 
 ## Channels and Levels
 The primary components of the system are **channels** and **levels** which allow for each log statement to be enabled or disabled when appropriate.
@@ -25,7 +27,7 @@ The primary components of the system are **channels** and **levels** which allow
 
 Using this combination of **Channels** and **Levels**, you can fine-tune what log statements are enabled when you run your application under different circumstances.
 
-## Standard Configuration
+## Configuration
 There are two primary pieces of configuration when setting up the `alog` environment:
 
 1. **default_level**: This is the level that will be enabled for a given channel when a specific level has not been set in the **filters**.
@@ -43,7 +45,8 @@ int main(int, char**)
 }
 ```
 
-By default `alog` uses the pretty-printer output formatter. To enable JSON output, simply use the `ALOG_USE_JSON_FORMATTER()` macro.
+## Structured Logging
+As `alog` has grown, its use has tended towards usage as part of a multi-replica cluster of servers. In such an environment, it can be very beneficial to provide structure in your log messages so that they can be aggregated between replicas and used for operational visibility. The simplest way to do this is to log lines as `json` rather than the traditional pretty-print formatting. By default `alog` uses the pretty-printer output formatter. To enable JSON output, simply use the `ALOG_USE_JSON_FORMATTER()` macro.
 
 ```c++
 #include <logger.h>
@@ -55,12 +58,62 @@ int main(int, char**)
 }
 ```
 
-## Logging Functions
-The standard logging functions each take a channel, a level, and payload information:
+While printing logs as `json` allows them to be filtered by `channel`, `level`, and `message` quite easily, some times more structure is needed. In these cases, `alog` also supports logging arbitrary key/value pairs. This is supported using the `jsonparser::TObject` map type. For example:
 
-* `ALOG(channel, level, msg)`: Log a single message line using streams
+```c++
+#include <logger.h>
+
+int main(int, char**)
+{
+  ALOG_SETUP("server.log", true, "info", "ALGO:debug2,NET:debug");
+  ALOG_USE_JSON_FORMATTER();
+  jsonparser::TObject mapData;
+  mapData["foo"] = ALOG_MAP_VALUE("bar");
+  mapData["baz"] = ALOG_MAP_VALUE(1234);
+  ALOG_MAP(MAIN, info, mapData);
+}
+```
+
+In addition to the `ALOG_MAP` macro which explicitly logs a json map, all of the standard `ALOG` macros take an optional final `map` argument, allowing key/value data to be added to any log line.
+
+## Metadata
+In addition to the content of an individual log message, you may want to attach some metadata to all log lines that occur within a given thread of execution. For example, this can be used to attach a request ID to all log lines created in the course of processing a given server request. This can come in very handy when you have a multi-threaded and/or multi-replica environment.
+
+The `metadata` feature in `alog` is implemented as a thread-global key/value map. Keys and values are added to the map using the `ALOG_SCOPED_METADATA` macro. We explicitly limit metadata interactions to construct/destruct scope object to ensure that metadata is properly cleaned up.
+
+The addition of metadata can be expensive and intrusive (especially in pretty-print mode), so the functionality can be globally enabled or disabled using the `ALOG_ENABLE_METADATA` and `ALOG_DISABLE_METADATA` macros. These should be called as part of the initial configuration.
+
+Here's a brief example of how you might use metadata:
+
+```c++
+#include <logger.h>
+
+int add(int a, int b)
+{
+  ALOG(MATH, info, "Adding " << a << " + " << b);
+  return a+b;
+}
+
+void handler(const CMyRequest& a_request, CMyResponse& a_response)
+{
+  ALOG_SCOPED_METADATA(a_request.requestID());
+  a_response.setResult(add(a_request.getA(), a_request.getB()));
+}
+```
+
+In this example, the `add` function doesn't need (or want) to know that it's part of handling some sort of `MyRequest`, but the developer would like to attach the `requestID()` to the log line printed in its implementation in case there's a bug.
+
+## Logging Macros
+The standard logging macros each take a channel, a level, and payload information:
+
+* `ALOG(channel, level, msg, [map])`: Log a single message line using streams
     ```c++
     ALOG(MAIN, debug, "This is the " << 1 << "st test with a stream");
+    ```
+
+* `ALOG_THREAD(channel, level, msg, [map])`: Log a single message line with the thread ID added to the header
+    ```c++
+    ALOG_THREAD(MAIN, debug, "This is the " << 2 << "nd test with a stream");
     ```
 
 * `ALOG_MAP(channel, level, map)`: Log an arbitrary key/value structure on the given channel/level
@@ -68,19 +121,17 @@ The standard logging functions each take a channel, a level, and payload informa
     ALOG_MAP(MAIN, debug, {{"foo": "bar"}, {"baz", 1}});
     ```
 
-* `ALOG_THREAD(channel, level, msg)`: Log a single message line with the thread ID added to the header
-    ```c++
-    ALOG_THREAD(MAIN, debug, "This is the " << 2 << "nd test with a stream");
-    ```
-
 * `ALOG_WARNING(msg)`: Log a warning message on the `WARN` channel at the `warning` level.
     ```c++
     ALOG_WARNING("Something's wrong!");
     ```
 
-In addition to the single-line logging functions, `alog` offers scoped logging blocks which help with log parsing by providing `Start:` and `End:` messages for logical scopes:
+## Log Scopes
+One of the most common uses for logging is to note when a certain block of code starts and ends. To facilitate this, `alog` has the concept of the `ALOG_SCOPED_*` macros. Each of these macros creates a local object which takes an action at construction time and a corresponding action at destruction time. All logging statements which occur between construction and destruction will be indented, making for a highly readable log, even with very verbose logging.
 
-* `ALOG_SCOPED_BLOCK(channel, level, msg)`: Set up a Start/End block of logging based on the scope. Note that only a single call to ALOG_SCOPED_BLOCK may be made within a given scope.
+Each of the scopes that creates log lines can take an optional `mapPtr` final argument. This allows for the scope to hold a pointer to a shared map which can have key/value pairs added within the context of the scope. This is particularly useful for `ALOG_SCOPED_TIMER`, but can be used elsewhere as well.
+
+* `ALOG_SCOPED_BLOCK(channel, level, msg, [mapPtr])`: Set up a Start/End block of logging based on the scope. Note that only a single call to ALOG_SCOPED_BLOCK may be made within a given scope.
     ```c++
     void foo()
     {
@@ -91,32 +142,21 @@ In addition to the single-line logging functions, `alog` offers scoped logging b
     }
     ```
 
-* `ALOG_SCOPED_TIMER(channel, level, msg)`: Set up a timer that will time the work done in the current scope and report the duration upon scope completion.
+* `ALOG_SCOPED_TIMER(channel, level, msg, [mapPtr])`: Set up a timer that will time the work done in the current scope and report the duration upon scope completion.
     ```c++
     void foo()
     {
       if (bar())
       {
-        ALOG_SCOPED_TIMER(MAIN, debug, "heavy_lifting");
-        heavy_lifting();
+        std::shared_ptr<jsonparser::TObject> map_ptr(new jsonparser::TObject());
+        ALOG_SCOPED_TIMER(MAIN, debug, "heavy_lifting", map_ptr);
+        int result = heavy_lifting();
+        map_ptr->insert("result_code", ALOG_MAP_VALUE(result));
       }
     }
     ```
 
-* `ALOG_SCOPED_INDENT()`: Add a level of indentation to all logging lines within the current scope to improve readibility.
-    ```c++
-    void foo()
-    {
-      if (bar())
-      {
-        ALOG_SCOPED_BLOCK(MAIN, debug, "Bar is true!");
-        ALOG_SCOPED_INDENT();
-        ALOG(MAIN, debug2, "Getting it done");
-      }
-    }
-    ```
-
-* `ALOG_FUNCTION(channel, msg)`: Add a Start/End indented block with the current function name on trace and add an automatic level of indentation.
+* `ALOG_FUNCTION(channel, msg, [mapPtr])`: Add a Start/End indented block with the current function name on trace and add an automatic level of indentation.
     ```c++
     void foo()
     {
@@ -128,13 +168,56 @@ In addition to the single-line logging functions, `alog` offers scoped logging b
     }
     ```
 
-* `ALOG_DETAIL_FUNCTION(channel, level, msg)`: Add a Start/End indented block with the current function name on the given level and add an automatic level of indentation.
+* `ALOG_DETAIL_FUNCTION(channel, level, msg, [mapPtr])`: Add a Start/End indented block with the current function name on the given level and add an automatic level of indentation.
     ```c++
     void foo()
     {
       ALOG_DETAIL_FUNCTION(TEST, debug2, "in the weeds");
       if (bar())
       {
+        ALOG(MAIN, debug2, "Getting it done");
+      }
+    }
+    ```
+
+* `ALOG_SCOPED_METADATA(key, value)`: Add a key/value pair that will be added to every subsequent line in the scope
+    ```c++
+    #include <logger.h>
+
+    int add(int a, int b)
+    {
+      ALOG(MATH, info, "Adding " << a << " + " << b);
+      return a+b;
+    }
+
+    void handler(const CMyRequest& a_request, CMyResponse& a_response)
+    {
+      ALOG_SCOPED_METADATA(a_request.requestID());
+      a_response.setResult(add(a_request.getA(), a_request.getB()));
+    }
+    ```
+
+* `ALOG_SCOPED_INDENT_IF(channel, level)`: Add a level of indentation to all logging lines within the current scope if the given channel/level combination is enabled.
+    ```c++
+    void foo()
+    {
+      if (bar())
+      {
+        ALOG_SCOPED_BLOCK(MAIN, debug, "Bar is true!");
+        ALOG_SCOPED_INDENT_IF(MAIN, debug2);
+        ALOG(MAIN, debug2, "Getting it done");
+      }
+    }
+    ```
+
+* [DEPRECATED] `ALOG_SCOPED_INDENT()`: Add a level of indentation to all logging lines within the current scope to improve readibility. Use `ALOG_SCOPED_INDENT_IF` instead.
+    ```c++
+    void foo()
+    {
+      if (bar())
+      {
+        ALOG_SCOPED_BLOCK(MAIN, debug, "Bar is true!");
+        ALOG_SCOPED_INDENT();
         ALOG(MAIN, debug2, "Getting it done");
       }
     }

@@ -38,6 +38,9 @@ namespace logging
 namespace
 {
 
+// Static empty map data to allow reference semantics for non-empty maps
+static const jsonparser::TObject s_emptyMapData;
+
 // Implement string splitting to avoid boost dependency:
 // CITE: http://stackoverflow.com/questions/236129/split-a-string-in-c
 template<typename Out>
@@ -658,27 +661,33 @@ void CLogChannelRegistrySingleton::reset()
 
 CLogScope::CLogScope(const std::string& a_channelName,
                    ELogLevels a_level,
-                   const std::string& a_msg)
+                   const std::string& a_msg,
+                   const TScopeLogMapPtr& a_mapDataPtr)
   : m_channelName(a_channelName),
     m_level(a_level),
-    m_msg(a_msg)
+    m_msg(a_msg),
+    m_mapDataPtr(a_mapDataPtr)
 {
-  ALOG_LEVEL_IMPL(m_channelName, m_level, "Start: " << m_msg, {});
+  const jsonparser::TObject& l_mapData = m_mapDataPtr ? *m_mapDataPtr : s_emptyMapData;
+  ALOG_LEVEL_IMPL(m_channelName, m_level, "Start: " << m_msg, l_mapData);
 }
 
 CLogScope::~CLogScope()
 {
-  ALOG_LEVEL_IMPL(m_channelName, m_level, "End: " << m_msg, {});
+  const jsonparser::TObject& l_mapData = m_mapDataPtr ? *m_mapDataPtr : s_emptyMapData;
+  ALOG_LEVEL_IMPL(m_channelName, m_level, "End: " << m_msg, l_mapData);
 }
 
 // CLogScopedTimer /////////////////////////////////////////////////////////////
 
 CLogScopedTimer::CLogScopedTimer(const std::string& a_channelName,
                                  ELogLevels a_level,
-                                 const std::string& a_msg)
+                                 const std::string& a_msg,
+                                 const TScopeLogMapPtr& a_mapDataPtr)
   : m_channelName(a_channelName),
     m_level(a_level),
     m_msg(a_msg),
+    m_mapDataPtr(a_mapDataPtr),
     m_t0()
 {
   if (logging::detail::CLogChannelRegistrySingleton::instance()->filter(m_channelName, m_level))
@@ -703,28 +712,37 @@ CLogScopedTimer::~CLogScopedTimer()
     // [100000000] => seconds
     if (val >= 100000000)
     {
-      val = std::chrono::duration<float, std::ratio<1,1>>(t1-m_t0).count();
+      val = std::chrono::duration_cast<std::chrono::seconds>(t1-m_t0).count();
       suffix = "s";
     }
 
     // [1000000] => milliseconds
     else if (val >= 1000000)
     {
-      val = std::chrono::duration<float, std::ratio<1,1000>>(t1-m_t0).count();
+      val = std::chrono::duration_cast<std::chrono::milliseconds>(t1-m_t0).count();
       suffix = "ms";
     }
 
     // [1000] => microseconds
     else if (val >= 1000)
     {
-      val = std::chrono::duration<float, std::ratio<1,1000000>>(t1-m_t0).count();
+      val = std::chrono::duration_cast<std::chrono::microseconds>(t1-m_t0).count();
       suffix = "us";
     }
 
     // Stream the message
     std::stringstream ss;
     ss << m_msg << val << suffix;
-    ALOG_LEVEL_IMPL(m_channelName, m_level, ss.str(), {});
+    jsonparser::TObject mapOut;
+    if (m_mapDataPtr)
+    {
+      mapOut = *m_mapDataPtr;
+    }
+
+    // Add the duration in milliseconds
+    mapOut["duration_ms"] = logging::detail::toMetadata(
+      std::chrono::duration_cast<std::chrono::milliseconds>(t1-m_t0).count());
+    ALOG_LEVEL_IMPL(m_channelName, m_level, ss.str(), mapOut);
   }
 }
 

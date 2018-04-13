@@ -255,6 +255,8 @@ private:
 
 /*-- Scope Classes -----------------------------------------------------------*/
 
+typedef std::shared_ptr<const jsonparser::TObject> TScopeLogMapPtr;
+
 /** \brief This class is used to add a Start/End block to a log */
 class CLogScope
 {
@@ -262,12 +264,14 @@ public:
   CLogScope(const CLogScope&) = delete;
   CLogScope(const std::string& a_channelName,
             ELogLevels a_level,
-            const std::string& a_msg);
+            const std::string& a_msg,
+            const TScopeLogMapPtr& a_mapDataPtr = nullptr);
   virtual ~CLogScope();
 private:
-  std::string m_channelName;
-  ELogLevels m_level;
-  std::string m_msg;
+  const std::string     m_channelName;
+  const ELogLevels      m_level;
+  const std::string     m_msg;
+  const TScopeLogMapPtr m_mapDataPtr;
 };  // end class CLogScope
 
 /** \brief Struct to time execution of a block */
@@ -276,12 +280,14 @@ struct CLogScopedTimer
   CLogScopedTimer(const CLogScopedTimer&) = delete;
   CLogScopedTimer(const std::string& a_channelName,
                   ELogLevels a_level,
-                  const std::string& a_msg);
+                  const std::string& a_msg,
+                  const TScopeLogMapPtr& a_mapDataPtr = nullptr);
   virtual ~CLogScopedTimer();
 private:
-  std::string m_channelName;
-  ELogLevels m_level;
-  std::string m_msg;
+  const std::string     m_channelName;
+  const ELogLevels      m_level;
+  const std::string     m_msg;
+  const TScopeLogMapPtr m_mapDataPtr;
   decltype(std::chrono::high_resolution_clock::now()) m_t0;
 };  // end class CLogScopedTimer
 
@@ -366,6 +372,14 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #define PP_CAT_II(p, res) res
 #define ALOG_UNIQUE_VAR_NAME_IMPL(base) PP_CAT(base, __LINE__)
 
+// Some of the public macros can take an optional final map argument to add key/
+// value data as needed. In order to enable this, we need the old NARGS trick:
+// https://stackoverflow.com/questions/27765387/distributing-an-argument-in-a-variadic-macro
+#define NARGS(...) NARGS_(__VA_ARGS__, _MAP, _NO_MAP, 0)
+#define NARGS_(_2, _1, N, ...) N
+#define CONC(A, B) CONC_(A, B)
+#define CONC_(A, B) A##B
+
 #define ALOG_LEVEL_IMPL(channel, level, msg, map)\
   do {if (logging::detail::CLogChannelRegistrySingleton\
     ::instance()->filter(channel, level)) {\
@@ -382,42 +396,67 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
         static_cast<std::wostringstream&>(std::wostringstream().flush() << msg).str(), map);\
   }} while(0)
 
-#define ALOG_CHANNEL_IMPL(channel, level, msg)\
+// The channel functions can take an optional map argument
+#define _ALOG_CHANNEL_IMPL_WITH_MAP(channel, level, msg, map) \
+  ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, map)
+#define _ALOG_CHANNEL_IMPL_WITH_NO_MAP(channel, level, msg) \
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
+
+#define _ALOGW_CHANNEL_IMPL_WITH_MAP(channel, level, msg, map) \
+  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, map)
+#define _ALOGW_CHANNEL_IMPL_WITH_NO_MAP(channel, level, msg) \
+  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
+
+#define ALOG_CHANNEL_IMPL(channel, level, ...)\
+  CONC(_ALOG_CHANNEL_IMPL_WITH, NARGS(__VA_ARGS__)) (channel, level, __VA_ARGS__)
+
+#define ALOGW_CHANNEL_IMPL(channel, level, ...)\
+  CONC(_ALOGW_CHANNEL_IMPL_WITH, NARGS(__VA_ARGS__)) (channel, level, __VA_ARGS__)
 
 #define ALOG_MAP_IMPL(channel, level, map)\
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, "", map)
 
-#define ALOGW_CHANNEL_IMPL(channel, level, msg)\
-  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
-
-#define ALOG_SCOPED_BLOCK_IMPL(channel, level, msg)\
-  logging::detail::CLogScope ALOG_UNIQUE_VAR_NAME_IMPL(_logScope) (\
+// All of the scope calls take a mapDataPtr as an optional last argument
+#define _SCOPE_WRAPPER_WITH_MAP(scopeType, channel, level, msg, map) \
+  logging::detail:: scopeType ALOG_UNIQUE_VAR_NAME_IMPL(scopeType) (\
+    channel, logging::detail::ELogLevels:: level,\
+    static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str(), map)
+#define _SCOPE_WRAPPER_WITH_NO_MAP(scopeType, channel, level, msg) \
+  logging::detail:: scopeType ALOG_UNIQUE_VAR_NAME_IMPL(scopeType) (\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
+#define _SCOPE_WRAPPER(scopeType, channel, level, ...) \
+  CONC(_SCOPE_WRAPPER_WITH, NARGS(__VA_ARGS__)) (scopeType, channel, level, __VA_ARGS__)
 
-#define ALOG_SCOPED_TIMER_IMPL(channel, level, msg)\
-  logging::detail::CLogScopedTimer ALOG_UNIQUE_VAR_NAME_IMPL(_logTimer) (\
-    channel, logging::detail::ELogLevels:: level,\
-    static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
+#define ALOG_SCOPED_BLOCK_IMPL(channel, level, ...)\
+  _SCOPE_WRAPPER(CLogScope, channel, level, __VA_ARGS__)
 
-#define ALOG_SCOPED_METADATA_IMPL(key, value)\
-  logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (key,\
-    logging::detail::toMetadata(value));
-
-#define ALOG_SCOPED_INDENT_IF_IMPL(channel, level) \
-  logging::detail::CLogScopedIndent ALOG_UNIQUE_VAR_NAME_IMPL(__alog_scoped_indent__)(\
-    channel, logging::detail::ELogLevels::  level)
+#define ALOG_SCOPED_TIMER_IMPL(channel, level, ...)\
+  _SCOPE_WRAPPER(CLogScopedTimer, channel, level, __VA_ARGS__)
 
 #define _ALOG_FUNCTION __FUNCTION__
 
-#define ALOG_FUNCTION_IMPL(channel, level, msg)\
+#define _ALOG_FUNCTION_IMPL_WITH_MAP(channel, level, msg, map)\
+  ALOG_SCOPED_BLOCK_IMPL(channel, level, "" << _ALOG_FUNCTION << "( " << msg << " )", map);\
+  ALOG_SCOPED_INDENT_IF_IMPL(channel, level)
+#define _ALOG_FUNCTION_IMPL_WITH_NO_MAP(channel, level, msg)\
   ALOG_SCOPED_BLOCK_IMPL(channel, level, "" << _ALOG_FUNCTION << "( " << msg << " )");\
   ALOG_SCOPED_INDENT_IF_IMPL(channel, level)
+#define ALOG_FUNCTION_IMPL(channel, level, ...)\
+  CONC(_ALOG_FUNCTION_IMPL_WITH, NARGS(__VA_ARGS__)) (channel, level, __VA_ARGS__)
 
 #define ALOG_IS_ENABLED_IMPL(channel, level)\
   logging::detail::CLogChannelRegistrySingleton::instance()->filter(\
     channel, logging::detail::ELogLevels:: level)
+
+// Non-logging scope objects
+#define ALOG_SCOPED_METADATA_IMPL(key, value)\
+  logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (key,\
+    logging::detail::toMetadata(value));
+#define ALOG_SCOPED_INDENT_IF_IMPL(channel, level) \
+  logging::detail::CLogScopedIndent ALOG_UNIQUE_VAR_NAME_IMPL(__alog_scoped_indent__)(\
+    channel, logging::detail::ELogLevels::  level)
+
 
 /*-- Setup Macros ------------------------------------------------------------*/
 
@@ -542,16 +581,30 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 
 /** Log a line on the given channel at the given level */
 #ifndef DISABLE_LOGGING
-#define ALOG(channel, level, msg) ALOG_CHANNEL_IMPL(#channel, level, msg)
+#define ALOG(channel, level, ...) ALOG_CHANNEL_IMPL(#channel, level, __VA_ARGS__)
 #else
-#define ALOG(channel, level, msg)
+#define ALOG(channel, level, ...)
 #endif
 
 /** Log a line on the class' native channel at the given level */
 #ifndef DISABLE_LOGGING
-#define ALOGthis(level, msg) ALOG_CHANNEL_IMPL(getLogChannel(), level, msg)
+#define ALOGthis(level, ...) ALOG_CHANNEL_IMPL(getLogChannel(), level, __VA_ARGS__)
 #else
-#define ALOGthis(level, msg)
+#define ALOGthis(level, ...)
+#endif
+
+/** Log a wchar line on the given channel at the given level */
+#ifndef DISABLE_LOGGING
+#define ALOGW(channel, level, ...) ALOGW_CHANNEL_IMPL(#channel, level, __VA_ARGS__)
+#else
+#define ALOGW(channel, level, ...)
+#endif
+
+/** Log a wchar line on the class' native channel at the given level */
+#ifndef DISABLE_LOGGING
+#define ALOGWthis(level, ...) ALOGW_CHANNEL_IMPL(getLogChannel(), level, __VA_ARGS__)
+#else
+#define ALOGWthis(level, ...)
 #endif
 
 /** Log an arbitrary key/value structure on the given channel/level */
@@ -568,77 +621,67 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #define ALOG_MAPthis(level, map)
 #endif
 
-/** Log a wchar line on the given channel at the given level */
-#ifndef DISABLE_LOGGING
-#define ALOGW(channel, level, msg) ALOGW_CHANNEL_IMPL(#channel, level, msg)
-#else
-#define ALOGW(channel, level, msg)
-#endif
-
-/** Log a wchar line on the class' native channel at the given level */
-#ifndef DISABLE_LOGGING
-#define ALOGWthis(level, msg) ALOGW_CHANNEL_IMPL(getLogChannel(), level, msg)
-#else
-#define ALOGWthis(level, msg)
-#endif
-
 /** Log a line that explicitly includes the thread id regardless of the global
  * setting */
 #ifndef DISABLE_LOGGING
-#define ALOG_THREAD(channel, level, msg)\
-  ALOG(channel, level, "[" << std::this_thread::get_id() << "] " << msg)
+#define ALOG_THREAD(channel, level, ...)\
+  { auto& sngl = logging::detail::CLogChannelRegistrySingleton::instance();\
+    bool currentlyEnabled = sngl->threadIDEnabled();\
+    if (not currentlyEnabled) sngl->enableThreadID();\
+    ALOG(channel, level, __VA_ARGS__);\
+    if (not currentlyEnabled) sngl->disableThreadID(); }
 #else
-#define ALOG_THREAD(channel, level, msg)
+#define ALOG_THREAD(channel, level, ...)
 #endif
 
 /** Log a line that includes the current thread's thread id to the class'
  * native channel */
 #ifndef DISABLE_LOGGING
-#define ALOG_THREADthis(level, msg)\
+#define ALOG_THREADthis(level, ...)\
   { auto& sngl = logging::detail::CLogChannelRegistrySingleton::instance();\
     bool currentlyEnabled = sngl->threadIDEnabled();\
     if (not currentlyEnabled) sngl->enableThreadID();\
-    ALOGthis(level, msg);\
+    ALOGthis(level, __VA_ARGS__);\
     if (not currentlyEnabled) sngl->disableThreadID(); }
 #else
-#define ALOG_THREADthis(level, msg)
+#define ALOG_THREADthis(level, ...)
 #endif
 
 /** Set up a Start/End block of logging based on the scope. Note that only a
  * single call to ALOG_SCOPED_BLOCK may be made within a given scope */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_BLOCK(channel, level, msg)\
-  ALOG_SCOPED_BLOCK_IMPL(#channel, level, msg)
+#define ALOG_SCOPED_BLOCK(channel, level, ...)\
+  ALOG_SCOPED_BLOCK_IMPL(#channel, level, __VA_ARGS__)
 #else
-#define ALOG_SCOPED_BLOCK(channel, level, msg)
+#define ALOG_SCOPED_BLOCK(channel, level, ...)
 #endif
 
 /** Set up a Start/End block of logging based on the scope using class' native
  * channel */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_BLOCKthis(level, msg)\
-  ALOG_SCOPED_BLOCK_IMPL(getLogChannel(), level, msg)
+#define ALOG_SCOPED_BLOCKthis(level, ...)\
+  ALOG_SCOPED_BLOCK_IMPL(getLogChannel(), level, __VA_ARGS__)
 #else
-#define ALOG_SCOPED_BLOCKthis(level, msg)
+#define ALOG_SCOPED_BLOCKthis(level, ...)
 #endif
 
 /** Set up a timer that will time the work done in the current scope and
  * report the duration upon scope completion */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_TIMER(channel, level, msg)\
-  ALOG_SCOPED_TIMER_IMPL(#channel, level, msg)
+#define ALOG_SCOPED_TIMER(channel, level, ...)\
+  ALOG_SCOPED_TIMER_IMPL(#channel, level, __VA_ARGS__)
 #else
-#define ALOG_SCOPED_TIMER(channel, level, msg)
+#define ALOG_SCOPED_TIMER(channel, level, ...)
 #endif
 
 /** Set up a timer that will time the work done in the current scope and
  * report the duration upon scope completion using current class' native
  * channel */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_TIMERthis(level, msg)\
-  ALOG_SCOPED_TIMER_IMPL(getLogChannel(), level, msg)
+#define ALOG_SCOPED_TIMERthis(level, ...)\
+  ALOG_SCOPED_TIMER_IMPL(getLogChannel(), level, __VA_ARGS__)
 #else
-#define ALOG_SCOPED_TIMERthis(level, msg)
+#define ALOG_SCOPED_TIMERthis(level, ...)
 #endif
 
 /** Set up a metadata scope that will add a key to the metadata that will be
@@ -676,34 +719,34 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 
 /** Add a Start/End indented block with the current function name on trace */
 #ifndef DISABLE_LOGGING
-#define ALOG_FUNCTION(channel, msg) ALOG_FUNCTION_IMPL(#channel, trace, msg)
+#define ALOG_FUNCTION(channel, ...) ALOG_FUNCTION_IMPL(#channel, trace, __VA_ARGS__)
 #else
-#define ALOG_FUNCTION(channel, msg)
+#define ALOG_FUNCTION(channel, ...)
 #endif
 
 /** Add a Start/End indented block with the current function name on trace
  * using native channel */
 #ifndef DISABLE_LOGGING
-#define ALOG_FUNCTIONthis(msg) ALOG_FUNCTION_IMPL(getLogChannel(), trace, msg)
+#define ALOG_FUNCTIONthis(...) ALOG_FUNCTION_IMPL(getLogChannel(), trace, __VA_ARGS__)
 #else
-#define ALOG_FUNCTIONthis(msg)
+#define ALOG_FUNCTIONthis(...)
 #endif
 
 /** Add a Start/End indented block with the current function name on designated
  * level. Used for lower-level functions that log on debug levels */
 #ifndef DISABLE_LOGGING
-#define ALOG_DETAIL_FUNCTION(channel, level, msg) ALOG_FUNCTION_IMPL(#channel, level, msg)
+#define ALOG_DETAIL_FUNCTION(channel, level, ...) ALOG_FUNCTION_IMPL(#channel, level, __VA_ARGS__)
 #else
-#define ALOG_DETAIL_FUNCTION(channel, level, msg)
+#define ALOG_DETAIL_FUNCTION(channel, level, ...)
 #endif
 
 /** Add a Start/End indented block with the current function name on designated
  * level on the native channel. Used for lower-level functions that log on
  * debug levels */
 #ifndef DISABLE_LOGGING
-#define ALOG_DETAIL_FUNCTIONthis(level, msg) ALOG_FUNCTION_IMPL(getLogChannel(), level, msg)
+#define ALOG_DETAIL_FUNCTIONthis(level, ...) ALOG_FUNCTION_IMPL(getLogChannel(), level, __VA_ARGS__)
 #else
-#define ALOG_DETAIL_FUNCTIONthis(level, msg)
+#define ALOG_DETAIL_FUNCTIONthis(level, ...)
 #endif
 
 /** This macro sends a warning to cerr and to the the log */
@@ -726,3 +769,7 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #else
 #define ALOG_IS_ENABLEDthis(level) false
 #endif
+
+/** Convert a value for use in map data. Note that this will be called inside
+ * regular code, so it cannot be compiled out. **/
+#define ALOG_MAP_VALUE(val) logging::detail::toMetadata(val)
