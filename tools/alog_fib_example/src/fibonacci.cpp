@@ -67,13 +67,12 @@ TFibSequence fib(const unsigned n)
     ////////////////////////////////////////////////////////////////////////////
     // TUTORIAL:                                                              //
     //                                                                        //
-    // The ALOGthis macro logs a single line on the given channel/level pair. //
-    // In this case, we use debug3 since this is a tight-loop log statement.  //
-    // Also, since we want to log some details about the state of the loop,   //
-    // we can use a key/value map. Note that for the inline-map definition,   //
-    // we need an extra set of parens so avoid confusing the preprocessor.    //
+    // The ALOG_MAPthis macro logs a key/value map on the given channel/level //
+    // pair. In this case, we use debug3 since this is a tight-loop log       //
+    // statement.                                                             //
     ////////////////////////////////////////////////////////////////////////////
-    ALOGthis(debug3, "Running iteration " << c, (jsonparser::TObject{
+    ALOG_MAPthis(debug3, (jsonparser::TObject{
+      std::make_pair("c", ALOG_MAP_VALUE(c)),
       std::make_pair("first", ALOG_MAP_VALUE(first)),
       std::make_pair("second", ALOG_MAP_VALUE(second)),
       std::make_pair("next", ALOG_MAP_VALUE(next)),
@@ -91,6 +90,18 @@ TFibSequence fib(const unsigned n)
     std::this_thread::sleep_for(std::chrono::milliseconds(next));
     out.push_back(next);
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // TUTORIAL:                                                                //
+  //                                                                          //
+  // The ALOGthis macro takes an optional final argument to add a key/value   //
+  // map to the log entry.                                                    //
+  ////////////////////////////////////////////////////////////////////////////
+  ALOGthis(debug3, "Final variable state", (jsonparser::TObject{
+    std::make_pair("first", ALOG_MAP_VALUE(first)),
+    std::make_pair("second", ALOG_MAP_VALUE(second)),
+    std::make_pair("next", ALOG_MAP_VALUE(next)),
+  }));
 
   //////////////////////////////////////////////////////////////////////////////
   // TUTORIAL:                                                                //
@@ -139,8 +150,17 @@ std::vector<TFibSequence> FibonacciCalculator::get_results()
   ALOG_SCOPED_TIMERthis(info, "Finished all jobs in ");
 
   std::vector<TFibSequence> out;
+  unsigned futureNum = 0;
   for (auto& future : m_futures)
   {
+    ////////////////////////////////////////////////////////////////////////////
+    // TUTORIAL:                                                              //
+    //                                                                        //
+    // The ALOGthis macro logs a single line on the given channel/level pair. //
+    // In this case, we use debug2 since this is a detail level log, but not  //
+    // one that will produce overly verbose output.                           //
+    ////////////////////////////////////////////////////////////////////////////
+    ALOGthis(debug2, "Waiting on future " << ++futureNum);
     out.push_back(future.get());
   }
   return out;
