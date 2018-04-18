@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 #include <ctime>
+#include <chrono>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
@@ -83,12 +84,21 @@ detail::CLogChannelRegistrySingleton::FilterMap parseFilterSpec(const std::strin
   return out;
 }
 
+// Get a timestamp formatted like 2018-04-17T21:42:11.583Z
 std::string getTimestamp()
 {
-  std::time_t t = std::time(NULL);
+  const auto now = std::chrono::high_resolution_clock::now();
+  std::time_t t = std::chrono::system_clock::to_time_t(now);
   char timestamp[20]; // Timestamp will always be 20 characters long
-  std::strftime(timestamp, sizeof(timestamp), "%Y/%m/%d %H:%M:%S", std::localtime(&t));
-  return std::string(timestamp);
+  std::strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%S", std::gmtime(&t));
+
+  // Add the milliseconds
+  const auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+  const auto now_s = std::chrono::time_point_cast<std::chrono::seconds>(now);
+  const auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now_ms - now_s).count();
+  std::stringstream ss;
+  ss << timestamp << "." << millis << "Z";
+  return ss.str();
 }
 
 // CITE: https://stackoverflow.com/questions/15615136/is-codecvt-not-a-std-header

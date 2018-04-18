@@ -107,7 +107,7 @@ struct CParsedLogEntry
 // Parse a line of plain-text logging into a CParsedLogEntry (null if parse failed)
 std::shared_ptr<CParsedLogEntry> parseStdLine(const std::string& a_line)
 {
-  boost::regex re("^([0-9/]* [0-9:]*) ([^\\]]*)\\[([^:]*):([^\\]:]*):?([^\\]\\s]*)\\] ([\\s]*)([^\\s].*)\n?$");
+  boost::regex re("^([0-9-]*T[0-9:]*.[0-9]*Z) ([^\\]]*)\\[([^:]*):([^\\]:]*):?([^\\]\\s]*)\\] ([\\s]*)([^\\s].*)\n?$");
   boost::smatch m;
   boost::regex_match(a_line, m, re);
   if (m.size() != 8)
