@@ -97,7 +97,7 @@ std::string getTimestamp()
   const auto now_s = std::chrono::time_point_cast<std::chrono::seconds>(now);
   const auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now_ms - now_s).count();
   std::stringstream ss;
-  ss << timestamp << "." << millis << "Z";
+  ss << timestamp << "." << std::setfill('0') << std::setw(3) << millis << "Z";
   return ss.str();
 }
 
