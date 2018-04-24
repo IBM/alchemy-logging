@@ -107,7 +107,14 @@ struct CParsedLogEntry
 // Parse a line of plain-text logging into a CParsedLogEntry (null if parse failed)
 std::shared_ptr<CParsedLogEntry> parseStdLine(const std::string& a_line)
 {
-  boost::regex re("^([0-9/]* [0-9:]*) ([^\\]]*)\\[([^:]*):([^\\]:]*):?([^\\]\\s]*)\\] ([\\s]*)([^\\s].*)\n?$");
+  // this regex also validates the format of the timestamp
+  // example timestamp: 2018-04-22T11:36:44.215Z
+  //                               2018  -   04   -   22   T   11   :   36   :   44   .  215   Z
+  std::string timestampRegex = "([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}Z)";
+  std::string restOfRegex = "([^\\]]*)\\[([^:]*):([^\\]:]*):?([^\\]\\s]*)\\] ([\\s]*)([^\\s].*)\n?";
+  std::stringstream ss;
+  ss << "^" << timestampRegex << " " << restOfRegex << "$";
+  boost::regex re(ss.str());
   boost::smatch m;
   boost::regex_match(a_line, m, re);
   if (m.size() != 8)
