@@ -91,7 +91,7 @@ std::string getTimestamp()
   std::time_t t = std::chrono::system_clock::to_time_t(now);
   char timestamp[20]; // Timestamp will always be 20 characters long
   // if strftime is unable to write the string to the buffer, it will return 0.
-  if(std::strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M::%S", std::gmtime(&t)) == 0)
+  if(std::strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%S", std::gmtime(&t)) == 0)
     return "ERROR_CREATING_TIMESTAMP";
 
   // Add the milliseconds
