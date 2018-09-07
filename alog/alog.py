@@ -54,7 +54,6 @@ class AlogFormatterBase(logging.Formatter):
     if self._indent > 0:
       self._indent -= 1
 
-DEFAULT_APP_VERSION = "1.0-SNAPSHOT-local"
 class AlogJsonFormatter(AlogFormatterBase):
   """
   Log formatter which prints messages a single-line json
@@ -62,7 +61,6 @@ class AlogJsonFormatter(AlogFormatterBase):
 
   _FIELDS_TO_PRINT = ['name', 'levelname', 'asctime', 'message', 'exc_text',
     'region-id', 'org-id', 'tran-id', 'watson-txn-id', 'channel']
-  _app_version = environ.get("SERVICE_VERSION", DEFAULT_APP_VERSION)
 
   def __init__(self):
     AlogFormatterBase.__init__(self)
@@ -89,8 +87,14 @@ class AlogJsonFormatter(AlogFormatterBase):
       into a dictionary
     :rtype dict
     """
-    out = {self._map_to_common_key_name(field_name): getattr(record, field_name) for field_name in
-          self._FIELDS_TO_PRINT if hasattr(record, field_name)}
+    out = {}
+    for field_name in self._FIELDS_TO_PRINT:
+      if hasattr(record, field_name):
+        record_field = getattr(record, field_name)
+        if isinstance(record_field, dict):
+          out.update(record_field)
+        else:
+          out[self._map_to_common_key_name(field_name)] = record_field
     out["level_str"] = out["level_str"].lower()
     return out
 
@@ -103,15 +107,13 @@ class AlogJsonFormatter(AlogFormatterBase):
     :rtype str
     """
     record.message = record.getMessage()
+
     record.asctime = self.formatTime(record, self.datefmt)
     if record.exc_info:
       record.exc_text = self.formatException(record.exc_info)
     if record.stack_info:
       record.stack_info = self.formatStack(record.stack_info)
     log_record = self._extract_fields_from_record_as_dict(record)
-
-    # Add app-version field to all log records
-    log_record['app-version'] = self._app_version
 
     # Add indent to all log records
     log_record['num_indent'] = self._indent
@@ -281,6 +283,7 @@ def configure(default_level, filters="", formatter='pretty'):
     l.propagate = False
     l.addHandler(handler)
 
+
 def use_channel(channel):
   """
   Interface wrapper for python alog implementation to keep consistency with
@@ -341,4 +344,3 @@ if __name__ == '__main__':
   use_channel("FOO").debug2("Debug2 line %d", 10)
   use_channel("BAR").debug4("""Large, deep debugging entry with multiple
 lines of text!""")
-
