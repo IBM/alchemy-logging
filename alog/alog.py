@@ -89,8 +89,13 @@ class AlogJsonFormatter(AlogFormatterBase):
       into a dictionary
     :rtype dict
     """
-    out = {self._map_to_common_key_name(field_name): getattr(record, field_name) for field_name in
-          self._FIELDS_TO_PRINT if hasattr(record, field_name)}
+    out = {}
+    for field_name in self._FIELDS_TO_PRINT:
+      if hasattr(record, field_name):
+        if isinstance(getattr(record, field_name), dict):
+          out.update(getattr(record, field_name))
+        else:
+          out[self._map_to_common_key_name(field_name)] = getattr(record, field_name)
     out["level_str"] = out["level_str"].lower()
     return out
 
@@ -103,6 +108,7 @@ class AlogJsonFormatter(AlogFormatterBase):
     :rtype str
     """
     record.message = record.getMessage()
+
     record.asctime = self.formatTime(record, self.datefmt)
     if record.exc_info:
       record.exc_text = self.formatException(record.exc_info)
@@ -111,7 +117,7 @@ class AlogJsonFormatter(AlogFormatterBase):
     log_record = self._extract_fields_from_record_as_dict(record)
 
     # Add app-version field to all log records
-    log_record['app-version'] = self._app_version
+    # log_record['app-version'] = self._app_version
 
     # Add indent to all log records
     log_record['num_indent'] = self._indent
@@ -281,6 +287,7 @@ def configure(default_level, filters="", formatter='pretty'):
     l.propagate = False
     l.addHandler(handler)
 
+
 def use_channel(channel):
   """
   Interface wrapper for python alog implementation to keep consistency with
@@ -341,4 +348,3 @@ if __name__ == '__main__':
   use_channel("FOO").debug2("Debug2 line %d", 10)
   use_channel("BAR").debug4("""Large, deep debugging entry with multiple
 lines of text!""")
-
