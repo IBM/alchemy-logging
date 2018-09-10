@@ -106,7 +106,11 @@ class AlogJsonFormatter(AlogFormatterBase):
     :return the jsonified string representation of the record
     :rtype str
     """
-    record.message = record.getMessage()
+    # maintain the message as a dict if passed in as one
+    if isinstance(record.msg, dict):
+      record.message = record.msg
+    else:
+      record.message = record.getMessage()
 
     record.asctime = self.formatTime(record, self.datefmt)
     if record.exc_info:
@@ -246,7 +250,6 @@ def configure(default_level, filters="", formatter='pretty'):
     as "CHAN:info,FOO:debug". If a dict, it should map from channel string to
     level string
   """
-
   # Set up the formatter if different type
   _setup_formatter(formatter)
 
@@ -282,7 +285,6 @@ def configure(default_level, filters="", formatter='pretty'):
     l.setLevel(level)
     l.propagate = False
     l.addHandler(handler)
-
 
 def use_channel(channel):
   """
@@ -326,9 +328,11 @@ def foo(val):
   ch = logging.getLogger("FOO")
   fn_scope = FnLog(ch.info)
   ch.debug3("This is a test")
+  ch.error({"test_json": True, "outer_message": "testing json logging"})
   if True:
     inner_scope = ScopedLog(ch.debug, "inner")
     ch.info("Log with %s val", val)
+    ch.info({"test_json": True, "inner_message": "Log with "+str(val)+" val"})
     del inner_scope
   ch.info("Log outside inner scope")
 
