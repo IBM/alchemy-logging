@@ -38,7 +38,7 @@ class TestJsonCompatibility(unittest.TestCase):
             logged_output = test_file.read().strip()
         try:
             logged_output = json.loads(logged_output)
-        except json.decoder.JSONDecodeError as e:
+        except json.decoder.JSONDecodeError:
             raise AssertionError("test_merge_msg_json unit test: FAILED. Logged output is not " \
                                  + "valid json. The output is:\n{0}".format(logged_output))
         self.assertIsNotNone(logged_output)
@@ -73,7 +73,7 @@ class TestJsonCompatibility(unittest.TestCase):
         self.assertIsNotNone(logged_output)
         try:
             logged_output = json.loads(logged_output)
-        except json.decoder.JSONDecodeError as e:
+        except json.decoder.JSONDecodeError:
             raise AssertionError("test_empty_msg_json unit test: FAILED. Logged output is not " \
                                  + "valid json. The output is:\n{0}".format(logged_output))
 
