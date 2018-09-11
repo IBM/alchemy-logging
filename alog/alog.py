@@ -170,23 +170,27 @@ class AlogPrettyFormatter(AlogFormatterBase):
         channel = record.name
         timestamp = self.formatTime(record, self.datefmt)
         header = self._make_header(timestamp, channel, level)
-        formatted = '\n'.join(['%s %s%s' % (header, self._INDENT*self._indent, line) for line in record.getMessage().split('\n')])
+        # pretty format the message
+        indent = self._INDENT*self._indent
+        formatted = ['%s %s%s' % (header, indent, line) for line in record.getMessage().split('\n')]
+        formatted = '\n'.join(formatted)
         return formatted
 
 ## Constants ###################################################################
 
 # Global maps from name <-> level
-g_alog_level_to_name = dict([(val, name.lower()) for (val, name) in logging._levelToName.items()] \
-    + [(60, "off"),
-       (9, "debug1"),
-       (8, "debug2"),
-       (7, "debug3"),
-       (6, "debug4"),
-       ])
-g_alog_name_to_level = dict([(n, l) for (l, n) in g_alog_level_to_name.items()])
+g_alog_level_to_name = {level: name.lower() for level, name in logging._levelToName.items()}
+g_alog_level_to_name.update({60: "off",
+                             9: "debug1",
+                             8: "debug2",
+                             7: "debug3",
+                             6: "debug4",
+                             })
+
+g_alog_name_to_level = {name: level for level, name in g_alog_level_to_name.items()}
 
 # Global map of valid formatters
-g_alog_formatters = {"json":   AlogJsonFormatter,
+g_alog_formatters = {"json": AlogJsonFormatter,
                      "pretty": AlogPrettyFormatter,
                      }
 
@@ -196,8 +200,12 @@ g_alog_formatter = None
 
 def _add_new_level(name, value):
     logging.addLevelName(value, name.upper())
-    setattr(logging.Logger, name, lambda self, msg, *args, **kwargs: self.log(value, msg, *args, **kwargs))
-    setattr(logging, name, lambda msg, *args, **kwargs: logging.log(value, msg, *args, **kwargs))
+
+    log_using_self_func = lambda self, msg, *args, **kwargs: self.log(value, msg, *args, **kwargs)
+    setattr(logging.Logger, name, log_using_self_func)
+
+    log_using_logging_func = lambda msg, *args, **kwargs: logging.log(value, msg, *args, **kwargs)
+    setattr(logging, name, log_using_logging_func)
 
 def _setup_formatter(formatter):
     # Get the formatter class
@@ -208,7 +216,7 @@ def _setup_formatter(formatter):
 
     # Set up the formatter if different type
     global g_alog_formatter
-    if type(g_alog_formatter) != fmt_class:
+    if not isinstance(g_alog_formatter, fmt_class):
         g_alog_formatter = fmt_class()
 
 def _parse_filters(filters):
@@ -311,7 +319,7 @@ class FnLog(ScopedLog):
     """
     Scoped log class that adds the function name to the BEGIN/END lines
     """
-    def __init__(self, log_fn, format_str="", *args):
+    def __init__(self, log_fn, *args, format_str=""):
         fn_name = traceback.format_stack()[-2].strip().split(',')[2].split(' ')[2].strip()
         format_str = "%s(" + format_str + ")"
         ScopedLog.__init__(self, log_fn, format_str, fn_name, *args)
@@ -324,11 +332,11 @@ def foo(val):
     fn_scope = FnLog(ch.info)
     ch.debug3("This is a test")
     ch.error({"test_json": True, "outer_message": "testing json logging"})
-    if True:
-        inner_scope = ScopedLog(ch.debug, "inner")
-        ch.info("Log with %s val", val)
-        ch.info({"test_json": True, "inner_message": "Log with "+str(val)+" val"})
-        del inner_scope
+    # test scoped logging
+    inner_scope = ScopedLog(ch.debug, "inner")
+    ch.info("Log with %s val", val)
+    ch.info({"test_json": True, "inner_message": "Log with "+str(val)+" val"})
+    del inner_scope
     ch.info("Log outside inner scope")
 
 if __name__ == '__main__':

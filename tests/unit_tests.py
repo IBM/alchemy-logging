@@ -10,9 +10,11 @@
 # *****************************************************************
 
 import os
+import sys
 import json
 import unittest
 
+sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'alog')))
 import alog
 
 
@@ -82,6 +84,5 @@ class TestJsonCompatibility(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    t = TestJsonCompatibility()
-    t.test_empty_msg_json()
-    t.test_merge_msg_json()
+    # has verbose output of tests; otherwise just says all passed or not
+    unittest.main(verbosity=2)
