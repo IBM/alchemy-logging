@@ -333,7 +333,7 @@ class ScopedTimer(object):
   def __init__(self, log_fn, format_str="", *args):
     self.log_fn = log_fn
     self.format_str = format_str
-    self.args = args if args else []
+    self.args = args
     self.start_time = time.time()
   def __del__(self):
     dt = str(timedelta(seconds=time.time() - self.start_time))
