@@ -319,7 +319,7 @@ class FnLog(ScopedLog):
     """
     Scoped log class that adds the function name to the BEGIN/END lines
     """
-    def __init__(self, log_fn, *args, format_str=""):
+    def __init__(self, log_fn, format_str="", *args):
         fn_name = traceback.format_stack()[-2].strip().split(',')[2].split(' ')[2].strip()
         format_str = "%s(" + format_str + ")"
         ScopedLog.__init__(self, log_fn, format_str, fn_name, *args)
