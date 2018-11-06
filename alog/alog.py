@@ -14,10 +14,11 @@ deposited with the U.S. Copyright Office.
 END_COPYRIGHT
 """
 
+import time
 import json
 import traceback
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 ## Formatters ##################################################################
 
@@ -324,6 +325,21 @@ class FnLog(ScopedLog):
         format_str = "%s(" + format_str + ")"
         ScopedLog.__init__(self, log_fn, format_str, fn_name, *args)
 
+class ScopedTimer(object):
+  """
+  Scoped log class that starts a timer at construction and logs the time delta
+  at destruction
+  """
+  def __init__(self, log_fn, format_str="", *args):
+    self.log_fn = log_fn
+    self.format_str = format_str
+    self.args = args
+    self.start_time = time.time()
+  def __del__(self):
+    dt = str(timedelta(seconds=time.time() - self.start_time))
+    fmt = self.format_str + "%s"
+    args = list(self.args) + [dt]
+    self.log_fn(fmt, *args)
 
 ## Testing #####################################################################
 

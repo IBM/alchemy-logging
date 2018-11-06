@@ -15,7 +15,7 @@ END_COPYRIGHT
 """
 
 # Core components
-from .alog import configure, use_channel, ScopedLog, FnLog
+from .alog import configure, use_channel, ScopedLog, FnLog, ScopedTimer
 
 # Exposed details
 from .alog import g_alog_level_to_name as _level_to_name
