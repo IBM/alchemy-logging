@@ -219,6 +219,17 @@ void addPrettyPrintMap(
   }
 }
 
+// Helper to transform the keys of a map into a vector for initialization
+std::vector<std::string> getMapKeys(const jsonparser::TObject& a_mdMap)
+{
+  std::vector<std::string> out;
+  for (const auto& entry : a_mdMap)
+  {
+    out.push_back(entry.first);
+  }
+  return out;
+}
+
 } // end anon namespace
 
 
@@ -786,14 +797,26 @@ CLogScopedIndent::~CLogScopedIndent()
 
 CLogScopedMetadata::CLogScopedMetadata(const std::string& a_key,
                                        const jsonparser::TJsonValue& a_val)
-  : m_key(a_key)
+  : m_keys({a_key})
 {
   CLogChannelRegistrySingleton::instance()->addMetadata(a_key, a_val);
 }
 
+CLogScopedMetadata::CLogScopedMetadata(const jsonparser::TObject& a_mdMap)
+  : m_keys(getMapKeys(a_mdMap))
+{
+  for (const auto& entry : a_mdMap)
+  {
+    CLogChannelRegistrySingleton::instance()->addMetadata(entry.first, entry.second);
+  }
+}
+
 CLogScopedMetadata::~CLogScopedMetadata()
 {
-  CLogChannelRegistrySingleton::instance()->removeMetadata(m_key);
+  for (const auto& key : m_keys)
+  {
+    CLogChannelRegistrySingleton::instance()->removeMetadata(key);
+  }
 }
 
 // Init Functions //////////////////////////////////////////////////////////////

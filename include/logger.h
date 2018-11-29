@@ -308,9 +308,10 @@ private:
 struct CLogScopedMetadata
 {
   CLogScopedMetadata(const std::string&, const jsonparser::TJsonValue&);
+  CLogScopedMetadata(const jsonparser::TObject&);
   ~CLogScopedMetadata();
 private:
-  std::string m_key;
+  const std::vector<std::string> m_keys;
 };  // end class CLogScopedMetadata
 
 /** \brief Initiate a log stream */
@@ -376,7 +377,8 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 // Some of the public macros can take an optional final map argument to add key/
 // value data as needed. In order to enable this, we need the old NARGS trick:
 // https://stackoverflow.com/questions/27765387/distributing-an-argument-in-a-variadic-macro
-#define NARGS(...) NARGS_(__VA_ARGS__, _MAP, _NO_MAP, 0)
+#define NARGS_MAP(...) NARGS_(__VA_ARGS__, _MAP, _NO_MAP, 0)
+#define NARGS_NUM(...) NARGS_(__VA_ARGS__, _2, _1, 0)
 #define NARGS_(_2, _1, N, ...) N
 #define CONC(A, B) CONC_(A, B)
 #define CONC_(A, B) A##B
@@ -409,10 +411,10 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
   ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
 
 #define ALOG_CHANNEL_IMPL(channel, level, ...)\
-  CONC(_ALOG_CHANNEL_IMPL_WITH, NARGS(__VA_ARGS__)) (channel, level, __VA_ARGS__)
+  CONC(_ALOG_CHANNEL_IMPL_WITH, NARGS_MAP(__VA_ARGS__)) (channel, level, __VA_ARGS__)
 
 #define ALOGW_CHANNEL_IMPL(channel, level, ...)\
-  CONC(_ALOGW_CHANNEL_IMPL_WITH, NARGS(__VA_ARGS__)) (channel, level, __VA_ARGS__)
+  CONC(_ALOGW_CHANNEL_IMPL_WITH, NARGS_MAP(__VA_ARGS__)) (channel, level, __VA_ARGS__)
 
 #define ALOG_MAP_IMPL(channel, level, map)\
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, "", map)
@@ -427,7 +429,7 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
 #define _SCOPE_WRAPPER(scopeType, channel, level, ...) \
-  CONC(_SCOPE_WRAPPER_WITH, NARGS(__VA_ARGS__)) (scopeType, channel, level, __VA_ARGS__)
+  CONC(_SCOPE_WRAPPER_WITH, NARGS_MAP(__VA_ARGS__)) (scopeType, channel, level, __VA_ARGS__)
 
 #define ALOG_SCOPED_BLOCK_IMPL(channel, level, ...)\
   _SCOPE_WRAPPER(CLogScope, channel, level, __VA_ARGS__)
@@ -444,16 +446,22 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
   ALOG_SCOPED_BLOCK_IMPL(channel, level, "" << _ALOG_FUNCTION << "( " << msg << " )");\
   ALOG_SCOPED_INDENT_IF_IMPL(channel, level)
 #define ALOG_FUNCTION_IMPL(channel, level, ...)\
-  CONC(_ALOG_FUNCTION_IMPL_WITH, NARGS(__VA_ARGS__)) (channel, level, __VA_ARGS__)
+  CONC(_ALOG_FUNCTION_IMPL_WITH, NARGS_MAP(__VA_ARGS__)) (channel, level, __VA_ARGS__)
 
 #define ALOG_IS_ENABLED_IMPL(channel, level)\
   logging::detail::CLogChannelRegistrySingleton::instance()->filter(\
     channel, logging::detail::ELogLevels:: level)
 
 // Non-logging scope objects
-#define ALOG_SCOPED_METADATA_IMPL(key, value)\
+#define _ALOG_SCOPED_METADATA_IMPL_2(key, value)\
   logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (key,\
     logging::detail::toMetadata(value));
+#define _ALOG_SCOPED_METADATA_IMPL_1(map)\
+  logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (map);
+#define ALOG_SCOPED_METADATA_IMPL(...)\
+  CONC(_ALOG_SCOPED_METADATA_IMPL, NARGS_NUM(__VA_ARGS__)) (__VA_ARGS__)
+
+
 #define ALOG_SCOPED_INDENT_IF_IMPL(channel, level) \
   logging::detail::CLogScopedIndent ALOG_UNIQUE_VAR_NAME_IMPL(__alog_scoped_indent__)(\
     channel, logging::detail::ELogLevels::  level)
@@ -688,10 +696,10 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 /** Set up a metadata scope that will add a key to the metadata that will be
  * removed when the current scope closes */
 #ifndef DISABLE_LOGGING
-#define ALOG_SCOPED_METADATA(key, value)\
-  ALOG_SCOPED_METADATA_IMPL(key, value)
+#define ALOG_SCOPED_METADATA(...)\
+  ALOG_SCOPED_METADATA_IMPL(__VA_ARGS__)
 #else
-#define ALOG_SCOPED_METADATA(key, value)
+#define ALOG_SCOPED_METADATA(...)
 #endif
 
 /** Add a level of indentation to the current scope */
