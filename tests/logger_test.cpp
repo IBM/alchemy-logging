@@ -1029,6 +1029,41 @@ TEST_F(CAlogTest, ScopedMetadata)
 }
 
 ////////
+// Test ALOG_SCOPED_METADATA with key/val map
+////////
+TEST_F(CAlogTest, ScopedMetadataMap)
+{
+  std::stringstream ss;
+  CLogChannelRegistrySingleton::instance()->setupFilters("TEST:debug,FOO:info", "off");
+  InitLogStream(ss);
+  CLogChannelRegistrySingleton::instance()->enableMetadata();
+
+  // Outer scope
+  {
+    ALOG_SCOPED_METADATA(jsonparser::TObject({
+      std::make_pair("foo", ALOG_MAP_VALUE("string_val")),
+      std::make_pair("bar", ALOG_MAP_VALUE(456)),
+    }));
+    ALOG(TEST, debug, "Line with metadata map");
+  }
+  ALOG(TEST, info, "Line with no metadata");
+
+  // Verify results at given levels
+  std::cout << ss.str() << std::endl;
+  EXPECT_TRUE(verifyStdLines(ss.str(), std::vector<CParsedLogEntry>{
+
+    // Inside scope
+    CParsedLogEntry("TEST ", ELogLevels::debug, "Line with metadata map"),
+    CParsedLogEntry("TEST ", ELogLevels::debug, "metadata: "),
+    CParsedLogEntry("TEST ", ELogLevels::debug, "foo: \"string_val\"", {}, 1),
+    CParsedLogEntry("TEST ", ELogLevels::debug, "bar: 456", {}, 1),
+
+    // Outside scope
+    CParsedLogEntry("TEST ", ELogLevels::info, "Line with no metadata")
+  }, true, true));
+}
+
+////////
 // Test that multiple scope objects can be created in the same scope
 // NOTE: If this compiles, it passes since the point is to ensure unique names
 ////////
