@@ -23,7 +23,8 @@ from datetime import datetime, timedelta
 ## Formatters ##################################################################
 
 class AlogFormatterBase(logging.Formatter):
-    """Base class with common functionality for alog formatters."""
+    """Base class with common functionality for alog formatters.
+    """
 
     def __init__(self):
         self._indent = 0
@@ -109,7 +110,7 @@ class AlogJsonFormatter(AlogFormatterBase):
         Returns:
             The jsonified string representation of the record.
         """
-        # maintain the message as a dict if passed in as one
+        # Maintain the message as a dict if passed in as one
         if isinstance(record.msg, dict):
             record.message = record.msg
         else:
@@ -177,7 +178,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
         channel = record.name
         timestamp = self.formatTime(record, self.datefmt)
         header = self._make_header(timestamp, channel, level)
-        # pretty format the message
+        # Pretty format the message
         indent = self._INDENT*self._indent
         formatted = ['%s %s%s' % (header, indent, line) for line in record.getMessage().split('\n')]
         formatted = '\n'.join(formatted)
@@ -311,7 +312,7 @@ def use_channel(channel):
 
 ## Convenience Helpers #########################################################
 
-# the whole point of this class is act on scope changes
+# The whole point of this class is act on scope changes
 # pylint: disable=too-few-public-methods
 class ScopedLog(object):
     """Scoped logging class that adds BEGIN/END lines and indents lines logged in
@@ -329,7 +330,7 @@ class ScopedLog(object):
         g_alog_formatter.deindent()
         self.log_fn("END: " + str(self.format_str), *self.args)
 
-# the whole point of this class is act on scope changes
+# The whole point of this class is act on scope changes
 # pylint: disable=too-few-public-methods
 class FnLog(ScopedLog):
     """Scoped log class that adds the function name to the BEGIN/END lines.
@@ -339,7 +340,7 @@ class FnLog(ScopedLog):
         format_str = "%s(" + format_str + ")"
         ScopedLog.__init__(self, log_fn, format_str, fn_name, *args)
 
-# the whole point of this class is act on scope changes
+# The whole point of this class is act on scope changes
 # pylint: disable=too-few-public-methods
 class ScopedTimer(object):
     """Scoped log class that starts a timer at construction and logs the time delta
@@ -364,7 +365,7 @@ def demo_function(val):
     fn_scope = FnLog(chan.info)
     chan.debug3("This is a test")
     chan.error({"test_json": True, "outer_message": "testing json logging"})
-    # test scoped logging
+    # Test scoped logging
     inner_scope = ScopedLog(chan.debug, "inner")
     chan.info("Log with %s val", val)
     chan.info({"test_json": True, "inner_message": "Log with "+str(val)+" val"})
