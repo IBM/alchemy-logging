@@ -23,38 +23,38 @@ from datetime import datetime, timedelta
 ## Formatters ##################################################################
 
 class AlogFormatterBase(logging.Formatter):
-    """Base class with common functionality for alog formatters"""
+    """Base class with common functionality for alog formatters."""
 
     def __init__(self):
         self._indent = 0
         logging.Formatter.__init__(self)
 
     def formatTime(self, record, datefmt=None):
-        """
-            A wrapper for the parent formatTime that returns UTC timezone time stamp in ISO format
-        :param LogRecord record: Log record to pull the created date from
-        :param str datefmt: Ignored
-        :return: string representation of created datetime
-        :rtype: str
+        """A wrapper for the parent formatTime that returns UTC timezone
+        time stamp inISO format.
+
+        Args:
+            record (LogRecord):  Log record to pull the created date from.
+            datefmt (str):       Ignored.
+
+        Returns:
+            A string representation of created datetime.
         """
         return datetime.utcfromtimestamp(record.created).isoformat()
 
     def indent(self):
-        """
-            Add a level of indentation
+        """Add a level of indentation.
         """
         self._indent += 1
 
     def deindent(self):
-        """
-            Remove a level of indentation
+        """Remove a level of indentation.
         """
         if self._indent > 0:
             self._indent -= 1
 
 class AlogJsonFormatter(AlogFormatterBase):
-    """
-    Log formatter which prints messages a single-line json
+    """Log formatter which prints messages a single-line json.
     """
 
     _FIELDS_TO_PRINT = ['name', 'levelname', 'asctime', 'message', 'exc_text',
@@ -77,13 +77,15 @@ class AlogJsonFormatter(AlogFormatterBase):
             return log_record_keyname
 
     def _extract_fields_from_record_as_dict(self, record):
-        """
-            Extracts the fields we want out of log record and puts them into an dict
-                for easy jsonification.
-        :param logging.LogRecord record: the log record object to extract from
-        :return The relevant fields pulled out from the log record object and initialized
-                into a dictionary
-        :rtype dict
+        """Extracts the fields we want out of log record and puts them into an dict
+        for easy jsonification.
+
+        Args:
+            record (logging.LogRecord): The log record object to extract from.
+
+        Returns:
+            The relevant fields pulled out from the log record object and
+            initialized into a dictionary.
         """
         out = {}
         for field_name in self._FIELDS_TO_PRINT:
@@ -93,16 +95,19 @@ class AlogJsonFormatter(AlogFormatterBase):
                     out.update(record_field)
                 else:
                     out[self._map_to_common_key_name(field_name)] = record_field
+
         out["level_str"] = out["level_str"].lower()
         return out
 
     def format(self, record):
         """Formats the log record as a JSON formatted string
-           (also removes new line characters so everything prints on a single line)
+       (also removes new line characters so everything prints on a single line)
 
-        :param logging.LogRecord record: the record to extract from
-        :return the jsonified string representation of the record
-        :rtype str
+        Args:
+            record (logging.LogRecord):  The record to extract from.
+
+        Returns:
+            The jsonified string representation of the record.
         """
         # maintain the message as a dict if passed in as one
         if isinstance(record.msg, dict):
@@ -113,8 +118,10 @@ class AlogJsonFormatter(AlogFormatterBase):
         record.asctime = self.formatTime(record, self.datefmt)
         if record.exc_info:
             record.exc_text = self.formatException(record.exc_info)
+
         if record.stack_info:
             record.stack_info = self.formatStack(record.stack_info)
+
         log_record = self._extract_fields_from_record_as_dict(record)
 
         # Add indent to all log records
@@ -123,49 +130,48 @@ class AlogJsonFormatter(AlogFormatterBase):
         return json.dumps(log_record, sort_keys=True)
 
 class AlogPrettyFormatter(AlogFormatterBase):
-    """
-    Log formatter that pretty-prints lines for easy visibility
+    """Log formatter that pretty-prints lines for easy visibility.
     """
     _INDENT = "  "
     _CHANNEL_PRINT_LEN = 5
-    _LEVEL_MAP = {"critical": "FATL",
-                  "fatal": "FATL",
-                  "error": "ERRR",
-                  "warning": "WARN",
-                  "info": "INFO",
-                  "trace": "TRCE",
-                  "debug": "DBUG",
-                  "debug1": "DBG1",
-                  "debug2": "DBG2",
-                  "debug3": "DBG3",
-                  "debug4": "DBG4",
-                  }
+    _LEVEL_MAP = {
+        "critical": "FATL",
+        "fatal": "FATL",
+        "error": "ERRR",
+        "warning": "WARN",
+        "info": "INFO",
+        "trace": "TRCE",
+        "debug": "DBUG",
+        "debug1": "DBG1",
+        "debug2": "DBG2",
+        "debug3": "DBG3",
+        "debug4": "DBG4",
+    }
 
     def __init__(self):
         AlogFormatterBase.__init__(self)
 
     def _make_header(self, timestamp, channel, level):
-        """
-            Create the header for a log line with proper padding
+        """Create the header for a log line with proper padding.
         """
 
         # Get the padded or truncated channel
-        ch = channel
+        chan = channel
         if len(channel) > self._CHANNEL_PRINT_LEN:
-            ch = channel[:self._CHANNEL_PRINT_LEN]
+            chan = channel[:self._CHANNEL_PRINT_LEN]
+
         elif len(channel) < self._CHANNEL_PRINT_LEN:
-            ch = channel + ' ' * (self._CHANNEL_PRINT_LEN - len(channel))
+            chan = channel + ' ' * (self._CHANNEL_PRINT_LEN - len(channel))
 
         # Get the mapped level
         lvl = self._LEVEL_MAP.get(level.lower(), "UNKN")
 
-        return "%s [%s:%s]" % (timestamp, ch, lvl)
+        return "%s [%s:%s]" % (timestamp, chan, lvl)
 
     def format(self, record):
-        """
-            Formats the log record as pretty-printed lines of the format:
+        """Formats the log record as pretty-printed lines of the format:
 
-            timestamp [CHANL:LEVL] message
+        timestamp [CHANL:LEVL] message
         """
         level = record.levelname
         channel = record.name
@@ -179,21 +185,27 @@ class AlogPrettyFormatter(AlogFormatterBase):
 
 ## Constants ###################################################################
 
-# Global maps from name <-> level
+# Global maps from name <-> level, pull these from logging packages for easy consistency
+# pylint: disable=protected-access
 g_alog_level_to_name = {level: name.lower() for level, name in logging._levelToName.items()}
-g_alog_level_to_name.update({60: "off",
-                             9: "debug1",
-                             8: "debug2",
-                             7: "debug3",
-                             6: "debug4",
-                             })
+
+# Extra custom log levels
+g_alog_level_to_name.update({
+    60: "off",
+    15: "trace",
+    9: "debug1",
+    8: "debug2",
+    7: "debug3",
+    6: "debug4",
+})
 
 g_alog_name_to_level = {name: level for level, name in g_alog_level_to_name.items()}
 
 # Global map of valid formatters
-g_alog_formatters = {"json": AlogJsonFormatter,
-                     "pretty": AlogPrettyFormatter,
-                     }
+g_alog_formatters = {
+    "json": AlogJsonFormatter,
+    "pretty": AlogPrettyFormatter,
+}
 
 ## Implementation Details ######################################################
 
@@ -221,7 +233,7 @@ def _setup_formatter(formatter):
         g_alog_formatter = fmt_class()
 
 def _parse_filters(filters):
-    ch_map = {}
+    chan_map = {}
     if len(filters):
         for entry in filters.split(','):
             if len(entry):
@@ -229,30 +241,32 @@ def _parse_filters(filters):
                 if len(parts) != 2:
                     logging.warning("Invalid filter entry [%s]", entry)
                 else:
-                    ch, level_name = parts
+                    chan, level_name = parts
                     level = g_alog_name_to_level.get(level_name, None)
                     if level is None:
-                        logging.warning("Invalid level [%s] for channel [%s]", level_name, ch)
+                        logging.warning("Invalid level [%s] for channel [%s]", level_name, chan)
                     else:
-                        ch_map[ch] = level_name
+                        chan_map[chan] = level_name
             else:
                 logging.warning("Invalid filter entry [%s]", entry)
-    return ch_map
+    return chan_map
 
 ## Core ########################################################################
 
 def configure(default_level, filters="", formatter='pretty'):
-    """
-    Top-level configuration function for the alog module. This function configures
+    """Top-level configuration function for the alog module. This function configures
     the logging package to use the given default level and overwrites the levels
     for all filters as specified. It can also configure the formatter type.
 
-    :param default_level (str) - This is the level that will be enabled for a
-        given channel when a specific level has not been set in the filters.
-    :param filters (str/dict) - This is a mapping from channel name to level that
-        allows levels to be set on a per-channel basis. If a string, it is formatted
-        as "CHAN:info,FOO:debug". If a dict, it should map from channel string to
-        level string
+    Args:
+        default_level (str):    This is the level that will be enabled for a
+                                given channel when a specific level has not been
+                                set in the filters.
+        filters (str/dict):     This is a mapping from channel name to level that
+                                allows levels to be set on a per-channel basis.
+                                If a string, it is formatted as "CHAN:info,FOO:debug".
+                                If a dict, it should map from channel string to
+                                level string.
     """
     # Set up the formatter if different type
     _setup_formatter(formatter)
@@ -262,7 +276,6 @@ def configure(default_level, filters="", formatter='pretty'):
         handler = logging.StreamHandler()
         handler.setFormatter(g_alog_formatter)
         logging.root.addHandler(handler)
-    root_handler = logging.root.handlers[0]
 
     # Add custom low levels
     for level, name in g_alog_level_to_name.items():
@@ -280,29 +293,29 @@ def configure(default_level, filters="", formatter='pretty'):
 
     # Add level filters by name
     # NOTE: All levels assumed valid after call to _parse_filters
-    for ch, level_name in _parse_filters(filters).items():
+    for chan, level_name in _parse_filters(filters).items():
         level = g_alog_name_to_level[level_name]
         handler = logging.StreamHandler()
         handler.setFormatter(g_alog_formatter)
         handler.setLevel(level)
-        l = logging.getLogger(ch)
-        l.setLevel(level)
-        l.propagate = False
-        l.addHandler(handler)
+        lgr = logging.getLogger(chan)
+        lgr.setLevel(level)
+        lgr.propagate = False
+        lgr.addHandler(handler)
 
 def use_channel(channel):
-    """
-    Interface wrapper for python alog implementation to keep consistency with
-    other languages
+    """Interface wrapper for python alog implementation to keep consistency with
+    other languages.
     """
     return logging.getLogger(channel)
 
 ## Convenience Helpers #########################################################
 
+# the whole point of this class is act on scope changes
+# pylint: disable=too-few-public-methods
 class ScopedLog(object):
-    """
-    Scoped logging class that adds BEGIN/END lines and indents lines logged in
-    the scope
+    """Scoped logging class that adds BEGIN/END lines and indents lines logged in
+    the scope.
     """
     def __init__(self, log_fn, format_str="", *args):
         self.log_fn = log_fn
@@ -316,44 +329,47 @@ class ScopedLog(object):
         g_alog_formatter.deindent()
         self.log_fn("END: " + str(self.format_str), *self.args)
 
+# the whole point of this class is act on scope changes
+# pylint: disable=too-few-public-methods
 class FnLog(ScopedLog):
-    """
-    Scoped log class that adds the function name to the BEGIN/END lines
+    """Scoped log class that adds the function name to the BEGIN/END lines.
     """
     def __init__(self, log_fn, format_str="", *args):
         fn_name = traceback.format_stack()[-2].strip().split(',')[2].split(' ')[2].strip()
         format_str = "%s(" + format_str + ")"
         ScopedLog.__init__(self, log_fn, format_str, fn_name, *args)
 
+# the whole point of this class is act on scope changes
+# pylint: disable=too-few-public-methods
 class ScopedTimer(object):
-  """
-  Scoped log class that starts a timer at construction and logs the time delta
-  at destruction
-  """
-  def __init__(self, log_fn, format_str="", *args):
-    self.log_fn = log_fn
-    self.format_str = format_str
-    self.args = args
-    self.start_time = time.time()
-  def __del__(self):
-    dt = str(timedelta(seconds=time.time() - self.start_time))
-    fmt = self.format_str + "%s"
-    args = list(self.args) + [dt]
-    self.log_fn(fmt, *args)
+    """Scoped log class that starts a timer at construction and logs the time delta
+    at destruction.
+    """
+    def __init__(self, log_fn, format_str="", *args):
+        self.log_fn = log_fn
+        self.format_str = format_str
+        self.args = args
+        self.start_time = time.time()
+
+    def __del__(self):
+        dt = str(timedelta(seconds=time.time() - self.start_time))
+        fmt = self.format_str + "%s"
+        args = list(self.args) + [dt]
+        self.log_fn(fmt, *args)
 
 ## Testing #####################################################################
 
-def foo(val):
-    ch = logging.getLogger("FOO")
-    fn_scope = FnLog(ch.info)
-    ch.debug3("This is a test")
-    ch.error({"test_json": True, "outer_message": "testing json logging"})
+def demo_function(val):
+    chan = logging.getLogger("FOO")
+    fn_scope = FnLog(chan.info)
+    chan.debug3("This is a test")
+    chan.error({"test_json": True, "outer_message": "testing json logging"})
     # test scoped logging
-    inner_scope = ScopedLog(ch.debug, "inner")
-    ch.info("Log with %s val", val)
-    ch.info({"test_json": True, "inner_message": "Log with "+str(val)+" val"})
+    inner_scope = ScopedLog(chan.debug, "inner")
+    chan.info("Log with %s val", val)
+    chan.info({"test_json": True, "inner_message": "Log with "+str(val)+" val"})
     del inner_scope
-    ch.info("Log outside inner scope")
+    chan.info("Log outside inner scope")
 
 if __name__ == '__main__':
     import sys
@@ -363,7 +379,7 @@ if __name__ == '__main__':
     configure(default_level=default_level, filters=filters, formatter=formatter)
 
     logging.info("TEST info")
-    foo("bar")
+    demo_function("bar")
     use_channel("FOO").debug2("Debug2 line %d", 10)
     use_channel("BAR").debug4("""Large, deep debugging entry with multiple
 lines of text!""")
