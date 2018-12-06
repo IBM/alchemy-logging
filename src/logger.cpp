@@ -719,7 +719,7 @@ CLogScopedTimer::CLogScopedTimer(const std::string& a_channelName,
   }
 }
 
-float CLogScopedTimer::getCurrentDurationNS() const
+unsigned long CLogScopedTimer::getCurrentDurationNS() const
 {
   const auto t1 = std::chrono::high_resolution_clock::now();
   return std::chrono::duration_cast<std::chrono::nanoseconds>(t1-m_t0).count();

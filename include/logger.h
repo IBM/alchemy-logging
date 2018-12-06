@@ -286,7 +286,7 @@ struct CLogScopedTimer
 
   /** \brief When created with ALOG_NEW_SCOPED_TIMER, this can be called to
    * get the current duration in nanoseconds */
-  float getCurrentDurationNS() const;
+  unsigned long getCurrentDurationNS() const;
 
 private:
   const std::string     m_channelName;

@@ -1177,13 +1177,13 @@ TEST_F(CAlogTest, NewScopedTimer)
 
     // Sleep for two milliseconds and make sure the delta registers >= 2ns
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
-    const float dt1 = timer.getCurrentDurationNS();
+    const unsigned long dt1 = timer.getCurrentDurationNS();
     ALOG(TEST, debug, "First time delta: " << dt1 << "ns");
     EXPECT_GE(dt1, 2 * 1000000);
 
     // Sleep for two more milliseconds and make sure the delta registers >= 4ns
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
-    const float dt2 = timer.getCurrentDurationNS();
+    const unsigned long dt2 = timer.getCurrentDurationNS();
     ALOG(TEST, debug, "Second time delta: " << dt2 << "ns");
     EXPECT_GE(dt2, 4 * 1000000);
   }
