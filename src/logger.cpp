@@ -719,6 +719,12 @@ CLogScopedTimer::CLogScopedTimer(const std::string& a_channelName,
   }
 }
 
+float CLogScopedTimer::getCurrentDurationNS() const
+{
+  const auto t1 = std::chrono::high_resolution_clock::now();
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(t1-m_t0).count();
+}
+
 CLogScopedTimer::~CLogScopedTimer()
 {
   if (logging::detail::CLogChannelRegistrySingleton::instance()->filter(m_channelName, m_level))

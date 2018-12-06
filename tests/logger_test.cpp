@@ -21,6 +21,8 @@
 #include <regex>
 #include <stdlib.h>
 #include <functional>
+#include <chrono>
+#include <thread>
 
 #include <boost/regex.hpp>
 
@@ -1159,6 +1161,32 @@ TEST_F(CAlogTest, WideChar)
   std::string result = ss.str();
   std::cout << result << std::endl;
   EXPECT_FALSE(result.empty());
+}
+
+////////
+// Test ALOG_NEW_SCOPED_TIMER
+////////
+TEST_F(CAlogTest, NewScopedTimer)
+{
+  ALOG_SETUP("", true, "debug", "");
+
+  // Scope with a timer that can be queried
+  {
+    const auto timer = ALOG_NEW_SCOPED_TIMER(TEST, debug, "Scope done in: ");
+    ALOG(TEST, debug, "Starting scope");
+
+    // Sleep for two milliseconds and make sure the delta registers >= 2ns
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    const float dt1 = timer.getCurrentDurationNS();
+    ALOG(TEST, debug, "First time delta: " << dt1 << "ns");
+    EXPECT_GE(dt1, 2 * 1000000);
+
+    // Sleep for two more milliseconds and make sure the delta registers >= 4ns
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    const float dt2 = timer.getCurrentDurationNS();
+    ALOG(TEST, debug, "Second time delta: " << dt2 << "ns");
+    EXPECT_GE(dt2, 4 * 1000000);
+  }
 }
 
 //// JSON Tests ////////////////////////////////////////////////////////////////

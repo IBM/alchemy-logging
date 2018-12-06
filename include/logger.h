@@ -278,12 +278,16 @@ private:
 /** \brief Struct to time execution of a block */
 struct CLogScopedTimer
 {
-  CLogScopedTimer(const CLogScopedTimer&) = delete;
   CLogScopedTimer(const std::string& a_channelName,
                   ELogLevels a_level,
                   const std::string& a_msg,
                   const TScopeLogMapPtr& a_mapDataPtr = nullptr);
   virtual ~CLogScopedTimer();
+
+  /** \brief When created with ALOG_NEW_SCOPED_TIMER, this can be called to
+   * get the current duration in nanoseconds */
+  float getCurrentDurationNS() const;
+
 private:
   const std::string     m_channelName;
   const ELogLevels      m_level;
@@ -420,22 +424,29 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, "", map)
 
 // All of the scope calls take a mapDataPtr as an optional last argument
-#define _SCOPE_WRAPPER_WITH_MAP(scopeType, channel, level, msg, map) \
-  logging::detail:: scopeType ALOG_UNIQUE_VAR_NAME_IMPL(scopeType) (\
+#define _SCOPE_WRAPPER_WITH_MAP(scopeType, varName, channel, level, msg, map) \
+  logging::detail:: scopeType varName (\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str(), map)
-#define _SCOPE_WRAPPER_WITH_NO_MAP(scopeType, channel, level, msg) \
-  logging::detail:: scopeType ALOG_UNIQUE_VAR_NAME_IMPL(scopeType) (\
+#define _SCOPE_WRAPPER_WITH_NO_MAP(scopeType, varName, channel, level, msg) \
+  logging::detail:: scopeType varName (\
     channel, logging::detail::ELogLevels:: level,\
     static_cast<std::ostringstream&>(std::ostringstream().flush() << msg).str())
-#define _SCOPE_WRAPPER(scopeType, channel, level, ...) \
-  CONC(_SCOPE_WRAPPER_WITH, NARGS_MAP(__VA_ARGS__)) (scopeType, channel, level, __VA_ARGS__)
+#define _SCOPE_WRAPPER(scopeType, varName, channel, level, ...) \
+  CONC(_SCOPE_WRAPPER_WITH, NARGS_MAP(__VA_ARGS__)) (scopeType, varName, channel, level, __VA_ARGS__)
 
 #define ALOG_SCOPED_BLOCK_IMPL(channel, level, ...)\
-  _SCOPE_WRAPPER(CLogScope, channel, level, __VA_ARGS__)
+  _SCOPE_WRAPPER(CLogScope, ALOG_UNIQUE_VAR_NAME_IMPL(CLogScope),\
+    channel, level, __VA_ARGS__)
 
 #define ALOG_SCOPED_TIMER_IMPL(channel, level, ...)\
-  _SCOPE_WRAPPER(CLogScopedTimer, channel, level, __VA_ARGS__)
+  _SCOPE_WRAPPER(CLogScopedTimer, ALOG_UNIQUE_VAR_NAME_IMPL(CLogScopedTimer),\
+    channel, level, __VA_ARGS__)
+
+#define ALOG_NEW_SCOPED_TIMER_IMPL(channel, level, ...)\
+  _SCOPE_WRAPPER(CLogScopedTimer, ,\
+    channel, level, __VA_ARGS__)
+
 
 #define _ALOG_FUNCTION __FUNCTION__
 
@@ -692,6 +703,23 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #else
 #define ALOG_SCOPED_TIMERthis(level, ...)
 #endif
+
+/** Create a new instance of a scoped timer that can be queried for the current
+ * duration and will report total time upon destruction
+ *
+ * NOTE: Since this creates a usable object, it can not be compiled out
+ */
+#define ALOG_NEW_SCOPED_TIMER(channel, level, ...)\
+  ALOG_NEW_SCOPED_TIMER_IMPL(#channel, level, __VA_ARGS__)
+
+/** Create a new instance of a scoped timer that can be queried for the current
+ * duration and will report total time upon destruction using the current class'
+ * native channel
+ *
+ * NOTE: Since this creates a usable object, it can not be compiled out
+ */
+#define ALOG_NEW_SCOPED_TIMERthis(level, ...)\
+  ALOG_NEW_SCOPED_TIMER_IMPL(getLogChannel(), level, __VA_ARGS__)
 
 /** Set up a metadata scope that will add a key to the metadata that will be
  * removed when the current scope closes */
