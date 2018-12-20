@@ -156,6 +156,25 @@ Each of the scopes that creates log lines can take an optional `mapPtr` final ar
     }
     ```
 
+* `ALOG_NEW_SCOPED_TIMER(channel, level, msg, [mapPtr])`: Create a new timer instance that will time the work done in the current scope and report the duration upon scope completion. This must be assigned to a named variable and can then be used to query for the current duration directly.
+    ```c++
+    void voo()
+    {
+        if (bar())
+        {
+            const auto timer = ALOG_NEW_SCOPED_TIMER(MAIN, debug, "Done handling bar in: ");
+
+            // Expensive operation
+            baz();
+
+            ALOG(MAIN, debug, "Duration after baz(): " << timer.getCurrentDurationNS() << "ns");
+
+            // Expensive operation
+            buz();
+        }
+    }
+    ```
+
 * `ALOG_FUNCTION(channel, msg, [mapPtr])`: Add a Start/End indented block with the current function name on trace and add an automatic level of indentation.
     ```c++
     void foo()
