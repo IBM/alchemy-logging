@@ -134,7 +134,6 @@ class AlogPrettyFormatter(AlogFormatterBase):
     """Log formatter that pretty-prints lines for easy visibility.
     """
     _INDENT = "  "
-    _CHANNEL_PRINT_LEN = 5
     _LEVEL_MAP = {
         "critical": "FATL",
         "fatal": "FATL",
@@ -149,8 +148,9 @@ class AlogPrettyFormatter(AlogFormatterBase):
         "debug4": "DBG4",
     }
 
-    def __init__(self):
+    def __init__(self, channel_len=5):
         AlogFormatterBase.__init__(self)
+        self.channel_len = channel_len
 
     def _make_header(self, timestamp, channel, level):
         """Create the header for a log line with proper padding.
@@ -158,11 +158,11 @@ class AlogPrettyFormatter(AlogFormatterBase):
 
         # Get the padded or truncated channel
         chan = channel
-        if len(channel) > self._CHANNEL_PRINT_LEN:
-            chan = channel[:self._CHANNEL_PRINT_LEN]
+        if len(channel) > self.channel_len:
+            chan = channel[:self.channel_len]
 
-        elif len(channel) < self._CHANNEL_PRINT_LEN:
-            chan = channel + ' ' * (self._CHANNEL_PRINT_LEN - len(channel))
+        elif len(channel) < self.channel_len:
+            chan = channel + ' ' * (self.channel_len - len(channel))
 
         # Get the mapped level
         lvl = self._LEVEL_MAP.get(level.lower(), "UNKN")
@@ -202,7 +202,7 @@ g_alog_level_to_name.update({
 
 g_alog_name_to_level = {name: level for level, name in g_alog_level_to_name.items()}
 
-# Global map of valid formatters
+# Global map of default formatters
 g_alog_formatters = {
     "json": AlogJsonFormatter,
     "pretty": AlogPrettyFormatter,
@@ -222,16 +222,27 @@ def _add_new_level(name, value):
     setattr(logging, name, log_using_logging_func)
 
 def _setup_formatter(formatter):
-    # Get the formatter class
-    fmt_class = g_alog_formatters.get(formatter, None)
-    if fmt_class is None:
-        logging.warning("Invalid formatter: %s. Falling back to pretty", formatter)
-        fmt_class = AlogPrettyFormatter
 
-    # Set up the formatter if different type
+    # If the formatter is a string, pull it from the defaults
     global g_alog_formatter
-    if not isinstance(g_alog_formatter, fmt_class):
-        g_alog_formatter = fmt_class()
+    if isinstance(formatter, str):
+
+        # Get the formatter class
+        fmt_class = g_alog_formatters.get(formatter, None)
+        if fmt_class is None:
+            raise ValueError("Invalid formatter: %s" % formatter)
+
+        # Set up the formatter if different type
+        if not isinstance(g_alog_formatter, fmt_class):
+            g_alog_formatter = fmt_class()
+
+    # If the formatter is a valid AlogFormatterBase, use it directly
+    elif isinstance(formatter, AlogFormatterBase):
+        g_alog_formatter = formatter
+
+    # Otherwise, log a warning and use the pretty printer
+    else:
+        raise ValueError("Invalid formatter type: %s" % type(formatter))
 
 def _parse_filters(filters):
     chan_map = {}
