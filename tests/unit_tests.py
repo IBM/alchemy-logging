@@ -14,7 +14,10 @@ import sys
 import json
 import unittest
 
-sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'alog')))
+# Put the local module at the beginning of the path in case there's an installed
+# copy on the system
+local_module = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'alog'))
+sys.path = [local_module] + sys.path
 import alog
 
 
@@ -82,6 +85,11 @@ class TestJsonCompatibility(unittest.TestCase):
         if os.path.isfile('json_alog_test.txt'):
             os.remove('json_alog_test.txt')
 
+class TestCustomFormatter(unittest.TestCase):
+
+    def test_pretty_with_args(self):
+        '''Tests that a manually constructed AlogPrettyFormatter can be used'''
+        alog.configure('info', '', formatter=alog.AlogPrettyFormatter(10))
 
 if __name__ == "__main__":
     # has verbose output of tests; otherwise just says all passed or not
