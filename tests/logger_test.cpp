@@ -603,26 +603,6 @@ ALCHEMY_TEST_SUITE(CAlogTest);
 using namespace logging::detail;
 
 ////////
-// Test writing to a log file
-////////
-TEST_F(CAlogTest, SimpleLogFile)
-{
-  std::string filename("unit_test");
-  ALOG_SETUP(filename, false, "debug4", "");
-
-  ALOG(TEST, info, "This is a test");
-  ALOG(TEST_LONG, info, "This is a test with a long channel");
-
-  // Verify that the file exists
-  std::string logname = "./" + (filename + ".log");
-  std::cout << logname << std::endl;
-  ASSERT_TRUE(std::ifstream(logname).good());
-
-  // Verify the file has two lines
-  ASSERT_EQ(countFileLines(logname), 2);
-}
-
-////////
 // Test writing to a log stream using a logging enabled class
 ////////
 TEST_F(CAlogTest, LoggingClassStream)
