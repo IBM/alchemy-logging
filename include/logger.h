@@ -478,92 +478,74 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
     channel, logging::detail::ELogLevels::  level)
 
 
-/*-- Setup Macros ------------------------------------------------------------*/
+/*-- Setup Functions ---------------------------------------------------------*/
 
 /* These macros are designed to be the only used interface to the logging
  * infrastructure. This allows compile-time removal of all logging for
  * performance by defining DISABLE_LOGGING */
 
- /** \brief Set up logging for an executable
-  *
-  * This setup macro should be called once per executable to configure logging
-  * for the duration of execution. If re-configuration is needed, use
-  * ALOG_RESET (such as in unit tests). This macro will configure logging to
-  * log to a file if specified and/or to the screen if specified, and will set
-  * the default level filter as well as channel specific filters.
-  *
-  * DEPRECATED \param filename - The name for the log file. If empty, no file
-  *   log is used
-  * DEPRECATED \param toScreen - If true, a stream log to std::cout is
-  *   initialized
-  * \param defaultLevel - The level to use by default when filtering log lines
-  * \param filterSpec - A string specifying the filters to use for specific
-  *   channels in the form "CH1:lvl1,CH2:lvl2"
-  */
-inline void ALOG_SETUP(
+/** \brief Set up logging for an executable
+ *
+ * This setup macro should be called once per executable to configure logging
+ * for the duration of execution. If re-configuration is needed, use
+ * ALOG_RESET (such as in unit tests). This macro will configure logging to
+ * log to a file if specified and/or to the screen if specified, and will set
+ * the default level filter as well as channel specific filters.
+ *
+ * DEPRECATION NOTICE: The filename and toScreen arguments have been deprecated
+ * and no longer function. The were not used, and were only here for legacy
+ * reason.
+ *
+ * DEPRECATED \param filename - The name for the log file. If empty, no file
+ *   log is used
+ * DEPRECATED \param toScreen - If true, a stream log to std::cout is
+ *   initialized
+ * \param defaultLevel - The level to use by default when filtering log lines
+ * \param filterSpec - A string specifying the filters to use for specific
+ *   channels in the form "CH1:lvl1,CH2:lvl2"
+ */
+void ALOG_SETUP(
   const std::string& defaultLevel,
-  const std::string& filterSpec)
-{
-  logging::detail::CLogChannelRegistrySingleton
-    ::instance()->setupFilters(filterSpec, defaultLevel);
-  logging::detail::InitLogStream(std::cout);
-}
-inline void ALOG_SETUP(
+  const std::string& filterSpec);
+void ALOG_SETUP(
   const std::string& /*filename*/,
   const bool /*toScreen*/,
   const std::string& defaultLevel,
-  const std::string& filterSpec)
-{
-  ALOG_SETUP(defaultLevel, filterSpec);
-}
+  const std::string& filterSpec);
 
-inline void ALOG_ADJUST_LEVELS(
+/** \brief Adjust the global log levels
+ *
+ * \param defaultLevel - The level to use by default when filtering log lines
+ * \param filterSpec - A string specifying the filters to use for specific
+ *   channels in the form "CH1:lvl1,CH2:lvl2"
+ */
+void ALOG_ADJUST_LEVELS(
   const std::string& defaultLevel,
-  const std::string& filterSpec)
-{
-  logging::detail::CLogChannelRegistrySingleton
-    ::instance()->setupFilters(filterSpec, defaultLevel);
-}
+  const std::string& filterSpec);
 
-inline void ALOG_ENABLE_THREAD_ID()
-{
-  logging::detail::CLogChannelRegistrySingleton::instance()->enableThreadID();
-}
+/** \brief Enable logging the thread ID with each message */
+void ALOG_ENABLE_THREAD_ID();
 
-inline void ALOG_DISABLE_THREAD_ID()
-{
-  logging::detail::CLogChannelRegistrySingleton::instance()->disableThreadID();
-}
+/** \brief Disable logging the thread ID with each message */
+void ALOG_DISABLE_THREAD_ID();
 
-inline void ALOG_ENABLE_METADATA()
-{
-  logging::detail::CLogChannelRegistrySingleton::instance()->enableMetadata();
-}
+/** \brief Enable logging of user-defined metadata with each message */
+void ALOG_ENABLE_METADATA();
 
-inline void ALOG_DISABLE_METADATA()
-{
-  logging::detail::CLogChannelRegistrySingleton::instance()->disableMetadata();
-}
+/** \brief Disable logging of user-defined metadata with each message */
+void ALOG_DISABLE_METADATA();
 
-inline void ALOG_SERVICE_NAME(const std::string& name)
-{
-  logging::detail::CLogChannelRegistrySingleton::instance()->setServiceName(name);
-}
+/** \brief Set a service name to be logged with each message */
+void ALOG_SERVICE_NAME(const std::string& name);
 
-inline void ALOG_USE_STD_FORMATTER()
-{
-  logging::detail::UseStdFormatter();
-}
+/** \brief Configure ALog to use the pretty-print formatter */
+void ALOG_USE_STD_FORMATTER();
 
-inline void ALOG_USE_JSON_FORMATTER()
-{
-  logging::detail::UseJSONFormatter();
-}
+/** \brief Configure ALog to use the json formatter */
+void ALOG_USE_JSON_FORMATTER();
 
-inline void ALOG_RESET()
-{
-  logging::detail::CLogChannelRegistrySingleton::instance()->reset();
-}
+/** \brief Reset ALog to the default (unconfigured) state */
+void ALOG_RESET();
 
 
 /** Define a member function that will be used with the XXXthis macros */
