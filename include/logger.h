@@ -498,17 +498,23 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
   * \param filterSpec - A string specifying the filters to use for specific
   *   channels in the form "CH1:lvl1,CH2:lvl2"
   */
-#ifndef DISABLE_LOGGING
-#define ALOG_SETUP(filename, toScreen, defaultLevel, filterSpec)\
-  std::shared_ptr<std::ofstream> __logFile;\
-  logging::detail::CLogChannelRegistrySingleton\
-    ::instance()->setupFilters(filterSpec, defaultLevel);\
-  if (not std::string(filename).empty())\
-    __logFile = logging::detail::InitLogFile(filename);\
-  if (toScreen) logging::detail::InitLogStream(std::cout)
-#else
-#define ALOG_SETUP(filename, toScreen, defaultLevel, filterSpec)
-#endif
+inline void ALOG_SETUP(const std::string& filename,
+  const bool toScreen,
+  const std::string& defaultLevel,
+  const std::string& filterSpec)
+{
+  std::shared_ptr<std::ofstream> __logFile;
+  logging::detail::CLogChannelRegistrySingleton
+    ::instance()->setupFilters(filterSpec, defaultLevel);
+  if (not std::string(filename).empty())
+  {
+    __logFile = logging::detail::InitLogFile(filename);
+  }
+  if (toScreen)
+  {
+    logging::detail::InitLogStream(std::cout);
+  }
+}
 
 #ifndef DISABLE_LOGGING
 #define ALOG_ADJUST_LEVELS(defaultLevel, filterSpec)\
