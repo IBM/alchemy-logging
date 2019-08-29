@@ -284,7 +284,7 @@ bool compareVariantType(const jp::TJsonValue& a, const jp::TJsonValue& b)
   {
     return boost::get<T>(a) == boost::get<T>(b);
   }
-  catch (boost::bad_get)
+  catch (const boost::bad_get&)
   {
     return false;
   }
@@ -303,7 +303,7 @@ bool jsValEqual(const jp::TJsonValue& a, const jp::TJsonValue& b)
   {
     return boost::get<std::string>(a).compare(boost::get<std::string>(b)) == 0;
   }
-  catch (boost::bad_get) {}
+  catch (const boost::bad_get&) {}
 
   // TNull
   try
@@ -312,7 +312,7 @@ bool jsValEqual(const jp::TJsonValue& a, const jp::TJsonValue& b)
     boost::get<jp::TNull>(b);
     return true;
   }
-  catch (boost::bad_get) {}
+  catch (const boost::bad_get&) {}
 
   // array
   try
@@ -326,7 +326,7 @@ bool jsValEqual(const jp::TJsonValue& a, const jp::TJsonValue& b)
     }
     return true;
   }
-  catch (boost::bad_get) {}
+  catch (const boost::bad_get&) {}
 
   // map
   try
@@ -342,7 +342,7 @@ bool jsValEqual(const jp::TJsonValue& a, const jp::TJsonValue& b)
     }
     return true;
   }
-  catch (boost::bad_get) {}
+  catch (const boost::bad_get&) {}
 
   return false;
 }
@@ -737,7 +737,7 @@ TEST_F(CAlogTest, LoggingOff)
     ALOG(BAR, off, "Invalid line on off");
     ASSERT_TRUE(false);
   }
-  catch(std::runtime_error)
+  catch(const std::runtime_error&)
   {
     ASSERT_TRUE(true);
   }
