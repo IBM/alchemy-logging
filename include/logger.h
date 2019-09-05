@@ -89,7 +89,7 @@ struct CLogEntry
   CLogEntry(const std::string& a_channel,
             const ELogLevels   a_level,
             const std::string& a_message,
-            jsonparser::TObject a_mapData = {});
+            jsonparser::TObject a_mapData = jsonparser::TObject{});
   std::string         channel;
   ELogLevels          level;
   std::string         message;
