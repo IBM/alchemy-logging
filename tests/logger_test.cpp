@@ -284,7 +284,7 @@ bool compareVariantType(const jp::TJsonValue& a, const jp::TJsonValue& b)
   {
     return boost::get<T>(a) == boost::get<T>(b);
   }
-  catch (boost::bad_get)
+  catch (const boost::bad_get&)
   {
     return false;
   }
@@ -303,7 +303,7 @@ bool jsValEqual(const jp::TJsonValue& a, const jp::TJsonValue& b)
   {
     return boost::get<std::string>(a).compare(boost::get<std::string>(b)) == 0;
   }
-  catch (boost::bad_get) {}
+  catch (const boost::bad_get&) {}
 
   // TNull
   try
@@ -312,7 +312,7 @@ bool jsValEqual(const jp::TJsonValue& a, const jp::TJsonValue& b)
     boost::get<jp::TNull>(b);
     return true;
   }
-  catch (boost::bad_get) {}
+  catch (const boost::bad_get&) {}
 
   // array
   try
@@ -326,7 +326,7 @@ bool jsValEqual(const jp::TJsonValue& a, const jp::TJsonValue& b)
     }
     return true;
   }
-  catch (boost::bad_get) {}
+  catch (const boost::bad_get&) {}
 
   // map
   try
@@ -342,7 +342,7 @@ bool jsValEqual(const jp::TJsonValue& a, const jp::TJsonValue& b)
     }
     return true;
   }
-  catch (boost::bad_get) {}
+  catch (const boost::bad_get&) {}
 
   return false;
 }
@@ -603,26 +603,6 @@ ALCHEMY_TEST_SUITE(CAlogTest);
 using namespace logging::detail;
 
 ////////
-// Test writing to a log file
-////////
-TEST_F(CAlogTest, SimpleLogFile)
-{
-  std::string filename("unit_test");
-  ALOG_SETUP(filename, false, "debug4", "");
-
-  ALOG(TEST, info, "This is a test");
-  ALOG(TEST_LONG, info, "This is a test with a long channel");
-
-  // Verify that the file exists
-  std::string logname = "./" + (filename + ".log");
-  std::cout << logname << std::endl;
-  ASSERT_TRUE(std::ifstream(logname).good());
-
-  // Verify the file has two lines
-  ASSERT_EQ(countFileLines(logname), 2);
-}
-
-////////
 // Test writing to a log stream using a logging enabled class
 ////////
 TEST_F(CAlogTest, LoggingClassStream)
@@ -757,7 +737,7 @@ TEST_F(CAlogTest, LoggingOff)
     ALOG(BAR, off, "Invalid line on off");
     ASSERT_TRUE(false);
   }
-  catch(std::runtime_error)
+  catch(const std::runtime_error&)
   {
     ASSERT_TRUE(true);
   }

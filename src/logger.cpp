@@ -854,3 +854,70 @@ void UseJSONFormatter()
 
 } // end namespace detail
 } // end namespace logging
+
+// Non-Namespace Public Functions //////////////////////////////////////////////
+
+void ALOG_SETUP(
+  const std::string& defaultLevel,
+  const std::string& filterSpec)
+{
+  logging::detail::CLogChannelRegistrySingleton
+    ::instance()->setupFilters(filterSpec, defaultLevel);
+  logging::detail::InitLogStream(std::cout);
+}
+void ALOG_SETUP(
+  const std::string& /*filename*/,
+  const bool /*toScreen*/,
+  const std::string& defaultLevel,
+  const std::string& filterSpec)
+{
+  ALOG_SETUP(defaultLevel, filterSpec);
+}
+
+void ALOG_ADJUST_LEVELS(
+  const std::string& defaultLevel,
+  const std::string& filterSpec)
+{
+  logging::detail::CLogChannelRegistrySingleton
+    ::instance()->setupFilters(filterSpec, defaultLevel);
+}
+
+void ALOG_ENABLE_THREAD_ID()
+{
+  logging::detail::CLogChannelRegistrySingleton::instance()->enableThreadID();
+}
+
+void ALOG_DISABLE_THREAD_ID()
+{
+  logging::detail::CLogChannelRegistrySingleton::instance()->disableThreadID();
+}
+
+void ALOG_ENABLE_METADATA()
+{
+  logging::detail::CLogChannelRegistrySingleton::instance()->enableMetadata();
+}
+
+void ALOG_DISABLE_METADATA()
+{
+  logging::detail::CLogChannelRegistrySingleton::instance()->disableMetadata();
+}
+
+void ALOG_SERVICE_NAME(const std::string& name)
+{
+  logging::detail::CLogChannelRegistrySingleton::instance()->setServiceName(name);
+}
+
+void ALOG_USE_STD_FORMATTER()
+{
+  logging::detail::UseStdFormatter();
+}
+
+void ALOG_USE_JSON_FORMATTER()
+{
+  logging::detail::UseJSONFormatter();
+}
+
+void ALOG_RESET()
+{
+  logging::detail::CLogChannelRegistrySingleton::instance()->reset();
+}
