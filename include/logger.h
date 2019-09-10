@@ -478,19 +478,20 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
     channel, logging::detail::ELogLevels::  level)
 
 
-/*-- Setup Functions ---------------------------------------------------------*/
+/*-- PUBLIC INTERFACE --------------------------------------------------------*
+ * These functions and macros are designed to be the only used interface to   *
+ * the logging infrastructure.                                                *
+/*----------------------------------------------------------------------------*/
 
-/* These macros are designed to be the only used interface to the logging
- * infrastructure. This allows compile-time removal of all logging for
- * performance by defining DISABLE_LOGGING */
+/*-- Setup Functions ---------------------------------------------------------*/
 
 /** \brief Set up logging for an executable
  *
- * This setup macro should be called once per executable to configure logging
+ * This setup function should be called once per executable to configure logging
  * for the duration of execution. If re-configuration is needed, use
- * ALOG_RESET (such as in unit tests). This macro will configure logging to
- * log to a file if specified and/or to the screen if specified, and will set
- * the default level filter as well as channel specific filters.
+ * ALOG_RESET (such as in unit tests). This function will will set the default
+ * level filter as well as channel specific filters and configure the output to
+ * go to stdout.
  *
  * DEPRECATION NOTICE: The filename and toScreen arguments have been deprecated
  * and no longer function. The were not used, and were only here for legacy
