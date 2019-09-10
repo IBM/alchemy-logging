@@ -481,7 +481,7 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 /*-- PUBLIC INTERFACE --------------------------------------------------------*
  * These functions and macros are designed to be the only used interface to   *
  * the logging infrastructure.                                                *
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 /*-- Setup Functions ---------------------------------------------------------*/
 
