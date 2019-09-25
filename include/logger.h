@@ -89,7 +89,7 @@ struct CLogEntry
   CLogEntry(const std::string& a_channel,
             const ELogLevels   a_level,
             const std::string& a_message,
-            jsonparser::TObject a_mapData = {});
+            jsonparser::TObject a_mapData = jsonparser::TObject{});
   std::string         channel;
   ELogLevels          level;
   std::string         message;
@@ -407,12 +407,12 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #define _ALOG_CHANNEL_IMPL_WITH_MAP(channel, level, msg, map) \
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, map)
 #define _ALOG_CHANNEL_IMPL_WITH_NO_MAP(channel, level, msg) \
-  ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
+  ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, jsonparser::TObject{})
 
 #define _ALOGW_CHANNEL_IMPL_WITH_MAP(channel, level, msg, map) \
   ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, map)
 #define _ALOGW_CHANNEL_IMPL_WITH_NO_MAP(channel, level, msg) \
-  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, {})
+  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, jsonparser::TObject{})
 
 #define ALOG_CHANNEL_IMPL(channel, level, ...)\
   CONC(_ALOG_CHANNEL_IMPL_WITH, NARGS_MAP(__VA_ARGS__)) (channel, level, __VA_ARGS__)

@@ -87,7 +87,7 @@ detail::CLogChannelRegistrySingleton::FilterMap parseFilterSpec(const std::strin
 // Get a timestamp formatted like 2018-04-17T21:42:11.583Z
 std::string getTimestamp()
 {
-  const auto now = std::chrono::high_resolution_clock::now();
+  const auto now = std::chrono::system_clock::now();
   std::time_t t = std::chrono::system_clock::to_time_t(now);
   char timestamp[20]; // Timestamp will always be 20 characters long
   // if strftime is unable to write the string to the buffer, it will return 0.
