@@ -250,13 +250,30 @@ g_alog_formatters = {
 
 g_alog_formatter = None
 
-def _add_new_level(name, value):
+def is_log_code(arg):
+    return arg.startswith('<') and arg.endswith('>')
+
+def _log_with_code(self, value, arg_one, *args, **kwargs):
+
+    # If no positional args, arg_one is message
+    if len(args) == 0:
+        self.log(value, arg_one, **kwargs)
+
+    # If arg_one looks like a log code, use the first positional arg as message
+    elif is_log_code(arg_one):
+        self.log(value, {"log_code": arg_one, "message": args[0] % tuple(args[1:])}, **kwargs)
+
+    # Otherwise, treat arg_one as the message
+    else:
+        self.log(value, arg_one, *args, **kwargs)
+
+def _add_level_fn(name, value):
     logging.addLevelName(value, name.upper())
 
-    log_using_self_func = lambda self, msg, *args, **kwargs: self.log(value, msg, *args, **kwargs)
+    log_using_self_func = lambda self, arg_one, *args, **kwargs: _log_with_code(self, value, arg_one, *args, **kwargs)
     setattr(logging.Logger, name, log_using_self_func)
 
-    log_using_logging_func = lambda msg, *args, **kwargs: logging.log(value, msg, *args, **kwargs)
+    log_using_logging_func = lambda arg_one, *args, **kwargs: _log_with_code(logging, value, arg_one, *args, **kwargs)
     setattr(logging, name, log_using_logging_func)
 
 def _setup_formatter(formatter):
@@ -333,7 +350,7 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
 
     # Remove any existing handlers
     formatters = [
-        h for h in logging.root.handlers if isinstance(h, AlogFormatterBase)]
+        h for h in logging.root.handlers if isinstance(h.formatter, AlogFormatterBase)]
     for handler in formatters:
         logging.root.removeHandler(handler)
 
@@ -344,8 +361,8 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
 
     # Add custom low levels
     for level, name in g_alog_level_to_name.items():
-        if not hasattr(logging.Logger, name) and name not in ["off", "notset"]:
-            _add_new_level(name, level)
+        if name not in ["off", "notset"]:
+            _add_level_fn(name, level)
 
     # Set default level
     default_level_val = g_alog_name_to_level.get(default_level, None)
