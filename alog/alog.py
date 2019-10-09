@@ -177,7 +177,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
         # If thread id enabled, add it
         header = "%s [%s:%s" % (timestamp, chan, lvl)
         if g_thread_id_enabled:
-            header += ":%d" % (timestamp, chan, lvl, get_ident())
+            header += ":%d" % get_ident()
         header += "]"
 
         # Add log code if present
