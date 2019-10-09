@@ -19,8 +19,11 @@ import json
 import traceback
 import logging
 from datetime import datetime, timedelta
+from threading import get_ident
 
 ## Formatters ##################################################################
+
+g_thread_id_enabled = False
 
 class AlogFormatterBase(logging.Formatter):
     """Base class with common functionality for alog formatters.
@@ -128,6 +131,10 @@ class AlogJsonFormatter(AlogFormatterBase):
         # Add indent to all log records
         log_record['num_indent'] = self._indent
 
+        # If enabled, add thread id
+        if g_thread_id_enabled:
+            log_record['thread_id'] = get_ident()
+
         return json.dumps(log_record, sort_keys=True)
 
 class AlogPrettyFormatter(AlogFormatterBase):
@@ -167,7 +174,11 @@ class AlogPrettyFormatter(AlogFormatterBase):
         # Get the mapped level
         lvl = self._LEVEL_MAP.get(level.lower(), "UNKN")
 
-        return "%s [%s:%s]" % (timestamp, chan, lvl)
+        # If thread id enabled, return header with thread id
+        if g_thread_id_enabled:
+            return "%s [%s:%s:%d]" % (timestamp, chan, lvl, get_ident())
+        else:
+            return "%s [%s:%s]" % (timestamp, chan, lvl)
 
     def format(self, record):
         """Formats the log record as pretty-printed lines of the format:
@@ -265,20 +276,26 @@ def _parse_filters(filters):
 
 ## Core ########################################################################
 
-def configure(default_level, filters="", formatter='pretty'):
+def configure(default_level, filters="", formatter='pretty', thread_id=False):
     """Top-level configuration function for the alog module. This function configures
     the logging package to use the given default level and overwrites the levels
     for all filters as specified. It can also configure the formatter type.
 
     Args:
-        default_level (str):    This is the level that will be enabled for a
-                                given channel when a specific level has not been
-                                set in the filters.
-        filters (str/dict):     This is a mapping from channel name to level that
-                                allows levels to be set on a per-channel basis.
-                                If a string, it is formatted as "CHAN:info,FOO:debug".
-                                If a dict, it should map from channel string to
-                                level string.
+        default_level   str
+            This is the level that will be enabled for a given channel when a
+            specific level has not been set in the filters.
+        filters         str/dict
+            This is a mapping from channel name to level that allows levels to
+            be set on a per-channel basis. If a string, it is formatted as
+            "CHAN:info,FOO:debug". If a dict, it should map from channel string
+            to level string.
+        formatter       str ('pretty' or 'json')/AlogFormatterBase
+            The formatter is either the string 'pretty' or 'json' to indicate
+            one of the default formatting options or an instance of
+            AlogFormatterBase for a custom formatter implementation
+        thread_id       bool
+            If true, include thread
     """
     # Set up the formatter if different type
     _setup_formatter(formatter)
