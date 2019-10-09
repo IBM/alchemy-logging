@@ -159,7 +159,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
         AlogFormatterBase.__init__(self)
         self.channel_len = channel_len
 
-    def _make_header(self, timestamp, channel, level):
+    def _make_header(self, timestamp, channel, level, log_code):
         """Create the header for a log line with proper padding.
         """
 
@@ -174,11 +174,17 @@ class AlogPrettyFormatter(AlogFormatterBase):
         # Get the mapped level
         lvl = self._LEVEL_MAP.get(level.lower(), "UNKN")
 
-        # If thread id enabled, return header with thread id
+        # If thread id enabled, add it
+        header = "%s [%s:%s" % (timestamp, chan, lvl)
         if g_thread_id_enabled:
-            return "%s [%s:%s:%d]" % (timestamp, chan, lvl, get_ident())
-        else:
-            return "%s [%s:%s]" % (timestamp, chan, lvl)
+            header += ":%d" % (timestamp, chan, lvl, get_ident())
+        header += "]"
+
+        # Add log code if present
+        if log_code is not None:
+            header += " %s" % log_code
+
+        return header
 
     def format(self, record):
         """Formats the log record as pretty-printed lines of the format:
@@ -208,7 +214,8 @@ class AlogPrettyFormatter(AlogFormatterBase):
         level = record.levelname
         channel = record.name
         timestamp = self.formatTime(record, self.datefmt)
-        header = self._make_header(timestamp, channel, level)
+        log_code = record.log_code if hasattr(record, 'log_code') else None
+        header = self._make_header(timestamp, channel, level, log_code)
         # Pretty format the message
         indent = self._INDENT*self._indent
         formatted = ['%s %s%s' % (header, indent, line) for line in record.message.split('\n')]
