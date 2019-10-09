@@ -283,11 +283,18 @@ def configure(default_level, filters="", formatter='pretty'):
     # Set up the formatter if different type
     _setup_formatter(formatter)
 
-    # Set up root handler if not already set
-    if not len(logging.root.handlers):
-        handler = logging.StreamHandler()
-        handler.setFormatter(g_alog_formatter)
-        logging.root.addHandler(handler)
+    # Set up thread id logging
+    global g_thread_id_enabled
+    g_thread_id_enabled = thread_id
+
+    # Remove any existing handlers
+    while len(logging.root.handlers) > 0:
+        logging.root.removeHandler(logging.root.handlers[0])
+
+    # Add the formatter
+    handler = logging.StreamHandler()
+    handler.setFormatter(g_alog_formatter)
+    logging.root.addHandler(handler)
 
     # Add custom low levels
     for level, name in g_alog_level_to_name.items():
