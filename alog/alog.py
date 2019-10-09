@@ -185,13 +185,33 @@ class AlogPrettyFormatter(AlogFormatterBase):
 
         timestamp [CHANL:LEVL] message
         """
+
+        # Extract special values from the message if it's a dict
+        metadata = None
+        if isinstance(record.msg, dict):
+            if 'message' in record.msg:
+                record.message = record.msg.pop('message')
+            if 'log_code' in record.msg:
+                record.log_code = record.msg.pop('log_code')
+            metadata = record.msg
+        else:
+            record.message = record.getMessage()
+
+        # Add metadata if present
+        if not hasattr(record, 'message'):
+            record.message = ''
+        if metadata is not None and len(metadata) > 0:
+            if len(record.message) > 0:
+                record.message += ' '
+            record.message += json.dumps(metadata)
+
         level = record.levelname
         channel = record.name
         timestamp = self.formatTime(record, self.datefmt)
         header = self._make_header(timestamp, channel, level)
         # Pretty format the message
         indent = self._INDENT*self._indent
-        formatted = ['%s %s%s' % (header, indent, line) for line in record.getMessage().split('\n')]
+        formatted = ['%s %s%s' % (header, indent, line) for line in record.message.split('\n')]
         formatted = '\n'.join(formatted)
         return formatted
 
