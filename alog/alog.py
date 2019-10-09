@@ -218,8 +218,11 @@ class AlogPrettyFormatter(AlogFormatterBase):
         header = self._make_header(timestamp, channel, level, log_code)
         # Pretty format the message
         indent = self._INDENT*self._indent
-        formatted = ['%s %s%s' % (header, indent, line) for line in record.message.split('\n')]
-        formatted = '\n'.join(formatted)
+        if isinstance(record.message, str):
+            formatted = ['%s %s%s' % (header, indent, line) for line in record.message.split('\n')]
+            formatted = '\n'.join(formatted)
+        else:
+            formatted = '%s %s%s' % (header, indent, str(record.message))
         return formatted
 
 ## Constants ###################################################################
