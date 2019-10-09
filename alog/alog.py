@@ -234,22 +234,38 @@ def _setup_formatter(formatter):
         g_alog_formatter = fmt_class()
 
 def _parse_filters(filters):
+    # Check to see if we've got a dictionary. If we do, keep the valid filter entries
+    if isinstance(filters, dict):
+        return _parse_dict_of_filters(filters)
+    elif isinstance(filters, str):
+        return _parse_str_of_filters(filters)
+    else:
+        logging.warning("Invalid filter type [%s] was ignored!", type(filters).__name__)
+        return {}
+
+def _parse_dict_of_filters(filters):
+    for entry, level_name in filters.items():
+        if g_alog_name_to_level.get(level_name, None) is None:
+            logging.warning("Invalid filter entry [%s]", entry)
+            del filters[entry]
+    return filters
+
+def _parse_str_of_filters(filters):
     chan_map = {}
-    if len(filters):
-        for entry in filters.split(','):
-            if len(entry):
-                parts = entry.split(':')
-                if len(parts) != 2:
-                    logging.warning("Invalid filter entry [%s]", entry)
-                else:
-                    chan, level_name = parts
-                    level = g_alog_name_to_level.get(level_name, None)
-                    if level is None:
-                        logging.warning("Invalid level [%s] for channel [%s]", level_name, chan)
-                    else:
-                        chan_map[chan] = level_name
-            else:
+    for entry in filters.split(','):
+        if len(entry):
+            parts = entry.split(':')
+            if len(parts) != 2:
                 logging.warning("Invalid filter entry [%s]", entry)
+            else:
+                chan, level_name = parts
+                level = g_alog_name_to_level.get(level_name, None)
+                if level is None:
+                    logging.warning("Invalid level [%s] for channel [%s]", level_name, chan)
+                else:
+                    chan_map[chan] = level_name
+        else:
+            logging.warning("Invalid filter entry [%s]", entry)
     return chan_map
 
 ## Core ########################################################################
