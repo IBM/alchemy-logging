@@ -305,8 +305,10 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
     g_thread_id_enabled = thread_id
 
     # Remove any existing handlers
-    while len(logging.root.handlers) > 0:
-        logging.root.removeHandler(logging.root.handlers[0])
+    formatters = [
+        h for h in logging.root.handlers if isinstance(h, AlogFormatterBase)]
+    for handler in formatters:
+        logging.root.removeHandler(handler)
 
     # Add the formatter
     handler = logging.StreamHandler()
