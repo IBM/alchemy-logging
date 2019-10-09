@@ -45,7 +45,7 @@ def pretty_level_to_name(pretty_level):
 
 def parse_pretty_line(line):
     timestamp_regex = "([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})"
-    rest_of_regex = "\\[([^:]*):([^\\]:]*):?([0-9]*)\\] ([\\s]*)([^\\s].*)\n?"
+    rest_of_regex = "\\[([^:]*):([^\\]:]*):?([0-9]*)\\]( ?<[^\s]*>)? ([\\s]*)([^\\s].*)\n?"
     whole_regex = "^%s %s$" % (timestamp_regex, rest_of_regex)
     expr = re.compile(whole_regex)
     match = expr.match(line.decode('utf-8'))
@@ -54,11 +54,13 @@ def parse_pretty_line(line):
         'timestamp': match[1],
         'channel': match[2].strip(),
         'level': pretty_level_to_name(match[3]),
-        'num_indent': len(match[5]) / len(alog.AlogPrettyFormatter._INDENT),
-        'message': match[6],
+        'num_indent': len(match[6]) / len(alog.AlogPrettyFormatter._INDENT),
+        'message': match[7],
     }
     if len(match[4]) > 0:
         res['thread_id'] = int(match[4])
+    if match[5] is not None:
+        res['log_code'] = match[5].strip()
     return res
 
 class TestJsonCompatibility(unittest.TestCase):
@@ -144,6 +146,122 @@ class TestThreadId(unittest.TestCase):
         line = logged_output[0]
         parts = parse_pretty_line(line)
         self.assertIn('thread_id', parts)
+
+class TestLogCode(unittest.TestCase):
+
+    def test_log_code_dict(self):
+        '''Test that logging a dict with a log code and message adds the code to
+        the header as expected
+        '''
+        commands_to_run = get_subproc_cmds([
+            "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
+            "test_channel = alog.use_channel('test_merge_msg_json')",
+            "test_channel.info({'log_code': '<TST00000000I>', 'message': 'This is a test'})",
+        ])
+
+        # run in subprocess and capture stderr
+        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
+
+        # Parse the line header
+        self.assertEqual(len(logged_output), 1)
+        line = logged_output[0]
+        parts = parse_pretty_line(line)
+        self.assertIn('log_code', parts)
+        self.assertEqual(parts['log_code'], '<TST00000000I>')
+        self.assertIn('message', parts)
+        self.assertEqual(parts['message'], 'This is a test')
+
+    def test_log_code_arg(self):
+        '''Test that logging with the first argument as a log code adds the code
+        to the header correctly
+        '''
+        commands_to_run = get_subproc_cmds([
+            "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
+            "test_channel = alog.use_channel('test_merge_msg_json')",
+            "test_channel.info('<TST00000000I>', 'This is a test')",
+        ])
+
+        # run in subprocess and capture stderr
+        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
+
+        # Parse the line header
+        self.assertEqual(len(logged_output), 1)
+        line = logged_output[0]
+        parts = parse_pretty_line(line)
+        self.assertIn('log_code', parts)
+        self.assertEqual(parts['log_code'], '<TST00000000I>')
+        self.assertIn('message', parts)
+        self.assertEqual(parts['message'], 'This is a test')
+
+    def test_log_code_with_formatting(self):
+        '''Test that logging with a log code and formatting arguments to the
+        message
+        '''
+        commands_to_run = get_subproc_cmds([
+            "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
+            "test_channel = alog.use_channel('test_merge_msg_json')",
+            "test_channel.info('<TST00000000I>', 'This is a test %d', 1)",
+        ])
+
+        # run in subprocess and capture stderr
+        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
+
+        # Parse the line header
+        self.assertEqual(len(logged_output), 1)
+        line = logged_output[0]
+        parts = parse_pretty_line(line)
+        self.assertIn('log_code', parts)
+        self.assertEqual(parts['log_code'], '<TST00000000I>')
+        self.assertIn('message', parts)
+        self.assertEqual(parts['message'], 'This is a test 1')
+
+    def test_native_logging(self):
+        '''Test that logging with the native logger works, despite overridden
+        functions
+        '''
+        commands_to_run = get_subproc_cmds([
+            "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
+            "import logging",
+            "logging.info('This is a test %d', 1)",
+        ])
+
+        # run in subprocess and capture stderr
+        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
+
+        # Parse the line header
+        self.assertEqual(len(logged_output), 1)
+        line = logged_output[0]
+        parts = parse_pretty_line(line)
+        self.assertNotIn('log_code', parts)
+        self.assertIn('message', parts)
+        self.assertEqual(parts['message'], 'This is a test 1')
+
+    def test_log_code_json(self):
+        '''Test that logging with a log code and the json formatter works as
+        expected
+        '''
+        commands_to_run = get_subproc_cmds([
+            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
+            "test_channel = alog.use_channel('test_merge_msg_json')",
+            "test_channel.info('<TST00000000I>', 'This is a test')",
+        ])
+
+        # run in subprocess and capture stderr
+        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
+
+        # Parse the line header
+        self.assertEqual(len(logged_output), 1)
+        line = logged_output[0]
+        parts = json.loads(line)
+        self.assertIn('log_code', parts)
+        self.assertEqual(parts['log_code'], '<TST00000000I>')
+        self.assertIn('message', parts)
+        self.assertEqual(parts['message'], 'This is a test')
 
 if __name__ == "__main__":
     # has verbose output of tests; otherwise just says all passed or not
