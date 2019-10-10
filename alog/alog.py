@@ -411,7 +411,7 @@ class ScopedLog(object):
         global g_alog_formatter
         g_alog_formatter.indent()
 
-    def __cleanup_scoped_log(self):
+    def _cleanup_scoped_log(self):
         global g_alog_formatter
         g_alog_formatter.deindent()
         self.log_fn("END: " + str(self.format_str), *self.args)
@@ -421,13 +421,13 @@ class ScopedLog(object):
     # context manager if we use a with statement (which is why we check has_finished).
     def __del__(self):
         if not self.has_finished:
-            self.__cleanup_scoped_log()
+            self._cleanup_scoped_log()
 
     # Context manager exit: This runs when you exit the scope of a with block. For this class, it
     # runs the cleanup, and marks it as finished so that the finalizer doesn't try to do it again.
     def __exit__(self, exception_type, exception_value, traceback):
         if not self.has_finished:
-            self.__cleanup_scoped_log()
+            self._cleanup_scoped_log()
 
     # Context manager entrance. This runs when we run ScopedLog in a with statement, like so.
     #               with ScopedLog(chan.info, "inner") as inner_scope:
