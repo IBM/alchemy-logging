@@ -407,12 +407,32 @@ class ScopedLog(object):
         self.format_str = format_str
         self.args = args
         self.log_fn("BEGIN: " + str(self.format_str), *self.args)
+        self.has_finished = False
         global g_alog_formatter
         g_alog_formatter.indent()
-    def __del__(self):
+
+    def __cleanup_scoped_log(self):
         global g_alog_formatter
         g_alog_formatter.deindent()
         self.log_fn("END: " + str(self.format_str), *self.args)
+        self.has_finished = True
+
+    # Finalizer needs to cleanup reset our log formatting. This will already be done by the
+    # context manager if we use a with statement (which is why we check has_finished).
+    def __del__(self):
+        if not self.has_finished:
+            self.__cleanup_scoped_log()
+
+    # Context manager exit: This runs when you exit the scope of a with block. For this class, it
+    # runs the cleanup, and marks it as finished so that the finalizer doesn't try to do it again.
+    def __exit__(self, exception_type, exception_value, traceback):
+        if not self.has_finished:
+            self.__cleanup_scoped_log()
+
+    # Context manager entrance. This runs when we run ScopedLog in a with statement, like so.
+    #               with ScopedLog(chan.info, "inner") as inner_scope:
+    def __enter__(self):
+        return self
 
 # The whole point of this class is act on scope changes
 # pylint: disable=too-few-public-methods
@@ -450,10 +470,9 @@ def demo_function(val):
     chan.debug3("This is a test")
     chan.error({"test_json": True, "outer_message": "testing json logging"})
     # Test scoped logging
-    inner_scope = ScopedLog(chan.debug, "inner")
-    chan.info("Log with %s val", val)
-    chan.info({"test_json": True, "inner_message": "Log with "+str(val)+" val"})
-    del inner_scope
+    with ScopedLog(chan.info, "inner") as inner_scope:
+        chan.info("I am scoped")
+        chan.info({"test_json": True, "inner_message": "Log with "+str(val)+" val"})
     chan.info("Log outside inner scope")
 
 if __name__ == '__main__':
