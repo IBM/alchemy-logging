@@ -31,10 +31,10 @@ import alog
 # results.
 
 def get_subproc_cmds(lines):
-    commands_to_run = "python3 -c \"import alog;"
+    commands_to_run = "python3 -c \"\"\"import alog\n"
     for line in lines:
-        commands_to_run += " %s;" % line
-    commands_to_run += "\""
+        commands_to_run += "%s\n" % line
+    commands_to_run += "\"\"\""
     return commands_to_run
 
 def pretty_level_to_name(pretty_level):
