@@ -470,7 +470,7 @@ def demo_function(val):
     chan.debug3("This is a test")
     chan.error({"test_json": True, "outer_message": "testing json logging"})
     # Test scoped logging
-    with ScopedLog(chan.info, "inner") as inner_scope:
+    with ScopedLog(chan.info, "inner"):
         chan.info("I am scoped")
         chan.info({"test_json": True, "inner_message": "Log with "+str(val)+" val"})
     chan.info("Log outside inner scope")
