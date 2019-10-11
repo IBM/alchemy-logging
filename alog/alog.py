@@ -256,7 +256,17 @@ g_alog_formatter = None
 def is_log_code(arg):
     return arg.startswith('<') and arg.endswith('>')
 
-def _log_with_code(self, value, arg_one, *args, **kwargs):
+def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
+    '''
+    This helper is used as an override to the native logging.Logger instance
+    methods for each level. As such, it's first argument, self, is the logger
+    instance (or the global root logger singleton) on which to call the method.
+    Having this as the first argument allows it to override the native methods
+    and support functionality like:
+
+    ch = alog.use_channel('FOO')
+    ch.debug('<FOO12345678I>', 'Logging is fun!')
+    '''
 
     # If no positional args, arg_one is message
     if len(args) == 0:
@@ -273,10 +283,10 @@ def _log_with_code(self, value, arg_one, *args, **kwargs):
 def _add_level_fn(name, value):
     logging.addLevelName(value, name.upper())
 
-    log_using_self_func = lambda self, arg_one, *args, **kwargs: _log_with_code(self, value, arg_one, *args, **kwargs)
+    log_using_self_func = lambda self, arg_one, *args, **kwargs: _log_with_code_method_override(self, value, arg_one, *args, **kwargs)
     setattr(logging.Logger, name, log_using_self_func)
 
-    log_using_logging_func = lambda arg_one, *args, **kwargs: _log_with_code(logging, value, arg_one, *args, **kwargs)
+    log_using_logging_func = lambda arg_one, *args, **kwargs: _log_with_code_method_override(logging, value, arg_one, *args, **kwargs)
     setattr(logging, name, log_using_logging_func)
 
 def _setup_formatter(formatter):
