@@ -478,3 +478,5 @@ if __name__ == '__main__':
     use_channel("FOO").debug2("Debug2 line %d", 10)
     use_channel("BAR").debug4("""Large, deep debugging entry with multiple
 lines of text!""")
+    test_ch = use_channel("TEST")
+    test_ch.info("<TST12345678I>", "This is a line with a log code")
