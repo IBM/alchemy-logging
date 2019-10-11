@@ -277,6 +277,7 @@ class TestLogScoping(unittest.TestCase):
         is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
         _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
         logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
+        self.assertEqual(len(logged_output), 4)
         # Parse out the two messages we explicitly logged. Only the first should be indented
         in_scope_log, out_scope_log = [line for line in logged_output if is_log_msg(line['message'])]
         self.assertGreaterEqual(in_scope_log['num_indent'], 1)
@@ -297,6 +298,7 @@ class TestLogScoping(unittest.TestCase):
         is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
         _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
         logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
+        self.assertEqual(len(logged_output), 4)
         # Parse out the two messages we explicitly logged. Only the first should be indented
         in_scope_log, out_scope_log = [line for line in logged_output if is_log_msg(line['message'])]
         self.assertGreaterEqual(in_scope_log['num_indent'], 1)
