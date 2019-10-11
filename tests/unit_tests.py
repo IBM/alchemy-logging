@@ -264,6 +264,7 @@ class TestLogCode(unittest.TestCase):
         self.assertEqual(parts['message'], 'This is a test')
 
 class TestLogScoping(unittest.TestCase):
+
     def test_context_managed_scoping(self):
         '''Test that deindent happens when with statement goes out of scope.'''
         commands_to_run = get_subproc_cmds([
