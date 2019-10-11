@@ -30,6 +30,8 @@ import alog
 # for these tests. Instead, we run python subprocesses and capture the logging
 # results.
 
+test_code = "<TST00000000I>"
+
 def get_subproc_cmds(lines):
     commands_to_run = "python3 -c \"import alog;"
     for line in lines:
@@ -156,7 +158,7 @@ class TestLogCode(unittest.TestCase):
         commands_to_run = get_subproc_cmds([
             "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
             "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info({'log_code': '<TST00000000I>', 'message': 'This is a test'})",
+            "test_channel.info({'log_code': '%s', 'message': 'This is a test'})" % test_code,
         ])
 
         # run in subprocess and capture stderr
@@ -168,7 +170,7 @@ class TestLogCode(unittest.TestCase):
         line = logged_output[0]
         parts = parse_pretty_line(line)
         self.assertIn('log_code', parts)
-        self.assertEqual(parts['log_code'], '<TST00000000I>')
+        self.assertEqual(parts['log_code'], test_code)
         self.assertIn('message', parts)
         self.assertEqual(parts['message'], 'This is a test')
 
@@ -179,7 +181,7 @@ class TestLogCode(unittest.TestCase):
         commands_to_run = get_subproc_cmds([
             "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
             "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info('<TST00000000I>', 'This is a test')",
+            "test_channel.info('%s', 'This is a test')" % test_code,
         ])
 
         # run in subprocess and capture stderr
@@ -191,7 +193,7 @@ class TestLogCode(unittest.TestCase):
         line = logged_output[0]
         parts = parse_pretty_line(line)
         self.assertIn('log_code', parts)
-        self.assertEqual(parts['log_code'], '<TST00000000I>')
+        self.assertEqual(parts['log_code'], test_code)
         self.assertIn('message', parts)
         self.assertEqual(parts['message'], 'This is a test')
 
@@ -202,7 +204,7 @@ class TestLogCode(unittest.TestCase):
         commands_to_run = get_subproc_cmds([
             "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
             "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info('<TST00000000I>', 'This is a test %d', 1)",
+            "test_channel.info('%s', 'This is a test %%d', 1)" % test_code,
         ])
 
         # run in subprocess and capture stderr
@@ -214,7 +216,7 @@ class TestLogCode(unittest.TestCase):
         line = logged_output[0]
         parts = parse_pretty_line(line)
         self.assertIn('log_code', parts)
-        self.assertEqual(parts['log_code'], '<TST00000000I>')
+        self.assertEqual(parts['log_code'], test_code)
         self.assertIn('message', parts)
         self.assertEqual(parts['message'], 'This is a test 1')
 
@@ -247,7 +249,7 @@ class TestLogCode(unittest.TestCase):
         commands_to_run = get_subproc_cmds([
             "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
             "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info('<TST00000000I>', 'This is a test')",
+            "test_channel.info('%s', 'This is a test')" % test_code,
         ])
 
         # run in subprocess and capture stderr
@@ -259,7 +261,7 @@ class TestLogCode(unittest.TestCase):
         line = logged_output[0]
         parts = json.loads(line)
         self.assertIn('log_code', parts)
-        self.assertEqual(parts['log_code'], '<TST00000000I>')
+        self.assertEqual(parts['log_code'], test_code)
         self.assertIn('message', parts)
         self.assertEqual(parts['message'], 'This is a test')
 
