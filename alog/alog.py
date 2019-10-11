@@ -249,6 +249,9 @@ g_alog_formatters = {
     "pretty": AlogPrettyFormatter,
 }
 
+scope_start_str = "BEGIN: "
+scope_end_str = "END: "
+
 ## Implementation Details ######################################################
 
 g_alog_formatter = None
@@ -406,7 +409,7 @@ class ScopedLog(object):
         self.log_fn = log_fn
         self.format_str = format_str
         self.args = args
-        self.log_fn("BEGIN: " + str(self.format_str), *self.args)
+        self.log_fn(scope_start_str + str(self.format_str), *self.args)
         self.has_finished = False
         global g_alog_formatter
         g_alog_formatter.indent()
@@ -414,7 +417,7 @@ class ScopedLog(object):
     def _cleanup_scoped_log(self):
         global g_alog_formatter
         g_alog_formatter.deindent()
-        self.log_fn("END: " + str(self.format_str), *self.args)
+        self.log_fn(scope_end_str + str(self.format_str), *self.args)
         self.has_finished = True
 
     # Finalizer needs to cleanup reset our log formatting. This will already be done by the

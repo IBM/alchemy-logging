@@ -263,6 +263,25 @@ class TestLogCode(unittest.TestCase):
         self.assertIn('message', parts)
         self.assertEqual(parts['message'], 'This is a test')
 
+class TestLogScoping(unittest.TestCase):
+    def test_context_managed_scoping(self):
+        '''Test that deindent happens when with statement goes out of scope.'''
+        commands_to_run = get_subproc_cmds([
+            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
+            "test_channel = alog.use_channel('test_log_scoping')",
+            "with alog.ScopedLog(test_channel.info, 'inner'):",
+            "   test_channel.info('<TST00000000I>', 'This should be scoped')",
+            "test_channel.info('<TST00000000I>', 'This should not be scoped')"
+        ])
+        # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
+        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
+        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
+        # Parse out the two messages we explicitly logged. Only the first should be indented
+        in_scope_log, out_scope_log = [line for line in logged_output if is_log_msg(line['message'])]
+        self.assertGreaterEqual(in_scope_log['num_indent'], 1)
+        self.assertEqual(out_scope_log['num_indent'], 0)
+
 if __name__ == "__main__":
     # has verbose output of tests; otherwise just says all passed or not
     unittest.main(verbosity=2)
