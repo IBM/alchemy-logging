@@ -19,11 +19,8 @@ import sys
 import unittest
 import re
 
-# Put the local module at the beginning of the path in case there's an installed
-# copy on the system
-local_module = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'alog'))
-sys.path = [local_module] + sys.path
-import alog
+# Import the implementation details so that we can test them
+import alog.alog as alog
 
 # Note on log capture: In these tests, we could attach a stream capture handler,
 # but logs captured that way will not include formatting, so that doesn't work
