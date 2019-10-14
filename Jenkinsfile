@@ -28,7 +28,7 @@ pipeline {
       name: "ARTIFACTORY_USERNAME")
     password(defaultValue: "",
       description: "Apikey for artifactory to publish built wheel(s)",
-      name: "ARTIFACTORY_APIKEY")
+      name: "ARTIFACTORY_API_KEY")
   }
 
   triggers {
@@ -44,8 +44,8 @@ pipeline {
           deleteDir()
           script {
             // Make sure artifactory credentials are provided if publishing
-            if (env.PUBLISH_WHEEL == "true" && (env.ARTIFACTORY_USERNAME == "" || env.ARTIFACTORY_APIKEY == "")) {
-              error "Must specify ARTIFACTORY_USERNAME and ARTIFACTORY_APIKEY when building the python wheels"
+            if (env.PUBLISH_WHEEL == "true" && (env.ARTIFACTORY_USERNAME == "" || env.ARTIFACTORY_API_KEY == "")) {
+              error "Must specify ARTIFACTORY_USERNAME and ARTIFACTORY_API_KEY when building the python wheels"
             }
 
             // Clone the repo
