@@ -14,6 +14,7 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: "10"))
     timeout(time: 1, unit: 'HOURS')
     timestamps()
+    skipDefaultCheckout()
   }
 
   parameters {
@@ -46,6 +47,13 @@ pipeline {
             if (env.PUBLISH_WHEEL == "true" && (env.ARTIFACTORY_USERNAME == "" || env.ARTIFACTORY_APIKEY == "")) {
               error "Must specify ARTIFACTORY_USERNAME and ARTIFACTORY_APIKEY when building the python wheels"
             }
+
+            // Clone the repo
+            def myScm = editableScm()
+            myScm['extensions'] = myScm['extensions'] + [
+              [$class: 'CloneOption', noTags: false],
+            ]
+            checkout myScm
           }
         }
       }
