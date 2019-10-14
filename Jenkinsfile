@@ -23,12 +23,6 @@ pipeline {
     booleanParam(defaultValue: false,
       description: "Publish the wheel to artifactory",
       name: "PUBLISH_WHEEL")
-    string(defaultValue: "",
-      description: "Username for artifactory to publish built wheel(s)",
-      name: "ARTIFACTORY_USERNAME")
-    password(defaultValue: "",
-      description: "Apikey for artifactory to publish built wheel(s)",
-      name: "ARTIFACTORY_API_KEY")
   }
 
   triggers {
@@ -43,12 +37,6 @@ pipeline {
         ansiColor('xterm') {
           deleteDir()
           script {
-            // Make sure artifactory credentials are provided if publishing
-            if (env.PUBLISH_WHEEL == "true" && (env.ARTIFACTORY_USERNAME == "" || env.ARTIFACTORY_API_KEY == "")) {
-              error "Must specify ARTIFACTORY_USERNAME and ARTIFACTORY_API_KEY when building the python wheels"
-            }
-
-            // Clone the repo
             def myScm = editableScm()
             myScm['extensions'] = myScm['extensions'] + [
               [$class: 'CloneOption', noTags: false],
@@ -85,12 +73,18 @@ pipeline {
     // Publish the wheel
     stage('Publish') {
       when {
-        expression { return env.PUBLISH_WHEEL == "true" }
+        expression { return (env.BRANCH_NAME == "master" || env.PUBLISH_WHEEL == "true") }
       }
       steps {
         ansiColor('xterm') {
           script {
-            sh 'docker build . --target=publish -f ./ci/Dockerfile --build-arg ARTIFACTORY_USERNAME=$ARTIFACTORY_USERNAME --build-arg ARTIFACTORY_API_KEY=$ARTIFACTORY_API_KEY'
+            withCredentials([usernamePassword(credentialsId: 'nlu-functional-id', passwordVariable: 'ARTIFACTORY_API_KEY', usernameVariable: 'ARTIFACTORY_USERNAME')]) {
+              currentBranchName = env.BRANCH_NAME
+              print "Current Branch: $currentBranchName"
+              sh 'docker build . --target=publish -f ./ci/Dockerfile --build-arg ARTIFACTORY_USERNAME=$ARTIFACTORY_USERNAME --build-arg ARTIFACTORY_API_KEY=$ARTIFACTORY_API_KEY'
+
+            }
+            echo "build: DONE"
           }
         }
       }
