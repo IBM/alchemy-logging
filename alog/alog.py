@@ -317,7 +317,10 @@ def _parse_filters(filters):
     if isinstance(filters, dict):
         return _parse_dict_of_filters(filters)
     elif isinstance(filters, str):
-        return _parse_str_of_filters(filters)
+        if len(filters):
+            return _parse_str_of_filters(filters)
+        else:
+            return {}
     else:
         logging.warning("Invalid filter type [%s] was ignored!", type(filters).__name__)
         return {}
