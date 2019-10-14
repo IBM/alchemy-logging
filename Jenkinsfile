@@ -7,7 +7,7 @@ def projectRepo = 'git@github.ibm.com:watson-nlu/alog-py.git'
 
 pipeline {
   agent {
-    'pickle'
+    node 'pickle'
   }
 
   options {
