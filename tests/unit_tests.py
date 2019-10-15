@@ -270,8 +270,8 @@ class TestLogScoping(unittest.TestCase):
             "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
             "test_channel = alog.use_channel('test_log_scoping')",
             "with alog.ScopedLog(test_channel.info, 'inner'):",
-            "   test_channel.info('<TST00000000I>', 'This should be scoped')",
-            "test_channel.info('<TST00000000I>', 'This should not be scoped')"
+            "   test_channel.info('%s', 'This should be scoped')" % test_code,
+            "test_channel.info('%s', 'This should not be scoped')" % test_code
         ])
         # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
         is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
@@ -290,9 +290,9 @@ class TestLogScoping(unittest.TestCase):
             "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
             "test_channel = alog.use_channel('test_log_scoping')",
             "inner_scope = alog.ScopedLog(test_channel.info, 'inner')",
-            "test_channel.info('<TST00000000I>', 'This should be scoped')",
+            "test_channel.info('%s', 'This should be scoped')" % test_code,
             "del inner_scope",
-            "test_channel.info('<TST00000000I>', 'This should not be scoped')"
+            "test_channel.info('%s', 'This should not be scoped')" % test_code
         ])
         # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
         is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
