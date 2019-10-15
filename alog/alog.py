@@ -478,21 +478,24 @@ class FnLog(ScopedLog):
 
 # The whole point of this class is act on scope changes
 # pylint: disable=too-few-public-methods
-class ScopedTimer(object):
+class ScopedTimer(ScopedLog):
     """Scoped log class that starts a timer at construction and logs the time delta
     at destruction.
     """
     def __init__(self, log_fn, format_str="", *args):
+        # Intentionally don't call parent constructor so we don't print BEGIN
         self.log_fn = log_fn
         self.format_str = format_str
         self.args = args
         self.start_time = time.time()
+        self.has_finished = False
 
-    def __del__(self):
+    def _cleanup_scoped_log(self):
         dt = str(timedelta(seconds=time.time() - self.start_time))
         fmt = self.format_str + "%s"
         args = list(self.args) + [dt]
         self.log_fn(fmt, *args)
+        self.has_finished = True
 
 ## Testing #####################################################################
 
@@ -509,6 +512,7 @@ def demo_function(val):
 
 if __name__ == '__main__':
     import sys
+    import time
     default_level = sys.argv[1] if len(sys.argv) > 1 else "info"
     filters = sys.argv[2] if len(sys.argv) > 2 else ""
     formatter = sys.argv[3] if len(sys.argv) > 3 else "pretty"
@@ -521,3 +525,8 @@ if __name__ == '__main__':
 lines of text!""")
     test_ch = use_channel("TEST")
     test_ch.info("<TST12345678I>", "This is a line with a log code")
+
+    # Sample scoped timer
+    with ScopedTimer(test_ch.info, 'Finished timer scope: ') as t:
+        time.sleep(1)
+        test_ch.info('Done with the scope')
