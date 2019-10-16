@@ -13,12 +13,13 @@ deposited with the U.S. Copyright Office.
 
 END_COPYRIGHT
 """
-import time
+import functools
 import json
-import traceback
 import logging
+import time
+import threading
+import traceback
 from datetime import datetime, timedelta
-from threading import get_ident
 
 ## Formatters ##################################################################
 
@@ -130,7 +131,7 @@ class AlogJsonFormatter(AlogFormatterBase):
 
         # If enabled, add thread id
         if g_thread_id_enabled:
-            log_record['thread_id'] = get_ident()
+            log_record['thread_id'] = threading.get_ident()
 
         return json.dumps(log_record, sort_keys=True)
 
@@ -173,7 +174,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
         # If thread id enabled, add it
         header = "%s [%s:%s" % (timestamp, chan, lvl)
         if g_thread_id_enabled:
-            header += ":%d" % get_ident()
+            header += ":%d" % threading.get_ident()
         header += "]"
 
         # Add log code if present
@@ -490,8 +491,15 @@ class FunctionLog(ScopedLog):
 class FnLog(FunctionLog):
     pass
 
-def logged_function(func):
-    pass
+def logged_function(log_fn, format_str="", *fmt_args):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            fmt_str = "%s(" + format_str + ")"
+            with ContextLog(log_fn, fmt_str, func.__name__, *fmt_args):
+                return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 ## Timers ######################################################################
 
@@ -540,12 +548,17 @@ class ContextTimer(_TimedLogBase):
         """
         self._end_timed_log()
 
-def timed_function(func):
-    pass
+def timed_function(log_fn, format_str="", *fmt_args):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            with ContextTimer(log_fn, format_str, *fmt_args):
+                return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 ## Testing #####################################################################
 
-@logged_function(chan.info, "function")
 def demo_function(val):
     chan = logging.getLogger("FOO")
     fn_scope = FnLog(chan.info)
