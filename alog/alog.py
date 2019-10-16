@@ -13,7 +13,6 @@ deposited with the U.S. Copyright Office.
 
 END_COPYRIGHT
 """
-
 import time
 import json
 import traceback
@@ -28,7 +27,6 @@ g_thread_id_enabled = False
 class AlogFormatterBase(logging.Formatter):
     """Base class with common functionality for alog formatters.
     """
-
     def __init__(self):
         self._indent = 0
         logging.Formatter.__init__(self)
@@ -60,7 +58,6 @@ class AlogFormatterBase(logging.Formatter):
 class AlogJsonFormatter(AlogFormatterBase):
     """Log formatter which prints messages a single-line json.
     """
-
     _FIELDS_TO_PRINT = ['name', 'levelname', 'asctime', 'message', 'exc_text',
                         'region-id', 'org-id', 'tran-id', 'watson-txn-id', 'channel']
 
@@ -162,7 +159,6 @@ class AlogPrettyFormatter(AlogFormatterBase):
     def _make_header(self, timestamp, channel, level, log_code):
         """Create the header for a log line with proper padding.
         """
-
         # Get the padded or truncated channel
         chan = channel
         if len(channel) > self.channel_len:
@@ -191,7 +187,6 @@ class AlogPrettyFormatter(AlogFormatterBase):
 
         timestamp [CHANL:LEVL] message
         """
-
         # Extract special values from the message if it's a dict
         metadata = None
         if isinstance(record.msg, dict):
@@ -260,8 +255,7 @@ def is_log_code(arg):
     return arg.startswith('<') and arg.endswith('>')
 
 def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
-    '''
-    This helper is used as an override to the native logging.Logger instance
+    """This helper is used as an override to the native logging.Logger instance
     methods for each level. As such, it's first argument, self, is the logger
     instance (or the global root logger singleton) on which to call the method.
     Having this as the first argument allows it to override the native methods
@@ -269,7 +263,7 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
 
     ch = alog.use_channel('FOO')
     ch.debug('<FOO12345678I>', 'Logging is fun!')
-    '''
+    """
 
     # If no positional args, arg_one is message
     if len(args) == 0:
@@ -286,18 +280,18 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
 def _add_level_fn(name, value):
     logging.addLevelName(value, name.upper())
 
-    log_using_self_func = lambda self, arg_one, *args, **kwargs: _log_with_code_method_override(self, value, arg_one, *args, **kwargs)
+    log_using_self_func = lambda self, arg_one, *args, **kwargs: \
+        _log_with_code_method_override(self, value, arg_one, *args, **kwargs)
     setattr(logging.Logger, name, log_using_self_func)
 
-    log_using_logging_func = lambda arg_one, *args, **kwargs: _log_with_code_method_override(logging, value, arg_one, *args, **kwargs)
+    log_using_logging_func = lambda arg_one, *args, **kwargs: \
+        _log_with_code_method_override(logging, value, arg_one, *args, **kwargs)
     setattr(logging, name, log_using_logging_func)
 
 def _setup_formatter(formatter):
-
     # If the formatter is a string, pull it from the defaults
     global g_alog_formatter
     if isinstance(formatter, str):
-
         # Get the formatter class
         fmt_class = g_alog_formatters.get(formatter, None)
         if fmt_class is None:
@@ -384,8 +378,7 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
     g_thread_id_enabled = thread_id
 
     # Remove any existing handlers
-    formatters = [
-        h for h in logging.root.handlers if isinstance(h.formatter, AlogFormatterBase)]
+    formatters = [h for h in logging.root.handlers if isinstance(h.formatter, AlogFormatterBase)]
     for handler in formatters:
         logging.root.removeHandler(handler)
 
@@ -426,86 +419,140 @@ def use_channel(channel):
     """
     return logging.getLogger(channel)
 
-## Convenience Helpers #########################################################
+## Scoped Loggers ##############################################################
 
 # The whole point of this class is act on scope changes
 # pylint: disable=too-few-public-methods
-class ScopedLog(object):
-    """Scoped logging class that adds BEGIN/END lines and indents lines logged in
-    the scope.
+class _ScopedLogBase:
+    """FIXME
     """
-    def __init__(self, log_fn, format_str="", *args):
+    def __init__(self, log_fn, format_str, *args):
+        """FIXME
+        """
         self.log_fn = log_fn
         self.format_str = format_str
         self.args = args
+
+    def _start_scoped_log(self):
+        """FIXME
+        """
         self.log_fn(scope_start_str + str(self.format_str), *self.args)
-        self.has_finished = False
         global g_alog_formatter
         g_alog_formatter.indent()
 
-    def _cleanup_scoped_log(self):
+    def _end_scoped_log(self):
+        """FIXME
+        """
         global g_alog_formatter
         g_alog_formatter.deindent()
         self.log_fn(scope_end_str + str(self.format_str), *self.args)
-        self.has_finished = True
 
-    # Finalizer needs to cleanup reset our log formatting. This will already be done by the
-    # context manager if we use a with statement (which is why we check has_finished).
+# pylint: disable=too-few-public-methods
+class ScopedLog(_ScopedLogBase):
+    """FIXME
+    """
+    def __init__(self, log_fn, format_str="", *args):
+        """FIXME
+        """
+        super().__init__(log_fn, format_str, *args)
+        self._start_scoped_log()
+
     def __del__(self):
-        if not self.has_finished:
-            self._cleanup_scoped_log()
+        """FIXME
+        """
+        self._end_scoped_log()
 
-    # Context manager exit: This runs when you exit the scope of a with block. For this class, it
-    # runs the cleanup, and marks it as finished so that the finalizer doesn't try to do it again.
-    def __exit__(self, exception_type, exception_value, traceback):
-        if not self.has_finished:
-            self._cleanup_scoped_log()
-
-    # Context manager entrance. This runs when we run ScopedLog in a with statement, like so.
-    #               with ScopedLog(chan.info, "inner") as inner_scope:
+# pylint: disable=too-few-public-methods
+class ContextLog(_ScopedLogBase):
+    """FIXME
+    """
     def __enter__(self):
+        """FIXME
+        """
+        self._start_scoped_log()
         return self
 
-# The whole point of this class is act on scope changes
+    def __exit__(self, exception_type, exception_value, traceback):
+        """FIXME
+        """
+        self._end_scoped_log()
+
 # pylint: disable=too-few-public-methods
-class FnLog(ScopedLog):
+class FunctionLog(ScopedLog):
     """Scoped log class that adds the function name to the BEGIN/END lines.
     """
     def __init__(self, log_fn, format_str="", *args):
         fn_name = traceback.format_stack()[-2].strip().split(',')[2].split(' ')[2].strip()
         format_str = "%s(" + format_str + ")"
-        ScopedLog.__init__(self, log_fn, format_str, fn_name, *args)
+        super().__init__(log_fn, format_str, fn_name, *args)
 
-# The whole point of this class is act on scope changes
-# pylint: disable=too-few-public-methods
-class ScopedTimer(ScopedLog):
-    """Scoped log class that starts a timer at construction and logs the time delta
-    at destruction.
-    """
-    def __init__(self, log_fn, format_str="", *args):
-        # Intentionally don't call parent constructor so we don't print BEGIN
+# for compatibility
+class FnLog(FunctionLog):
+    pass
+
+def logged_function(func):
+    pass
+
+## Timers ######################################################################
+
+class _TimedLogBase:
+    def __init__(self, log_fn, format_str, *args):
+        """FIXME
+        """
         self.log_fn = log_fn
         self.format_str = format_str
         self.args = args
-        self.start_time = time.time()
-        self.has_finished = False
+        self.start_time = 0
 
-    def _cleanup_scoped_log(self):
-        dt = str(timedelta(seconds=time.time() - self.start_time))
+    def _start_timed_log(self):
+        """FIXME
+        """
+        self.start_time = time.time()
+
+    def _end_timed_log(self):
+        """FIXME
+        """
+        duration = str(timedelta(seconds=time.time() - self.start_time))
         fmt = self.format_str + "%s"
-        args = list(self.args) + [dt]
+        args = list(self.args) + [duration]
         self.log_fn(fmt, *args)
-        self.has_finished = True
+
+# pylint: disable=too-few-public-methods
+class ScopedTimer(_TimedLogBase):
+    """Scoped log class that starts a timer at construction and logs the time delta at destruction.
+    """
+    def __init__(self, log_fn, format_str="", *args):
+        super().__init__(log_fn, format_str, *args)
+        self._start_timed_log()
+
+    def __del__(self):
+        self._end_timed_log()
+
+class ContextTimer(_TimedLogBase):
+    def __enter__(self):
+        """FIXME
+        """
+        self._start_timed_log()
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        """FIXME
+        """
+        self._end_timed_log()
+
+def timed_function(func):
+    pass
 
 ## Testing #####################################################################
 
+@logged_function(chan.info, "function")
 def demo_function(val):
     chan = logging.getLogger("FOO")
     fn_scope = FnLog(chan.info)
     chan.debug3("This is a test")
     chan.error({"test_json": True, "outer_message": "testing json logging"})
     # Test scoped logging
-    with ScopedLog(chan.info, "inner"):
+    with ContextLog(chan.info, "inner"):
         chan.info("I am scoped")
         chan.info({"test_json": True, "inner_message": "Log with "+str(val)+" val"})
     chan.info("Log outside inner scope")
@@ -527,6 +574,6 @@ lines of text!""")
     test_ch.info("<TST12345678I>", "This is a line with a log code")
 
     # Sample scoped timer
-    with ScopedTimer(test_ch.info, 'Finished timer scope: ') as t:
+    with ContextTimer(test_ch.info, 'Finished timer context: ') as t:
         time.sleep(1)
         test_ch.info('Done with the scope')

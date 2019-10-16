@@ -20,6 +20,7 @@ import unittest
 import re
 
 # Import the implementation details so that we can test them
+#import alog.alog as alog
 import alog.alog as alog
 
 # Note on log capture: In these tests, we could attach a stream capture handler,
@@ -43,8 +44,8 @@ def pretty_level_to_name(pretty_level):
     return None
 
 def parse_pretty_line(line):
-    timestamp_regex = "([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})"
-    rest_of_regex = "\\[([^:]*):([^\\]:]*):?([0-9]*)\\]( ?<[^\s]*>)? ([\\s]*)([^\\s].*)\n?"
+    timestamp_regex = r"([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})"
+    rest_of_regex = r"\[([^:]*):([^\]:]*):?([0-9]*)\]( ?<[^\s]*>)? ([\s]*)([^\s].*)\n?"
     whole_regex = "^%s %s$" % (timestamp_regex, rest_of_regex)
     expr = re.compile(whole_regex)
     match = expr.match(line.decode('utf-8'))
@@ -269,13 +270,14 @@ class TestLogScoping(unittest.TestCase):
         commands_to_run = get_subproc_cmds([
             "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
             "test_channel = alog.use_channel('test_log_scoping')",
-            "with alog.ScopedLog(test_channel.info, 'inner'):",
+            "with alog.ContextLog(test_channel.info, 'inner'):",
             "   test_channel.info('%s', 'This should be scoped')" % test_code,
             "test_channel.info('%s', 'This should not be scoped')" % test_code
         ])
         # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
         is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
         _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        print([line for line in stderr.split(b'\n') if len(line) > 0])
         logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
         self.assertEqual(len(logged_output), 4)
         # Parse out the two messages we explicitly logged. Only the first should be indented
