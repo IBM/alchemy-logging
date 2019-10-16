@@ -1,17 +1,15 @@
-"""
-BEGIN_COPYRIGHT
-
-IBM Confidential
-OCO Source Materials
-
-5727-I17
-(C) Copyright IBM Corp. 2017 All Rights Reserved.
-
-The source code for this program is not published or otherwise
-divested of its trade secrets, irrespective of what has been
-deposited with the U.S. Copyright Office.
-
-END_COPYRIGHT
+# *****************************************************************
+#
+# Licensed Materials - Property of IBM
+#
+# (C) Copyright IBM Corp. 2017. All Rights Reserved.
+#
+# US Government Users Restricted Rights - Use, duplication or
+# disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+# *****************************************************************
+"""Alchemy Logger is a logging framework built on top of the standard python logging package with
+a number of additional features, including log channels, configurable formatting and scoped loggers.
 """
 import functools
 import json
@@ -415,8 +413,7 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
         lgr.addHandler(handler)
 
 def use_channel(channel):
-    """Interface wrapper for python alog implementation to keep consistency with
-    other languages.
+    """Interface wrapper for python alog implementation to keep consistency with other languages.
     """
     return logging.getLogger(channel)
 
@@ -425,24 +422,25 @@ def use_channel(channel):
 # The whole point of this class is act on scope changes
 # pylint: disable=too-few-public-methods
 class _ScopedLogBase:
-    """FIXME
+    """Base class for scoped loggers.  This class provides methods for starting and stopping the
+    logger and expects the child class to call them when appropriate.
     """
     def __init__(self, log_fn, format_str, *args):
-        """FIXME
+        """Construct a new scoped logger.
         """
         self.log_fn = log_fn
         self.format_str = format_str
         self.args = args
 
     def _start_scoped_log(self):
-        """FIXME
+        """Log the start message for a scoped logger and increment the indentor.
         """
         self.log_fn(scope_start_str + str(self.format_str), *self.args)
         global g_alog_formatter
         g_alog_formatter.indent()
 
     def _end_scoped_log(self):
-        """FIXME
+        """Log the end message for a scoped logger and decrement the indentor.
         """
         global g_alog_formatter
         g_alog_formatter.deindent()
@@ -450,50 +448,86 @@ class _ScopedLogBase:
 
 # pylint: disable=too-few-public-methods
 class ScopedLog(_ScopedLogBase):
-    """FIXME
+    """Scoped log prints a begin message when constructed and an end message on deletion, i.e., soon
+    after the object leaves scope.
+
+    Examples:
+        >>> def test_function():
+        >>>     # will log begin message here and end message after the function returns
+        >>>     _ = ScopedLog(log_channel.debug)
     """
     def __init__(self, log_fn, format_str="", *args):
-        """FIXME
+        """Construct a new scoped logger and print the begin message.
         """
         super().__init__(log_fn, format_str, *args)
         self._start_scoped_log()
 
     def __del__(self):
-        """FIXME
+        """Print the end message when this logger is deleted.
         """
         self._end_scoped_log()
 
 # pylint: disable=too-few-public-methods
 class ContextLog(_ScopedLogBase):
-    """FIXME
+    """Context log prints a begin message when a context manager is entered and the end message when
+    the context manager exits.
+
+    Examples:
+        >>> with ContextLog(chan.debug):
+        >>>   # logs begin message when context manager is entered
+        >>>   print('hello world')
+        >>>   # logs the end message when the context manager exits
     """
     def __enter__(self):
-        """FIXME
+        """Log the begin message when the context manager starts.
         """
         self._start_scoped_log()
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        """FIXME
+        """Log the end message when the context manager exits.
         """
         self._end_scoped_log()
 
 # pylint: disable=too-few-public-methods
 class FunctionLog(ScopedLog):
-    """Scoped log class that adds the function name to the BEGIN/END lines.
+    """Function log behaves like a ScopedLog but adds the function name to the begin and end
+    messages.  This is intended to be used for loging when a function starts and ends.
+
+    Notes:
+        Using the @logged_function decorator is the prefered (pythonic) method for logging
+        functions, consider using that instead.
+
+    Examples:
+        >>> def test_function():
+        >>>     # will log the begin message here and end message after the function returns
+        >>>     # messages will include the name 'test_function'
+        >>>     _ = ScopedLog(log_channel.debug)
     """
     def __init__(self, log_fn, format_str="", *args):
         fn_name = traceback.format_stack()[-2].strip().split(',')[2].split(' ')[2].strip()
         format_str = "%s(" + format_str + ")"
         super().__init__(log_fn, format_str, fn_name, *args)
 
-# for compatibility
+# older name for FunctionLog, provided for compatibility
 class FnLog(FunctionLog):
     pass
 
 def logged_function(log_fn, format_str="", *fmt_args):
+    """Function log decorator is a scoped log that adds the function name to the begin and end
+    messages.  This is intended to be used for loging when a function starts and ends.
+
+    Examples:
+        >>> @logged_function(log_channel.debug)
+        >>> def test_function():
+        >>>     # will log the begin message before the function is entered and the end message
+        >>>     # after the function exits
+        >>>     print('hello world!')
+    """
+    # decorator function returned after arguments are passed
     def decorator(func):
-        @functools.wraps(func)
+        # wrapper function returned by decorator
+        @functools.wraps(func) # ensures that docstrings are maintained
         def wrapper(*args, **kwargs):
             fmt_str = "%s(" + format_str + ")"
             with ContextLog(log_fn, fmt_str, func.__name__, *fmt_args):
@@ -504,8 +538,11 @@ def logged_function(log_fn, format_str="", *fmt_args):
 ## Timers ######################################################################
 
 class _TimedLogBase:
+    """Base class for timed loggers.  This class provides methods for starting and stopping the
+    logger and expects the child class to call them when appropriate.
+    """
     def __init__(self, log_fn, format_str, *args):
-        """FIXME
+        """Construct a new timed logger.
         """
         self.log_fn = log_fn
         self.format_str = format_str
@@ -513,12 +550,12 @@ class _TimedLogBase:
         self.start_time = 0
 
     def _start_timed_log(self):
-        """FIXME
+        """Get the start time for this timed logger.
         """
         self.start_time = time.time()
 
     def _end_timed_log(self):
-        """FIXME
+        """Gets the end time and prints the end message for this timed logger.
         """
         duration = str(timedelta(seconds=time.time() - self.start_time))
         fmt = self.format_str + "%s"
@@ -527,29 +564,63 @@ class _TimedLogBase:
 
 # pylint: disable=too-few-public-methods
 class ScopedTimer(_TimedLogBase):
-    """Scoped log class that starts a timer at construction and logs the time delta at destruction.
+    """Scoped timer that starts a timer at construction and logs the time delta at destruction.
+
+    Notes:
+        Using the @timed_function decorator is the prefered (pythonic) method for timing entire
+        functions, consider using that instead.
+
+    Examples:
+        >>> def test_function():
+        >>>     # will log the time delta when the function exits
+        >>>     _ = ScopedTimer(log_channel.debug)
     """
     def __init__(self, log_fn, format_str="", *args):
+        """Construct a new scoped timer and get the start time.
+        """
         super().__init__(log_fn, format_str, *args)
         self._start_timed_log()
 
     def __del__(self):
+        """Log the end message, including time delta, when this timer is deleted.
+        """
         self._end_timed_log()
 
 class ContextTimer(_TimedLogBase):
+    """Context timer that starts a timer when a context is entered and logs the time delta when the
+    context exits.
+
+    Examples:
+        >>> with ContextTimer(chan.debug):
+        >>>   # starts the timer when the context starts
+        >>>   print('hello world')
+        >>>   # logs the time delta when the context manager exits
+    """
     def __enter__(self):
-        """FIXME
+        """Start the timer when a context is entered.
         """
         self._start_timed_log()
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        """FIXME
+        """Log the end message, including time delta, when the context exits.
         """
         self._end_timed_log()
 
 def timed_function(log_fn, format_str="", *fmt_args):
+    """Timed function decorator is a scoped timer that adds the function name to the end messages.
+    This is intended to be used for loging the time required for a function to complete.
+
+    Examples:
+        >>> @timed_function(log_channel.debug)
+        >>> def test_function():
+        >>>     # will start the timer just before test_function begins and log the time spent
+        >>>     # after it returns
+        >>>     print('hello world!')
+    """
+    # decorator function returned after arguments are passed
     def decorator(func):
+        # wrapper function returned by decorator
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             with ContextTimer(log_fn, format_str, *fmt_args):

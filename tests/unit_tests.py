@@ -8,7 +8,8 @@
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 #
 # *****************************************************************
-
+'''ALog unit tests.
+'''
 import io
 import json
 import logging
@@ -106,13 +107,11 @@ class TestJsonCompatibility(unittest.TestCase):
         self.assertIsInstance(logged_output, dict)
 
 class TestCustomFormatter(unittest.TestCase):
-
     def test_pretty_with_args(self):
         '''Tests that a manually constructed AlogPrettyFormatter can be used'''
         alog.configure('info', '', formatter=alog.AlogPrettyFormatter(10))
 
 class TestThreadId(unittest.TestCase):
-
     def test_thread_id_json(self):
         '''Test that the thread id is given with json formatting'''
         commands_to_run = get_subproc_cmds([
@@ -148,7 +147,6 @@ class TestThreadId(unittest.TestCase):
         self.assertIn('thread_id', parts)
 
 class TestLogCode(unittest.TestCase):
-
     def test_log_code_dict(self):
         '''Test that logging a dict with a log code and message adds the code to
         the header as expected
@@ -196,8 +194,7 @@ class TestLogCode(unittest.TestCase):
         self.assertEqual(parts['message'], 'This is a test')
 
     def test_log_code_with_formatting(self):
-        '''Test that logging with a log code and formatting arguments to the
-        message
+        '''Test that logging with a log code and formatting arguments to the message.
         '''
         commands_to_run = get_subproc_cmds([
             "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
@@ -219,8 +216,7 @@ class TestLogCode(unittest.TestCase):
         self.assertEqual(parts['message'], 'This is a test 1')
 
     def test_native_logging(self):
-        '''Test that logging with the native logger works, despite overridden
-        functions
+        '''Test that logging with the native logger works, despite overridden functions.
         '''
         commands_to_run = get_subproc_cmds([
             "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
@@ -241,8 +237,7 @@ class TestLogCode(unittest.TestCase):
         self.assertEqual(parts['message'], 'This is a test 1')
 
     def test_log_code_json(self):
-        '''Test that logging with a log code and the json formatter works as
-        expected
+        '''Test that logging with a log code and the json formatter works as expected.
         '''
         commands_to_run = get_subproc_cmds([
             "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
@@ -263,8 +258,7 @@ class TestLogCode(unittest.TestCase):
         self.assertIn('message', parts)
         self.assertEqual(parts['message'], 'This is a test')
 
-class TestLogScoping(unittest.TestCase):
-
+class TestScopedLoggers(unittest.TestCase):
     def test_context_managed_scoping(self):
         '''Test that deindent happens when with statement goes out of scope.'''
         commands_to_run = get_subproc_cmds([
@@ -304,6 +298,130 @@ class TestLogScoping(unittest.TestCase):
         in_scope_log, out_scope_log = [line for line in logged_output if is_log_msg(line['message'])]
         self.assertGreaterEqual(in_scope_log['num_indent'], 1)
         self.assertEqual(out_scope_log['num_indent'], 0)
+
+    def test_direct_function_logger(self):
+        '''Test to make sure that scoped function logger works.
+        '''
+        commands_to_run = get_subproc_cmds([
+            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
+            "test_channel = alog.use_channel('test_log_scoping')",
+            "def test():",
+            "    _ = alog.FunctionLog(test_channel.info, 'inner')",
+            "    test_channel.info('%s', 'This should be scoped')" % test_code,
+            "test()",
+            "test_channel.info('%s', 'This should not be scoped')" % test_code
+        ])
+        # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
+        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
+        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
+        self.assertEqual(len(logged_output), 4)
+        # Parse out the two messages we explicitly logged. Only the first should be indented
+        in_scope_log, out_scope_log = [line for line in logged_output if is_log_msg(line['message'])]
+        self.assertGreaterEqual(in_scope_log['num_indent'], 1)
+        self.assertEqual(out_scope_log['num_indent'], 0)
+
+    def test_decorated_function_logger(self):
+        '''Test to make sure that function logger works with decorators.
+        '''
+        commands_to_run = get_subproc_cmds([
+            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
+            "test_channel = alog.use_channel('test_log_scoping')",
+            "@alog.logged_function(test_channel.info, 'inner')",
+            "def test():",
+            "    test_channel.info('%s', 'This should be scoped')" % test_code,
+            "test()",
+            "test_channel.info('%s', 'This should not be scoped')" % test_code
+        ])
+        # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
+        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
+        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
+        self.assertEqual(len(logged_output), 4)
+        # Parse out the two messages we explicitly logged. Only the first should be indented
+        in_scope_log, out_scope_log = [line for line in logged_output if is_log_msg(line['message'])]
+        self.assertGreaterEqual(in_scope_log['num_indent'], 1)
+        self.assertEqual(out_scope_log['num_indent'], 0)
+
+class TestTimedLoggers(unittest.TestCase):
+    def test_context_managed_timer(self):
+        commands_to_run = get_subproc_cmds([
+            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
+            "test_channel = alog.use_channel('test_log_scoping')",
+            "with alog.ContextTimer(test_channel.info, 'timed: '):",
+            "   test_channel.info('%s', 'Test message.')" % test_code,
+        ])
+        # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
+        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
+        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
+        self.assertEqual(len(logged_output), 2)
+
+        # Parse out the two messages we explicitly logged. Only the first should be indented
+        test_log, timed_log = [line for line in logged_output if is_log_msg(line['message'])]
+
+        # verify number of fields
+        self.assertEqual(len(test_log), 8)
+        self.assertEqual(len(timed_log), 7)
+
+        # ensure timer outputs a timedelta
+        timed_message = timed_log['message']
+        self.assertTrue(timed_message.startswith('timed: 0:'))
+        self.assertTrue(re.match(r'^timed: [0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9]+$', timed_message))
+
+    def test_scoped_timer(self):
+        commands_to_run = get_subproc_cmds([
+            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
+            "test_channel = alog.use_channel('test_log_scoping')",
+            "def test():",
+            "    _ = alog.ScopedTimer(test_channel.info, 'timed: ')",
+            "    test_channel.info('%s', 'Test message.')" % test_code,
+            "test()",
+        ])
+        # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
+        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
+        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
+        self.assertEqual(len(logged_output), 2)
+
+        # Parse out the two messages we explicitly logged. Only the first should be indented
+        test_log, timed_log = [line for line in logged_output if is_log_msg(line['message'])]
+
+        # verify number of fields
+        self.assertEqual(len(test_log), 8)
+        self.assertEqual(len(timed_log), 7)
+
+        # ensure timer outputs a timedelta
+        timed_message = timed_log['message']
+        self.assertTrue(timed_message.startswith('timed: 0:'))
+        self.assertTrue(re.match(r'^timed: [0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9]+$', timed_message))
+
+    def test_decorated_timer(self):
+        commands_to_run = get_subproc_cmds([
+            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
+            "test_channel = alog.use_channel('test_log_scoping')",
+            "@alog.timed_function(test_channel.info, 'timed: ')",
+            "def test():",
+            "    test_channel.info('%s', 'Test message.')" % test_code,
+            "test()",
+        ])
+        # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
+        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
+        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
+        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
+        self.assertEqual(len(logged_output), 2)
+
+        # Parse out the two messages we explicitly logged. Only the first should be indented
+        test_log, timed_log = [line for line in logged_output if is_log_msg(line['message'])]
+
+        # verify number of fields
+        self.assertEqual(len(test_log), 8)
+        self.assertEqual(len(timed_log), 7)
+
+        # ensure timer outputs a timedelta
+        timed_message = timed_log['message']
+        self.assertTrue(timed_message.startswith('timed: 0:'))
+        self.assertTrue(re.match(r'^timed: [0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9]+$', timed_message))
 
 if __name__ == "__main__":
     # has verbose output of tests; otherwise just says all passed or not
