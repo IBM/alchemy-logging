@@ -459,7 +459,7 @@ class ScopedLog(_ScopedLogBase):
     Examples:
         >>> def test_function():
         >>>     # will log begin message here and end message after returning
-        >>>     _ = ScopedLog(log_channel.debug)
+        >>>     _ = alog.ScopedLog(log_channel.debug)
     """
     def __init__(self, log_fn, format_str="", *args):
         """Construct a new scoped logger and print the begin message.
@@ -478,7 +478,7 @@ class ContextLog(_ScopedLogBase):
     the end message when the context manager exits.
 
     Examples:
-        >>> with ContextLog(chan.debug):
+        >>> with alog.ContextLog(chan.debug):
         >>>   # logs begin message when context manager is entered
         >>>   print('hello world')
         >>>   # logs the end message when the context manager exits
@@ -501,14 +501,14 @@ class FunctionLog(ScopedLog):
     function starts and ends.
 
     Notes:
-        Using the @logged_function decorator is the prefered (pythonic) method
+        Using the @alog.logged_function decorator is the prefered (pythonic) method
         for logging functions, consider using that instead.
 
     Examples:
         >>> def test_function():
         >>>     # will log the begin message here and end message after the
         >>>     # function returns messages will include the name test_function
-        >>>     _ = FunctionLog(log_channel.debug)
+        >>>     _ = alog.FunctionLog(log_channel.debug)
     """
     def __init__(self, log_fn, format_str="", *args):
         fn_name = traceback.format_stack()[-2].strip().split(',')[2].split(' ')[2].strip()
@@ -525,7 +525,7 @@ def logged_function(log_fn, format_str="", *fmt_args):
     function starts and ends.
 
     Examples:
-        >>> @logged_function(log_channel.debug)
+        >>> @alog.logged_function(log_channel.debug)
         >>> def test_function():
         >>>     # will log the begin message before the function is entered and
         >>>     # the end message after the function exits
@@ -576,13 +576,13 @@ class ScopedTimer(_TimedLogBase):
     at destruction.
 
     Notes:
-        Using the @timed_function decorator is the prefered (pythonic) method
-        for timing entire functions, consider using that instead.
+        Using the @alog.timed_function decorator is the prefered (pythonic)
+        method for timing entire functions, consider using that instead.
 
     Examples:
         >>> def test_function():
         >>>     # will log the time delta when the function exits
-        >>>     _ = ScopedTimer(log_channel.debug)
+        >>>     _ = alog.ScopedTimer(log_channel.debug)
     """
     def __init__(self, log_fn, format_str="", *args):
         """Construct a new scoped timer and get the start time.
@@ -600,7 +600,7 @@ class ContextTimer(_TimedLogBase):
     time delta when the context exits.
 
     Examples:
-        >>> with ContextTimer(chan.debug):
+        >>> with alog.ContextTimer(chan.debug):
         >>>   # starts the timer when the context starts
         >>>   print('hello world')
         >>>   # logs the time delta when the context manager exits
@@ -622,7 +622,7 @@ def timed_function(log_fn, format_str="", *fmt_args):
     for a function to complete.
 
     Examples:
-        >>> @timed_function(log_channel.debug)
+        >>> @alog.timed_function(log_channel.debug)
         >>> def test_function():
         >>>     # will start the timer just before test_function begins and log
         >>>     # the time spent after it returns
