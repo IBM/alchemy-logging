@@ -21,7 +21,6 @@ import unittest
 import re
 
 # Import the implementation details so that we can test them
-#import alog.alog as alog
 import alog.alog as alog
 
 # Note on log capture: In these tests, we could attach a stream capture handler,
