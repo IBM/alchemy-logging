@@ -8,8 +8,9 @@
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 #
 # *****************************************************************
-"""Alchemy Logger is a logging framework built on top of the standard python logging package with
-a number of additional features, including log channels, configurable formatting and scoped loggers.
+"""Alchemy Logger is a logging framework built on top of the standard python
+logging package with a number of additional features, including log channels,
+configurable formatting and scoped loggers.
 """
 import functools
 import json
@@ -57,8 +58,9 @@ class AlogFormatterBase(logging.Formatter):
 class AlogJsonFormatter(AlogFormatterBase):
     """Log formatter which prints messages a single-line json.
     """
-    _FIELDS_TO_PRINT = ['name', 'levelname', 'asctime', 'message', 'exc_text',
-                        'region-id', 'org-id', 'tran-id', 'watson-txn-id', 'channel']
+    _FIELDS_TO_PRINT = ['name', 'levelname', 'asctime', 'message',
+                        'exc_text', 'region-id', 'org-id', 'tran-id',
+                        'watson-txn-id', 'channel']
 
     def __init__(self):
         AlogFormatterBase.__init__(self)
@@ -77,8 +79,8 @@ class AlogJsonFormatter(AlogFormatterBase):
             return log_record_keyname
 
     def _extract_fields_from_record_as_dict(self, record):
-        """Extracts the fields we want out of log record and puts them into an dict
-        for easy jsonification.
+        """Extracts the fields we want out of log record and puts them into an
+        dict for easy jsonification.
 
         Args:
             record (logging.LogRecord): The log record object to extract from.
@@ -221,7 +223,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
 
 ## Constants ###################################################################
 
-# Global maps from name <-> level, pull these from logging packages for easy consistency
+# Global maps from name <-> level, pull from logging packages for consistency
 # pylint: disable=protected-access
 g_alog_level_to_name = {level: name.lower() for level, name in logging._levelToName.items()}
 
@@ -349,9 +351,10 @@ def _parse_str_of_filters(filters):
 ## Core ########################################################################
 
 def configure(default_level, filters="", formatter='pretty', thread_id=False):
-    """Top-level configuration function for the alog module. This function configures
-    the logging package to use the given default level and overwrites the levels
-    for all filters as specified. It can also configure the formatter type.
+    """Top-level configuration function for the alog module. This function
+    configures the logging package to use the given default level and
+    overwrites the levels for all filters as specified. It can also configure
+    the formatter type.
 
     Args:
         default_level   str
@@ -413,7 +416,8 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
         lgr.addHandler(handler)
 
 def use_channel(channel):
-    """Interface wrapper for python alog implementation to keep consistency with other languages.
+    """Interface wrapper for python alog implementation to keep consistency with
+    other languages.
     """
     return logging.getLogger(channel)
 
@@ -422,8 +426,9 @@ def use_channel(channel):
 # The whole point of this class is act on scope changes
 # pylint: disable=too-few-public-methods
 class _ScopedLogBase:
-    """Base class for scoped loggers.  This class provides methods for starting and stopping the
-    logger and expects the child class to call them when appropriate.
+    """Base class for scoped loggers.  This class provides methods for starting
+    and stopping the logger and expects the child class to call them when
+    appropriate.
     """
     def __init__(self, log_fn, format_str, *args):
         """Construct a new scoped logger.
@@ -448,12 +453,12 @@ class _ScopedLogBase:
 
 # pylint: disable=too-few-public-methods
 class ScopedLog(_ScopedLogBase):
-    """Scoped log prints a begin message when constructed and an end message on deletion, i.e., soon
-    after the object leaves scope.
+    """Scoped log prints a begin message when constructed and an end message on
+    deletion, i.e., soon after the object leaves scope.
 
     Examples:
         >>> def test_function():
-        >>>     # will log begin message here and end message after the function returns
+        >>>     # will log begin message here and end message after returning
         >>>     _ = ScopedLog(log_channel.debug)
     """
     def __init__(self, log_fn, format_str="", *args):
@@ -469,8 +474,8 @@ class ScopedLog(_ScopedLogBase):
 
 # pylint: disable=too-few-public-methods
 class ContextLog(_ScopedLogBase):
-    """Context log prints a begin message when a context manager is entered and the end message when
-    the context manager exits.
+    """Context log prints a begin message when a context manager is entered and
+    the end message when the context manager exits.
 
     Examples:
         >>> with ContextLog(chan.debug):
@@ -491,17 +496,18 @@ class ContextLog(_ScopedLogBase):
 
 # pylint: disable=too-few-public-methods
 class FunctionLog(ScopedLog):
-    """Function log behaves like a ScopedLog but adds the function name to the begin and end
-    messages.  This is intended to be used for loging when a function starts and ends.
+    """Function log behaves like a ScopedLog but adds the function name to the
+    begin and end messages.  This is intended to be used for loging when a
+    function starts and ends.
 
     Notes:
-        Using the @logged_function decorator is the prefered (pythonic) method for logging
-        functions, consider using that instead.
+        Using the @logged_function decorator is the prefered (pythonic) method
+        for logging functions, consider using that instead.
 
     Examples:
         >>> def test_function():
-        >>>     # will log the begin message here and end message after the function returns
-        >>>     # messages will include the name 'test_function'
+        >>>     # will log the begin message here and end message after the
+        >>>     # function returns messages will include the name test_function
         >>>     _ = ScopedLog(log_channel.debug)
     """
     def __init__(self, log_fn, format_str="", *args):
@@ -514,14 +520,15 @@ class FnLog(FunctionLog):
     pass
 
 def logged_function(log_fn, format_str="", *fmt_args):
-    """Function log decorator is a scoped log that adds the function name to the begin and end
-    messages.  This is intended to be used for loging when a function starts and ends.
+    """Function log decorator is a scoped log that adds the function name to the
+    begin and end messages.  This is intended to be used for loging when a
+    function starts and ends.
 
     Examples:
         >>> @logged_function(log_channel.debug)
         >>> def test_function():
-        >>>     # will log the begin message before the function is entered and the end message
-        >>>     # after the function exits
+        >>>     # will log the begin message before the function is entered and
+        >>>     # the end message after the function exits
         >>>     print('hello world!')
     """
     # decorator function returned after arguments are passed
@@ -538,8 +545,9 @@ def logged_function(log_fn, format_str="", *fmt_args):
 ## Timers ######################################################################
 
 class _TimedLogBase:
-    """Base class for timed loggers.  This class provides methods for starting and stopping the
-    logger and expects the child class to call them when appropriate.
+    """Base class for timed loggers.  This class provides methods for starting
+    and stopping the logger and expects the child class to call them when
+    appropriate.
     """
     def __init__(self, log_fn, format_str, *args):
         """Construct a new timed logger.
@@ -564,11 +572,12 @@ class _TimedLogBase:
 
 # pylint: disable=too-few-public-methods
 class ScopedTimer(_TimedLogBase):
-    """Scoped timer that starts a timer at construction and logs the time delta at destruction.
+    """Scoped timer that starts a timer at construction and logs the time delta
+    at destruction.
 
     Notes:
-        Using the @timed_function decorator is the prefered (pythonic) method for timing entire
-        functions, consider using that instead.
+        Using the @timed_function decorator is the prefered (pythonic) method
+        for timing entire functions, consider using that instead.
 
     Examples:
         >>> def test_function():
@@ -587,8 +596,8 @@ class ScopedTimer(_TimedLogBase):
         self._end_timed_log()
 
 class ContextTimer(_TimedLogBase):
-    """Context timer that starts a timer when a context is entered and logs the time delta when the
-    context exits.
+    """Context timer that starts a timer when a context is entered and logs the
+    time delta when the context exits.
 
     Examples:
         >>> with ContextTimer(chan.debug):
@@ -608,14 +617,15 @@ class ContextTimer(_TimedLogBase):
         self._end_timed_log()
 
 def timed_function(log_fn, format_str="", *fmt_args):
-    """Timed function decorator is a scoped timer that adds the function name to the end messages.
-    This is intended to be used for loging the time required for a function to complete.
+    """Timed function decorator is a scoped timer that adds the function name to
+    the end messages.  This is intended to be used for loging the time required
+    for a function to complete.
 
     Examples:
         >>> @timed_function(log_channel.debug)
         >>> def test_function():
-        >>>     # will start the timer just before test_function begins and log the time spent
-        >>>     # after it returns
+        >>>     # will start the timer just before test_function begins and log
+        >>>     # the time spent after it returns
         >>>     print('hello world!')
     """
     # decorator function returned after arguments are passed
