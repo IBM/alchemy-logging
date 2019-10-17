@@ -430,7 +430,7 @@ class _ScopedLogBase:
     and stopping the logger and expects the child class to call them when
     appropriate.
     """
-    def __init__(self, log_fn, format_str, *args):
+    def __init__(self, log_fn, format_str="", *args):
         """Construct a new scoped logger.
         """
         self.log_fn = log_fn
@@ -508,7 +508,7 @@ class FunctionLog(ScopedLog):
         >>> def test_function():
         >>>     # will log the begin message here and end message after the
         >>>     # function returns messages will include the name test_function
-        >>>     _ = ScopedLog(log_channel.debug)
+        >>>     _ = FunctionLog(log_channel.debug)
     """
     def __init__(self, log_fn, format_str="", *args):
         fn_name = traceback.format_stack()[-2].strip().split(',')[2].split(' ')[2].strip()
@@ -549,7 +549,7 @@ class _TimedLogBase:
     and stopping the logger and expects the child class to call them when
     appropriate.
     """
-    def __init__(self, log_fn, format_str, *args):
+    def __init__(self, log_fn, format_str="", *args):
         """Construct a new timed logger.
         """
         self.log_fn = log_fn
