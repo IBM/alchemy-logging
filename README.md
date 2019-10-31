@@ -64,7 +64,7 @@ import alog
 import logging
 
 def foo():
-  alog.debug('FOO', 'Debug line on the FOO channel with an int value %d!', 10)
+  alog.use_channel('FOO').debug('Debug line on the FOO channel with an int value %d!', 10)
   logging.debug3('debug3 line on the MAIN channel')
 ```
 
