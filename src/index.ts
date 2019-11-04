@@ -52,9 +52,7 @@ export interface AlogConfig {
 
 // Tweak the Bunyan log maps so that any logger created after this is called
 // will have our fun custom levels.
-function configure() {
-    validateLevelMaps(customLevelFromName, customNameFromLevel);
-
+export function configure(argOne: AlogConfig | string, filters?: any, formatter?: string | FormatterFunc) {
     // Clear out all existing mappings from bunyan
     for (const property of Object.keys(bunyan.levelFromName)) {
         delete bunyan.levelFromName[property];
@@ -66,6 +64,22 @@ function configure() {
     // Use our custom levels
     Object.assign(bunyan.levelFromName, customLevelFromName);
     Object.assign(bunyan.nameFromLevel, customNameFromLevel);
+
+    let defaultLevel: number = null;
+    // argOne might be a big map of all the things: (defaultLevel, Filters, formatter)
+    if (typeof argOne === "string") {
+        defaultLevel = bunyan.levelFromName[argOne];
+    } else if (typeof argOne === "number") {
+        defaultLevel = argOne;
+    } else if (typeof argOne === "object") {
+
+    } else {
+        throw "feces";
+    }
+
+
+
+
 }
 
 // configure();
