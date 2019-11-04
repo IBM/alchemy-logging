@@ -17,7 +17,7 @@ const DEBUG3 = 7;
 const DEBUG4 = 6;
 
 // Build the map which maps strings -> numeric levels
-const customLevelFromName  = {
+const customLevelFromName: {[levelName: string]: number} = {
     'off': OFF,
     'fatal': FATAL,
     'error': ERROR,
@@ -31,10 +31,14 @@ const customLevelFromName  = {
     'debug4': DEBUG4
 };
 
+function isLogCode(arg_one: string) {
+    return arg_one.match(/^<[A-Z]{3}\d{8}[IWDEFT]>$/) !== null;
+}
+
 // Build the map which maps numeric levels -> strings
-const customNameFromLevel = {};
-Object.keys(customLevelFromName).forEach(function(name) {
-    customNameFromLevel[customLevelFromName[name]] = name;
+const customNameFromLevel:{[levelValue: number]: string} = {};
+Object.keys(customLevelFromName).forEach((levelName: string) => {
+    customNameFromLevel[customLevelFromName[levelName]] = levelName;
 });
 /////////////////////////////////////////////////////////////////////
 
@@ -42,7 +46,7 @@ Object.keys(customLevelFromName).forEach(function(name) {
 // STUB: Precondition check which blows up in a very angry way
 // if any of our custom level (string keys or numeric values) explode if anything
 // is conflicting with Bunyan.
-function validateLevelMaps(customLevelFromName, customNameFromLevel) {
+function validateLevelMaps(customLevelFromName: {[levelName: string]: number}, customNameFromLevel: {[levelValue: number]: string}) {
     // First, check for collisions against bunyan.levelFromName
     console.log(`STUB: Would have compared ${JSON.stringify(customLevelFromName)} to ${JSON.stringify(bunyan.levelFromName)} here.`);
     // Then, check against bunyan.nameFromLevel
@@ -67,16 +71,16 @@ function configure() {
     Object.assign(bunyan.nameFromLevel, customNameFromLevel);
 }
 
-configure();
-sampleLogger = bunyan.createLogger({name: 'test_app', level: DEBUG1});
+// configure();
+// sampleLogger = bunyan.createLogger({name: 'test_app', level: DEBUG1});
 
-// Put these things into a real testing dir if any of this actually works. Bunyan should be able to resolve custom levels.
-bunyan.resolveLevel('debug1');
-
-
+// // Put these things into a real testing dir if any of this actually works. Bunyan should be able to resolve custom levels.
+// bunyan.resolveLevel('debug1');
 
 
-function mkALogEmitter(minLevel) {
+
+
+function mkALogEmitter(minLevel: number) {
     return function() {
 
         const record = {
