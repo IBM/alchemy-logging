@@ -68,8 +68,13 @@ export function configure(argOne: AlogConfig | string, filters?: any, formatter?
     let defaultLevel: number = null;
     // argOne might be a big map of all the things: (defaultLevel, Filters, formatter)
     if (typeof argOne === "string") {
-        defaultLevel = bunyan.levelFromName[argOne];
+        if (bunyan.levelFromName.hasOwnProperty(argOne)) {
+            defaultLevel = bunyan.levelFromName[argOne];
+        } else {
+            throw "foxes";
+        }
     } else if (typeof argOne === "number") {
+        if (argOne)
         defaultLevel = argOne;
     } else if (typeof argOne === "object") {
 
