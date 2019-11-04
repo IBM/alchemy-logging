@@ -1,0 +1,38 @@
+{
+    "extends": [
+        "tslint:recommended",
+        "tslint-no-unused-expression-chai"
+    ],
+    "rules": {
+        "max-line-length": {
+            "options": [120]
+        },
+        "new-parens": true,
+        "no-arg": true,
+        "no-bitwise": true,
+        "no-conditional-assignment": true,
+        "no-consecutive-blank-lines": false,
+        "no-console": {
+            "severity": "warning",
+            "options": [
+                "log"
+            ]
+        },
+        "interface-name": false,
+        "quotemark": false,
+        "trailing-comma": false,
+        "semicolon": false,
+        "object-literal-sort-keys": false,
+        "no-empty-interface": false,
+        "no-var-requires": false,
+        "no-namespace": false
+    },
+    "jsRules": {
+        "max-line-length": {
+            "options": [120]
+        },
+        "quotemark": false,
+        "object-literal-sort-keys": false,
+        "no-string-literal": false
+    }
+}
