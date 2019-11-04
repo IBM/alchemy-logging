@@ -81,7 +81,7 @@ function mkALogEmitter(minLevel) {
 
         const record = {
             message: '',
-            channel: this.fields.name.
+            channel: this.fields.name,
             level: bunyan.nameFromLevel[this._level],
             timestamp: new Date(),
             num_indent: 0,
@@ -148,33 +148,33 @@ NICE FEATURES:
 
 // Examples ////////////////////////////////////////////////////////////////////
 
-// const alog = require('alog');
-alog.configure('debug', 'MAIN:debug4');
-alog.configure('debug', { MAIN: 'debug4' });
-alog.configure(alog.DEBUG, {MAIN: alog.DEBUG4});
-alog.configure({
-    defaultLevel: alog.DEBUG,
-    filters: {
-        MAIN: alog.DEBUG4
-    },
-    formatter: 'json' // 'pretty', CustomFormatter(),
-    // threaId: true
-});
+// // const alog = require('alog');
+// alog.configure('debug', 'MAIN:debug4');
+// alog.configure('debug', { MAIN: 'debug4' });
+// alog.configure(alog.DEBUG, {MAIN: alog.DEBUG4});
+// alog.configure({
+//     defaultLevel: alog.DEBUG,
+//     filters: {
+//         MAIN: alog.DEBUG4
+//     },
+//     formatter: 'json' // 'pretty', CustomFormatter(),
+//     // threaId: true
+// });
 
-const channel = alog.useChannel('MAIN');
+// const channel = alog.useChannel('MAIN');
 
-// 1. Log code
-// 2. Message generator (string, function, string + format args)
-// 3. Metadata map
-//
-// log_code? message [format_args]...
+// // 1. Log code
+// // 2. Message generator (string, function, string + format args)
+// // 3. Metadata map
+// //
+// // log_code? message [format_args]...
 
-channel.debug2('<TST12345678D>', 'This is the %dst test', 1);
-channel.withMetadata({
-    metakey: 'val',
-}).info('<TST12345678I>', 'This is a test');
-channel.debug4('<TST12345678D>', () => {
-    let m = '';
-    myContainer.forEach((element) => m += '--' + element);
-    return m;
-});
+// channel.debug2('<TST12345678D>', 'This is the %dst test', 1);
+// channel.withMetadata({
+//     metakey: 'val',
+// }).info('<TST12345678I>', 'This is a test');
+// channel.debug4('<TST12345678D>', () => {
+//     let m = '';
+//     myContainer.forEach((element) => m += '--' + element);
+//     return m;
+// });
