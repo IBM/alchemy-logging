@@ -1,4 +1,4 @@
-const bunyan = require('bunyan');
+import bunyan from require('bunyan');
 
 /////////////////////////////////////////////////////////////////////
 // Bunyan's built in log levels include entries for the following:
@@ -18,25 +18,25 @@ const DEBUG4 = 6;
 
 // Build the map which maps strings -> numeric levels
 const customLevelFromName: {[levelName: string]: number} = {
-    'off': OFF,
-    'fatal': FATAL,
-    'error': ERROR,
-    'warning': WARNING,
-    'info': INFO,
-    'trace': TRACE,
-    'debug': DEBUG,
-    'debug1': DEBUG1,
-    'debug2': DEBUG2,
-    'debug3': DEBUG3,
-    'debug4': DEBUG4
+    off: OFF,
+    fatal: FATAL,
+    error: ERROR,
+    warning: WARNING,
+    info: INFO,
+    trace: TRACE,
+    debug: DEBUG,
+    debug1: DEBUG1,
+    debug2: DEBUG2,
+    debug3: DEBUG3,
+    debug4: DEBUG4
 };
 
-function isLogCode(arg_one: string) {
-    return arg_one.match(/^<[A-Z]{3}\d{8}[IWDEFT]>$/) !== null;
+function isLogCode(argOne: string) {
+    return argOne.match(/^<[A-Z]{3}\d{8}[IWDEFT]>$/) !== null;
 }
 
 // Build the map which maps numeric levels -> strings
-const customNameFromLevel:{[levelValue: number]: string} = {};
+const customNameFromLevel: {[levelValue: number]: string} = {};
 Object.keys(customLevelFromName).forEach((levelName: string) => {
     customNameFromLevel[customLevelFromName[levelName]] = levelName;
 });
@@ -46,11 +46,15 @@ Object.keys(customLevelFromName).forEach((levelName: string) => {
 // STUB: Precondition check which blows up in a very angry way
 // if any of our custom level (string keys or numeric values) explode if anything
 // is conflicting with Bunyan.
-function validateLevelMaps(customLevelFromName: {[levelName: string]: number}, customNameFromLevel: {[levelValue: number]: string}) {
+function validateLevelMaps(
+    levelFromName: {[levelName: string]: number},
+    nameFromLevel: {[levelValue: number]: string}) {
     // First, check for collisions against bunyan.levelFromName
-    console.log(`STUB: Would have compared ${JSON.stringify(customLevelFromName)} to ${JSON.stringify(bunyan.levelFromName)} here.`);
+    console.log(`STUB: Would have compared ${
+        JSON.stringify(levelFromName)} to ${JSON.stringify(bunyan.levelFromName)} here.`);
     // Then, check against bunyan.nameFromLevel
-    console.log(`STUB: Would have compared ${JSON.stringify(customNameFromLevel)} to ${JSON.stringify(bunyan.nameFromLevel)} here.`);
+    console.log(`STUB: Would have compared ${
+        JSON.stringify(nameFromLevel)} to ${JSON.stringify(bunyan.nameFromLevel)} here.`);
 }
 
 // Tweak the Bunyan log maps so that any logger created after this is called
@@ -74,8 +78,8 @@ function configure() {
 // configure();
 // sampleLogger = bunyan.createLogger({name: 'test_app', level: DEBUG1});
 
-// // Put these things into a real testing dir if any of this actually works. Bunyan should be able to resolve custom levels.
-// bunyan.resolveLevel('debug1');
+// // Put these things into a real testing dir if any of this actually works.
+// Bunyan should be able to resolve custom levels.
 
 
 
@@ -94,33 +98,28 @@ function mkALogEmitter(minLevel: number) {
         // If no args: log an empty message
         if (arguments.length === 0) {
             // Nothing to do
-        }
-
+        } else if (arguments.length === 1) {
         // If one arg:
-        else if (arguments.length === 1) {
+
             // if function: invoke and log as message
             if (typeof arguments[0] === 'function') {
-
+                //DEBUG
             }
             // elif objects: log key/val objects
             // else: log string message
-        }
+        } else if (arguments.length === 2) {
+            // If two args:
 
-        // If two args:
-        else if (arguments.length === 2) {
             // if first log code:
             //   set log code on props, treat second as single-arg message
             // else: first message, second additional key/val objects
-        }
+        } else if (arguments.length === 3) {
+            // If three args:
 
-        // If three args:
-        else if (arguments.length === 3) {
             // if first NOT a log code: barf
             // else: code, message, metadata
-        }
-
-        // More than three => error
-        else {
+        } else {
+            // More than three => error
 
         }
     }
