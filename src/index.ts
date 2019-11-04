@@ -42,19 +42,12 @@ Object.keys(customLevelFromName).forEach((levelName: string) => {
 });
 /////////////////////////////////////////////////////////////////////
 
+export type FormatterFunc = (logRecord: any) => string;
 
-// STUB: Precondition check which blows up in a very angry way
-// if any of our custom level (string keys or numeric values) explode if anything
-// is conflicting with Bunyan.
-function validateLevelMaps(
-    levelFromName: {[levelName: string]: number},
-    nameFromLevel: {[levelValue: number]: string}) {
-    // First, check for collisions against bunyan.levelFromName
-    console.log(`STUB: Would have compared ${
-        JSON.stringify(levelFromName)} to ${JSON.stringify(bunyan.levelFromName)} here.`);
-    // Then, check against bunyan.nameFromLevel
-    console.log(`STUB: Would have compared ${
-        JSON.stringify(nameFromLevel)} to ${JSON.stringify(bunyan.nameFromLevel)} here.`);
+export interface AlogConfig {
+    defaultLevel: number;
+    filters?: {[channelName: string]: number};
+    formatter?: FormatterFunc;
 }
 
 // Tweak the Bunyan log maps so that any logger created after this is called
