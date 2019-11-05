@@ -1,9 +1,9 @@
-import bunyan from require('bunyan');
 
-/////////////////////////////////////////////////////////////////////
-// Bunyan's built in log levels include entries for the following:
-// 10 -> trace, 20 -> debug, 30 -> info, 40 -> warn, 50 -> error, 60 -> fatal
-// Make sure there aren't any collisions!
+// Third Party
+import bunyan from 'bunyan';
+
+// Constants ///////////////////////////////////////////////////////////////////
+
 const OFF = 60;
 const FATAL = 59;
 const ERROR = bunyan.ERROR;
@@ -40,7 +40,57 @@ const customNameFromLevel: {[levelValue: number]: string} = {};
 Object.keys(customLevelFromName).forEach((levelName: string) => {
     customNameFromLevel[customLevelFromName[levelName]] = levelName;
 });
-/////////////////////////////////////////////////////////////////////
+
+// Validation //////////////////////////////////////////////////////////////////
+
+function isValidLevel(lvl: any) {
+    return Number.isInteger(lvl) && lvl > 0;
+}
+
+function isValidFilterConfig(filterConfig: any) {
+    for (const key of filterConfig) {
+        if (!isValidLevel(filterConfig[key])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function isValidConfig(configObject: any): boolean {
+
+    // defaultLevel
+    if (!isValidLevel(configObject.defaultLevel)) {
+        return false;
+    }
+
+    // filters
+    if (configObject.filters !== undefined) {
+        if (typeof configObject.filters !== 'object') {
+            return false;
+        }
+        if (!isValidFilterConfig(configObject.filters)) {
+            return false;
+        }
+    }
+
+    // formatter
+    if (configObject.formatter !== undefined && typeof configObject.formatter !== 'function') {
+        return false;
+    }
+
+    // other
+
+    return true;
+}
+
+// Formatter ///////////////////////////////////////////////////////////////////
+
+function PrettyFormatter(record: any): string {
+    //DEBUG
+    return 'THIS IS A STUB !';
+}
+
+// Core Exports ////////////////////////////////////////////////////////////////
 
 export type FormatterFunc = (logRecord: any) => string;
 
@@ -50,41 +100,89 @@ export interface AlogConfig {
     formatter?: FormatterFunc;
 }
 
+export class AlogConfigError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = this.constructor.name;
+    }
+};
+
 // Tweak the Bunyan log maps so that any logger created after this is called
 // will have our fun custom levels.
 export function configure(argOne: AlogConfig | string, filters?: any, formatter?: string | FormatterFunc) {
     // Clear out all existing mappings from bunyan
     for (const property of Object.keys(bunyan.levelFromName)) {
-        delete bunyan.levelFromName[property];
+        delete (bunyan.levelFromName as any)[property];
     }
     for (const property of Object.keys(bunyan.nameFromLevel)) {
-        delete bunyan.nameFromLevel[property];
+        delete (bunyan.nameFromLevel as any)[property];
     }
 
     // Use our custom levels
     Object.assign(bunyan.levelFromName, customLevelFromName);
     Object.assign(bunyan.nameFromLevel, customNameFromLevel);
 
-    let defaultLevel: number = null;
+    // These are the three core pieces of config we need from the various args
+    let parsedDefaultLevel: number = null;
+    let parsedFilters: { [channelName: string]: number };
+    let parsedFormatter: FormatterFunc = PrettyFormatter;
+
     // argOne might be a big map of all the things: (defaultLevel, Filters, formatter)
+    let argOneObj = false;
     if (typeof argOne === "string") {
         if (bunyan.levelFromName.hasOwnProperty(argOne)) {
-            defaultLevel = bunyan.levelFromName[argOne];
+            parsedDefaultLevel = (bunyan.levelFromName as any)[argOne];
         } else {
-            throw "foxes";
+            throw new AlogConfigError(`Invalid level string [${argOne}]`);
         }
     } else if (typeof argOne === "number") {
-        if (argOne)
-        defaultLevel = argOne;
+        if (isValidLevel(argOne)) {
+            parsedDefaultLevel = argOne;
+        } else {
+            throw new AlogConfigError(`Invalid level value [${argOne}]`);
+        }
     } else if (typeof argOne === "object") {
-
+        argOneObj = true;
+        if (isValidConfig(argOne)) {
+            parsedDefaultLevel = argOne.defaultLevel;
+            filters = argOne.filters || filters;
+            formatter = argOne.formatter || formatter;
+        } else {
+            throw new AlogConfigError(`Invalid config object: ${JSON.stringify(argOne)}`);
+        }
     } else {
-        throw "feces";
+        throw new AlogConfigError(`Invalid argument type: [${typeof argOne}]`);
     }
 
+    // filters
+    if (argOneObj && filters !== undefined) {
+        throw new AlogConfigError('Cannot specify both config object and filters argument');
+    } else if (filters !== undefined) {
+        // Validate if it's an object
+        if (typeof filters === 'object') {
+            if (!isValidFilterConfig(filters)) {
+                throw new AlogConfigError(`Invalid filter config: ${JSON.stringify(filters)}`);
+            }
+            parsedFilters = filters;
+        } else if (typeof filters === 'string') {
+            // Parse if it's a string
+            const parsed: any = {};
+            filters.split(',').forEach((part: string) => {
+                const keyVal = part.split(':');
+                if (keyVal.length !== 2) {
+                    throw new AlogConfigError(`Invalid filter spec part [${part}]`);
+                } else if (!isValidLevel(keyVal[1])) {
+                    throw new AlogConfigError(`Invalid filter level [${part}]`);
+                }
+                parsed[keyVal[0]] = (bunyan.levelFromName as any)[keyVal[1]];
+            });
+            parsedFilters = parsed;
+        } else {
+            throw new AlogConfigError(`Invalid argument type for filters: [${typeof filters}]`);
+        }
+    }
 
-
-
+    // formatter
 }
 
 // configure();
