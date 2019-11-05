@@ -20,6 +20,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/bunyan": "^1.8.6",
     "@types/node": "^12.12.5",
     "bunyan": "^1.8.12",
     "typescript": "^3.6.4"
