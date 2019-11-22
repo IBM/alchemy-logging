@@ -1,9 +1,10 @@
 ## MUST HAVE
-- [ ] Full set of levels
-- [ ] Multi-channel level setting
-- [ ] Pretty and JSON formatting
-- [ ] Lazy message construction
-- [ ] (core detail) custom output stream, mostly for testing
+- [X] Full set of levels
+- [X] Multi-channel level setting
+- [ ] Pretty formatting
+- [X] JSON formatting
+- [X] Lazy message construction
+- [X] (core detail) custom output stream, mostly for testing
 
 ## CORE FEATURES
 - [ ] channel.with_metadata()
