@@ -26,7 +26,7 @@ const nameFromLevel = alog.__get__('nameFromLevel');
 
 /*-- Tests -------------------------------------------------------------------*/
 
-describe("Alog TypeScript Test Suite", () => {
+describe("Alog TypeScript Internals Test Suite", () => {
   // core singleton suite
   describe("AlogCoreSingleton", () => {
 
