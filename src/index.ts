@@ -1,4 +1,7 @@
 
+// Standard
+import { Writable } from 'stream';
+
 // Third Party
 const deepCopy = require('deepcopy');
 
@@ -10,17 +13,17 @@ export { AlogConfigError } from './alog_config_error';
 
 // Constants ///////////////////////////////////////////////////////////////////
 
-const OFF = 60;
-const FATAL = 59;
-const ERROR = 50;
-const WARNING = 40;
-const INFO = 30;
-const TRACE = 15;
-const DEBUG = 10;
-const DEBUG1 = 9;
-const DEBUG2 = 8;
-const DEBUG3 = 7;
-const DEBUG4 = 6;
+export const OFF = 60;
+export const FATAL = 59;
+export const ERROR = 50;
+export const WARNING = 40;
+export const INFO = 30;
+export const TRACE = 15;
+export const DEBUG = 10;
+export const DEBUG1 = 9;
+export const DEBUG2 = 8;
+export const DEBUG3 = 7;
+export const DEBUG4 = 6;
 
 // Build the map which maps strings -> numeric levels
 const levelFromName: {[levelName: string]: number} = {
@@ -46,7 +49,13 @@ Object.keys(levelFromName).forEach((levelName: string) => {
 // Validation //////////////////////////////////////////////////////////////////
 
 function isValidLevel(lvl: any) {
-  return Number.isInteger(lvl) && lvl > 0;
+  if (typeof lvl === 'number') {
+    return Number.isInteger(lvl) && lvl > 0;
+  } else if (typeof lvl === 'string') {
+    return Object.keys(levelFromName).includes(lvl);
+  } else {
+    return false;
+  }
 }
 
 function isLogCode(arg: any) {
@@ -97,8 +106,7 @@ function PrettyFormatter(record: any): string {
 }
 
 function JsonFormatter(record: any): string {
-  //DEBUG
-  return JSON.stringify({stub: 'message'});
+  return JSON.stringify(record);
 }
 
 const defaultFormatterMap: {[key: string]: FormatterFunc} = {
@@ -111,7 +119,9 @@ const defaultFormatterMap: {[key: string]: FormatterFunc} = {
 // Core singleton class
 class AlogCoreSingleton {
 
-  // Public //
+  ///////////////////
+  // Public Static //
+  ///////////////////
 
   // Public singleton access
   public static getInstance() {
@@ -121,44 +131,123 @@ class AlogCoreSingleton {
     return AlogCoreSingleton.instance;
   }
 
-  // Private //
+  ////////////////////
+  // Private Static //
+  ////////////////////
 
   // The singleton instance
   private static instance: AlogCoreSingleton;
 
-  // Private member data
+  /////////////////////////
+  // Private Member Data //
+  /////////////////////////
+
   private defaultLevel: number;
-  private filters: {[channel: string]: number};
+  private filters: FilterMap;
   private formatter: FormatterFunc;
-  private indent: number;
+  private numIndent: number;
   private metadata: LogMetadata;
+  private streams: Writable[];
 
   // Private constructor
   private constructor() {
-    this.defaultLevel = OFF;
-    this.filters = {};
-    this.formatter = defaultFormatterMap.pretty;
-    this.indent = 0;
-    this.metadata = {};
+    this.reset();
+
+    // Add log functions for each level
+    for (const levelName of Object.keys(levelFromName)) {
+      (this as any)[levelName] = (
+        channel: string,
+        argThree: string|MessageGenerator|LogMetadata,
+        argFour?: string|MessageGenerator|LogMetadata,
+        argFive?: LogMetadata) => {
+        this.log(levelFromName[levelName], channel, argThree, argFour, argFive);
+      }
+    }
+  }
+
+  /////////////////////////////
+  // Public Instance Methods //
+  /////////////////////////////
+
+  // Set the default level
+  public setDefaultLevel(defaultLevel: number): void {
+    this.defaultLevel = defaultLevel;
+  }
+
+  // Set the filters
+  public setFilters(filters: FilterMap): void {
+    this.filters = filters;
+  }
+
+  // Set the formatter
+  public setFormatter(formatter: FormatterFunc): void {
+    this.formatter = formatter;
+  }
+
+  // Increment the indent level
+  public indent(): void {
+    this.numIndent += 1;
+  }
+
+  // Decrement the indent level
+  public deindent(): void {
+    this.numIndent = Math.max(0, this.numIndent - 1);
+  }
+
+  // Add a metadata key/value pair
+  public addMetadata(key: string, value: any): void {
+    this.metadata[key] = value;
+  }
+
+  // Remove a metadata key
+  public removeMetadata(key: string): void {
+    delete this.metadata[key];
+  }
+
+  // Add an output stream
+  public addOutputStream(stream: Writable): void {
+    this.streams.push(stream);
+  }
+
+  // Reset streams to default
+  public resetOutputStreams(): void {
+    this.streams = [process.stdout];
   }
 
   // The core channel/level enablement check function
-  private isEnabled(channel: string, level: number): boolean {
-    return level > (this.filters[channel] || this.defaultLevel);
+  public isEnabled(channel: string, level: number): boolean {
+    const enabledLevel: number = (this.filters[channel] || this.defaultLevel);
+    return level >= enabledLevel;
   }
 
-  // Emitter implementation
+  //////////////////////////////
+  // Private Instance Methods //
+  //////////////////////////////
+
+  // Reset to default values for all member data
+  private reset() {
+    this.defaultLevel = OFF;
+    this.filters = {};
+    this.formatter = defaultFormatterMap.pretty;
+    this.numIndent = 0;
+    this.metadata = {};
+
+    // Output streams. At minimum send it to stdout
+    this.streams = [process.stdout];
+  }
+
+  // Level-agnostic log implementation
   //
   // Note that this function implements the following signature options for a
   // given log-level emitter:
   //
-  // emit(channel: string, logCode: string, message?: MessageGenerator, metadata?: LogMetadata)
-  // emit(channel: string, logCode: string, message?: string, metadata?: LogMetadata)
-  // emit(channel: string, messageGenerator: string, metadata?: LogMetadata)
-  // emit(channel: string, message: string, metadata?: LogMetadata)
+  // log(channel: string, logCode: string, message?: MessageGenerator, metadata?: LogMetadata)
+  // log(channel: string, logCode: string, message?: string, metadata?: LogMetadata)
+  // log(channel: string, messageGenerator: string, metadata?: LogMetadata)
+  // log(channel: string, message: string, metadata?: LogMetadata)
   //
-  // @param channel: The channel to log on
   // @param level: The level to emit the log at
+  // @param channel: The channel to log on
   // @param argThree: This can be one of several things:
   //  * log code - Add that to the record as the log_code
   //  * string - Just log it
@@ -171,9 +260,9 @@ class AlogCoreSingleton {
   //  * LogMetadata - Metadata for the call
   // @param argFive: If argThree is a log code and argFour is either a string or
   //  a MessageGenerator, this can be extra metadata for the call
-  private emit(
-    channel: string,
+  private log(
     level: number,
+    channel: string,
     argThree: string|MessageGenerator|LogMetadata,
     argFour?: string|MessageGenerator|LogMetadata,
     argFive?: LogMetadata,
@@ -189,7 +278,7 @@ class AlogCoreSingleton {
         level_str: nameFromLevel[level],
         timestamp: new Date().toISOString(),
         message: '',
-        num_indent: this.indent,
+        num_indent: this.numIndent,
       };
 
       // If there is global metadata configured, add it
@@ -203,11 +292,11 @@ class AlogCoreSingleton {
 
         if (typeof argFour === 'function') {
           // Signature 1
-          // emit(channel: string, logCode: string, message?: MessageGenerator, metadata?: LogRecord)
+          // log(channel: string, logCode: string, message?: MessageGenerator, metadata?: LogRecord)
           record.message = argFour() as string;
         } else if (typeof argFour === 'string') {
           // Signature 2
-          // emit(channel: string, logCode: string, message?: string, metadata?: LogRecord)
+          // log(channel: string, logCode: string, message?: string, metadata?: LogRecord)
           record.message = argFour as string;
         } // else ignore argFour because it's invalid
         if (argFive !== undefined && Object.keys(argFive).length) {
@@ -218,11 +307,11 @@ class AlogCoreSingleton {
 
         if (typeof argThree === 'function') {
           // Signature 3
-          // emit(channel: string, message?: MessageGenerator, metadata?: LogRecord)
+          // log(channel: string, message?: MessageGenerator, metadata?: LogRecord)
           record.message = argThree() as string;
         } else if (typeof argThree === 'string')  {
           // Signature 4
-          // emit(channel: string, message?: string, metadata?: LogRecord)
+          // log(channel: string, message?: string, metadata?: LogRecord)
           record.message = argThree as string;
         } // else ignore argThree because it's invalid
         if (argFour !== undefined && typeof argFour === 'object' && Object.keys(argFour).length) {
@@ -233,15 +322,72 @@ class AlogCoreSingleton {
       // Invoke the formatter to get the formatted string
       const logStr: string = this.formatter(record);
 
-      // Write it to stdout
-      process.stdout.write(logStr);
+      // Write to each of the output streams
+      this.streams.forEach((stream: Writable): void => {
+        stream.write(logStr + '\n');
+      });
+    }
+  }
+}
+
+// Configure Implementation ////////////////////////////////////////////////////
+
+function levelFromArg(level: string | number): number {
+  if (typeof level === 'string') {
+    if (isValidLevel(level)) {
+      return levelFromName[level];
+    } else {
+      throw new AlogConfigError(`Invalid level name: [${level}]`);
+    }
+  } else if (typeof level === 'number') {
+    return level;
+  } else {
+    throw new AlogConfigError(`Invalid argument type: [${typeof level}]`);
+  }
+}
+
+function filtersFromArg(filters: FilterMap | string): FilterMap {
+  if (typeof filters === 'object') {
+    if (!isValidFilterConfig(filters)) {
+      throw new AlogConfigError(`Invalid filter config: ${JSON.stringify(filters)}`);
+    }
+    return filters;
+  } else if (typeof filters === 'string') {
+    // Parse if it's a string
+    const parsed: any = {};
+    filters.split(',').forEach((part: string) => {
+      const keyVal = part.split(':');
+      if (keyVal.length !== 2) {
+        throw new AlogConfigError(`Invalid filter spec part [${part}]`);
+      } else if (!isValidLevel(keyVal[1])) {
+        throw new AlogConfigError(`Invalid filter level [${part}]`);
+      }
+      parsed[keyVal[0]] = levelFromName[keyVal[1]];
+    });
+    return parsed;
+  } else {
+    throw new AlogConfigError(`Invalid argument type for filters: [${typeof filters}]`);
+  }
+}
+
+function formatterFromArg(formatter: FormatterFunc | string) {
+  if (typeof formatter === 'function') {
+    // If it's a function, just use it (and hope it's a valid one!)
+    return formatter;
+  } else if (typeof formatter === 'string') {
+    // Otherwise, look up in the default formatter map
+    if (defaultFormatterMap[formatter] === undefined) {
+      throw new AlogConfigError(
+        `Invalid formatter type "${formatter}". Options are: [${Object.keys(defaultFormatterMap)}]`);
+    } else {
+      return defaultFormatterMap[formatter];
     }
   }
 }
 
 function parseConfigureArgs(
-  argOne: AlogConfig | string,
-  filters?: {[key: string]: number} | string,
+  argOne: AlogConfig | string | number,
+  filters?: FilterMap| string,
   formatter?: string | FormatterFunc): AlogConfig {
 
   // These are the three core pieces of config we need from the various args
@@ -250,19 +396,7 @@ function parseConfigureArgs(
   let parsedFormatter: FormatterFunc = defaultFormatterMap.pretty;
 
   // argOne might be a big map of all the things: (defaultLevel, Filters, formatter)
-  if (typeof argOne === "string") {
-    if (levelFromName.hasOwnProperty(argOne)) {
-      parsedDefaultLevel = levelFromName[argOne];
-    } else {
-      throw new AlogConfigError(`Invalid level string [${argOne}]`);
-    }
-  } else if (typeof argOne === "number") {
-    if (isValidLevel(argOne)) {
-      parsedDefaultLevel = argOne;
-    } else {
-      throw new AlogConfigError(`Invalid level value [${argOne}]`);
-    }
-  } else if (typeof argOne === "object") {
+  if (typeof argOne === "object") {
     if (isValidConfig(argOne)) {
 
       // If other arguments specified, throw an error
@@ -284,49 +418,17 @@ function parseConfigureArgs(
       throw new AlogConfigError(`Invalid config object: ${JSON.stringify(argOne)}`);
     }
   } else {
-    throw new AlogConfigError(`Invalid argument type: [${typeof argOne}]`);
+    parsedDefaultLevel = levelFromArg(argOne);
   }
 
   // filters
   if (filters !== undefined) {
-    // Validate if it's an object
-    if (typeof filters === 'object') {
-      if (!isValidFilterConfig(filters)) {
-        throw new AlogConfigError(`Invalid filter config: ${JSON.stringify(filters)}`);
-      }
-      parsedFilters = filters;
-    } else if (typeof filters === 'string') {
-      // Parse if it's a string
-      const parsed: any = {};
-      filters.split(',').forEach((part: string) => {
-        const keyVal = part.split(':');
-        if (keyVal.length !== 2) {
-          throw new AlogConfigError(`Invalid filter spec part [${part}]`);
-        } else if (!isValidLevel(keyVal[1])) {
-          throw new AlogConfigError(`Invalid filter level [${part}]`);
-        }
-        parsed[keyVal[0]] = levelFromName[keyVal[1]];
-      });
-      parsedFilters = parsed;
-    } else {
-      throw new AlogConfigError(`Invalid argument type for filters: [${typeof filters}]`);
-    }
+    parsedFilters = filtersFromArg(filters);
   }
 
   // formatter
   if (formatter !== undefined) {
-    if (typeof formatter === 'function') {
-      // If it's a function, just use it (and hope it's a valid one!)
-      parsedFormatter = formatter;
-    } else if (typeof formatter === 'string') {
-      // Otherwise, look up in the default formatter map
-      if (defaultFormatterMap[formatter] === undefined) {
-        throw new AlogConfigError(
-          `Invalid formatter type "${formatter}". Options are: [${Object.keys(defaultFormatterMap)}]`);
-      } else {
-        parsedFormatter = defaultFormatterMap[formatter];
-      }
-    }
+    parsedFormatter = formatterFromArg(formatter);
   }
 
   // Return the config
@@ -338,6 +440,9 @@ function parseConfigureArgs(
 }
 
 // Core Exports ////////////////////////////////////////////////////////////////
+
+// Map type for channel -> level filters
+export interface FilterMap {[channel: string]: number}
 
 // Artibrary metadata dict
 export interface LogMetadata {[key: string]: any}
@@ -365,7 +470,7 @@ export type MessageGenerator = () => string;
 
 export interface AlogConfig {
   defaultLevel: number;
-  filters?: {[channelName: string]: number};
+  filters?: FilterMap;
   formatter?: FormatterFunc;
 }
 
@@ -386,14 +491,20 @@ export interface AlogConfig {
  */
 export function configure(
   argOne: AlogConfig | string,
-  filters?: {[key: string]: number} | string,
+  filters?: FilterMap | string,
   formatter?: string | FormatterFunc) {
 
   // Configure core singleton to support alog channels and levels
+  const instance: AlogCoreSingleton = AlogCoreSingleton.getInstance();
 
   // Set the current defaults
-
+  const config: AlogConfig = parseConfigureArgs(argOne, filters, formatter);
+  instance.setDefaultLevel(config.defaultLevel);
+  instance.setFilters(config.filters);
+  instance.setFormatter(config.formatter);
 }
+
+
 
 // Feature Priorities //////////////////////////////////////////////////////////
 /*
