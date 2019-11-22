@@ -355,7 +355,7 @@ function filtersFromArg(filters: FilterMap | string): FilterMap {
   } else if (typeof filters === 'string') {
     // Parse if it's a string
     const parsed: any = {};
-    filters.split(',').forEach((part: string) => {
+    filters.split(',').filter((part) => part.trim() !== '').forEach((part: string) => {
       const keyVal = part.split(':');
       if (keyVal.length !== 2) {
         throw new AlogConfigError(`Invalid filter spec part [${part}]`);
