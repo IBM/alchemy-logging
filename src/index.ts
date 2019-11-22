@@ -504,70 +504,12 @@ export function configure(
   instance.setFormatter(config.formatter);
 }
 
-
-
-// Feature Priorities //////////////////////////////////////////////////////////
-/*
-
-MUST HAVE:
-* Full set of levels
-* Multi-channel level setting
-* Pretty and JSON formatting
-* Lazy message construction
-* (core detail) custom output stream, mostly for testing
-
-CORE FEATURES:
-* channel.with_metadata()
-* Scoped indentation
-* Function trace BEGIN/END
-* Some way to produce complex logs lazily
-
-NICE FEATURES:
-* Scoped timing
-* Decorators for scope behavior
-* ALOG_USE_CHANNEL for classes
-
-*/
-
-
-// Examples ////////////////////////////////////////////////////////////////////
-
-
-// configure();
-// sampleLogger = bunyan.createLogger({name: 'test_app', level: DEBUG1});
-
-// // Put these things into a real testing dir if any of this actually works.
-// Bunyan should be able to resolve custom levels.
-
-
-
-// // const alog = require('alog');
-// alog.configure('debug', 'MAIN:debug4');
-// alog.configure('debug', { MAIN: 'debug4' });
-// alog.configure(alog.DEBUG, {MAIN: alog.DEBUG4});
-// alog.configure({
-//   defaultLevel: alog.DEBUG,
-//   filters: {
-//     MAIN: alog.DEBUG4
-//   },
-//   formatter: 'json' // 'pretty', CustomFormatter(),
-//   // threaId: true
-// });
-
-// const channel = alog.useChannel('MAIN');
-
-// // 1. Log code
-// // 2. Message generator (string, function, string + format args)
-// // 3. Metadata map
-// //
-// // log_code? message [format_args]...
-
-// channel.debug2('<TST12345678D>', 'This is the %dst test', 1);
-// channel.withMetadata({
-//   metakey: 'val',
-// }).info('<TST12345678I>', 'This is a test');
-// channel.debug4('<TST12345678D>', () => {
-//   let m = '';
-//   myContainer.forEach((element) => m += '--' + element);
-//   return m;
-// });
+// Expose parts of the singleton directly
+export const indent = AlogCoreSingleton.getInstance().indent;
+export const deindent = AlogCoreSingleton.getInstance().deindent;
+export const addMetadata = AlogCoreSingleton.getInstance().addMetadata;
+export const removeMetadata = AlogCoreSingleton.getInstance().removeMetadata;
+export const isEnabled = AlogCoreSingleton.getInstance().isEnabled;
+for (const levelName of Object.keys(levelFromName)) {
+  exports[levelName] = (AlogCoreSingleton.getInstance() as any)[levelName];
+}
