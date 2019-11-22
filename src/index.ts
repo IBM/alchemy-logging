@@ -171,52 +171,54 @@ class AlogCoreSingleton {
 
   // Set the default level
   public setDefaultLevel(defaultLevel: number): void {
-    this.defaultLevel = defaultLevel;
+    AlogCoreSingleton.getInstance().defaultLevel = defaultLevel;
   }
 
   // Set the filters
   public setFilters(filters: FilterMap): void {
-    this.filters = filters;
+    AlogCoreSingleton.getInstance().filters = filters;
   }
 
   // Set the formatter
   public setFormatter(formatter: FormatterFunc): void {
-    this.formatter = formatter;
+    AlogCoreSingleton.getInstance().formatter = formatter;
   }
 
   // Increment the indent level
   public indent(): void {
-    this.numIndent += 1;
+    AlogCoreSingleton.getInstance().numIndent += 1;
   }
 
   // Decrement the indent level
   public deindent(): void {
-    this.numIndent = Math.max(0, this.numIndent - 1);
+    AlogCoreSingleton.getInstance().numIndent = Math.max(0, AlogCoreSingleton.getInstance().numIndent - 1);
   }
 
   // Add a metadata key/value pair
   public addMetadata(key: string, value: any): void {
-    this.metadata[key] = value;
+    AlogCoreSingleton.getInstance().metadata[key] = value;
   }
 
   // Remove a metadata key
   public removeMetadata(key: string): void {
-    delete this.metadata[key];
+    delete AlogCoreSingleton.getInstance().metadata[key];
   }
 
   // Add an output stream
   public addOutputStream(stream: Writable): void {
-    this.streams.push(stream);
+    AlogCoreSingleton.getInstance().streams.push(stream);
   }
 
   // Reset streams to default
   public resetOutputStreams(): void {
-    this.streams = [process.stdout];
+    AlogCoreSingleton.getInstance().streams = [process.stdout];
   }
 
   // The core channel/level enablement check function
   public isEnabled(channel: string, level: number): boolean {
-    const enabledLevel: number = (this.filters[channel] || this.defaultLevel);
+    const enabledLevel: number = (
+      AlogCoreSingleton.getInstance().filters[channel] ||
+      AlogCoreSingleton.getInstance().defaultLevel);
     return level >= enabledLevel;
   }
 
@@ -269,7 +271,7 @@ class AlogCoreSingleton {
   ): void {
 
     // Only do any work if this level/channel combo is enabled
-    if (this.isEnabled(channel, level)) {
+    if (AlogCoreSingleton.getInstance().isEnabled(channel, level)) {
 
       // Create the base log record
       const record: LogRecord = {
@@ -278,12 +280,12 @@ class AlogCoreSingleton {
         level_str: nameFromLevel[level],
         timestamp: new Date().toISOString(),
         message: '',
-        num_indent: this.numIndent,
+        num_indent: AlogCoreSingleton.getInstance().numIndent,
       };
 
       // If there is global metadata configured, add it
-      if (Object.keys(this.metadata).length) {
-        record.metadata = deepCopy(this.metadata);
+      if (Object.keys(AlogCoreSingleton.getInstance().metadata).length) {
+        record.metadata = deepCopy(AlogCoreSingleton.getInstance().metadata);
       }
 
       // Determine if the first variable arg is a log code
@@ -320,10 +322,10 @@ class AlogCoreSingleton {
       }
 
       // Invoke the formatter to get the formatted string
-      const logStr: string = this.formatter(record);
+      const logStr: string = AlogCoreSingleton.getInstance().formatter(record);
 
       // Write to each of the output streams
-      this.streams.forEach((stream: Writable): void => {
+      AlogCoreSingleton.getInstance().streams.forEach((stream: Writable): void => {
         stream.write(logStr + '\n');
       });
     }
