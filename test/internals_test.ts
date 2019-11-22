@@ -300,10 +300,29 @@ describe("Alog TypeScript Test Suite", () => {
           },
         ])).to.be.true;
       });
+
+      it("should correctly log merged global and local metadata", () => {
+        alogCore.addMetadata('baz', 1);
+        alogCore.log(alog.DEBUG, 'TEST', "This is NOT a generated message", {foo: 'bar'});
+        alogCore.log(alog.INFO, 'FOO', "This is NOT a second generated message");
+        expect(validateLogRecords(getLogRecords(), [
+          {
+            channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
+            timestamp: IS_PRESENT, num_indent: 0,
+            message: "This is NOT a generated message",
+            metadata: {foo: 'bar', baz: 1},
+          },
+          {
+            channel: 'FOO', level: alog.INFO, level_str: nameFromLevel[alog.INFO],
+            timestamp: IS_PRESENT, num_indent: 0,
+            message: "This is NOT a second generated message",
+            metadata: {baz: 1},
+          },
+        ])).to.be.true;
+      });
     }); // log
 
     describe('level log functions', () => {
-
 
       const alogCore = AlogCoreSingleton.getInstance();
       let logStream: Writable;
