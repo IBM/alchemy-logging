@@ -14,6 +14,7 @@ const isLogCode = alog.__get__('isLogCode');
 const AlogCoreSingleton = alog.__get__('AlogCoreSingleton');
 const PrettyFormatter = alog.__get__('PrettyFormatter');
 const JsonFormatter = alog.__get__('JsonFormatter');
+const levelFromName = alog.__get__('levelFromName');
 const nameFromLevel = alog.__get__('nameFromLevel');
 
 /*-- Helpers -----------------------------------------------------------------*/
@@ -245,27 +246,123 @@ describe("Alog TypeScript Test Suite", () => {
       });
 
       it("should be able to log with signature 2", () => {
-        //DEBUG
+        alogCore.log(alog.DEBUG, 'TEST', sampleLogCode, "This is NOT a generated message", {foo: 'bar'});
+        alogCore.log(alog.INFO, 'FOO', sampleLogCode, "This is NOT a second generated message");
+        expect(validateLogRecords(getLogRecords(), [
+          {
+            channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
+            timestamp: IS_PRESENT, num_indent: 0,
+            message: "This is NOT a generated message",
+            metadata: {foo: 'bar'},
+            log_code: sampleLogCode,
+          },
+          {
+            channel: 'FOO', level: alog.INFO, level_str: nameFromLevel[alog.INFO],
+            timestamp: IS_PRESENT, num_indent: 0,
+            message: "This is NOT a second generated message",
+            log_code: sampleLogCode,
+          },
+        ])).to.be.true;
       });
 
       it("should be able to log with signature 3", () => {
-        //DEBUG
+        alogCore.log(alog.DEBUG, 'TEST', () => "This is a generated message", {foo: 'bar'});
+        alogCore.log(alog.INFO, 'FOO', () => "This is a second generated message");
+        expect(validateLogRecords(getLogRecords(), [
+          {
+            channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
+            timestamp: IS_PRESENT, num_indent: 0,
+            message: "This is a generated message",
+            metadata: {foo: 'bar'},
+          },
+          {
+            channel: 'FOO', level: alog.INFO, level_str: nameFromLevel[alog.INFO],
+            timestamp: IS_PRESENT, num_indent: 0,
+            message: "This is a second generated message",
+          },
+        ])).to.be.true;
       });
 
       it("should be able to log with signature 4", () => {
-        //DEBUG
+        alogCore.log(alog.DEBUG, 'TEST', "This is NOT a generated message", {foo: 'bar'});
+        alogCore.log(alog.INFO, 'FOO', "This is NOT a second generated message");
+        expect(validateLogRecords(getLogRecords(), [
+          {
+            channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
+            timestamp: IS_PRESENT, num_indent: 0,
+            message: "This is NOT a generated message",
+            metadata: {foo: 'bar'},
+          },
+          {
+            channel: 'FOO', level: alog.INFO, level_str: nameFromLevel[alog.INFO],
+            timestamp: IS_PRESENT, num_indent: 0,
+            message: "This is NOT a second generated message",
+          },
+        ])).to.be.true;
+      });
+    }); // log
+
+    describe('level log functions', () => {
+
+
+      const alogCore = AlogCoreSingleton.getInstance();
+      let logStream: Writable;
+      beforeEach(() => {
+        alogCore.reset();
+        alogCore.setDefaultLevel(alog.DEBUG);
+        alogCore.setFilters({LOWER: alog.WARNING, HIGHER: alog.DEBUG2});
+        alogCore.setFormatter(JsonFormatter);
+        logStream = new MemoryStreams.WritableStream();
+        alogCore.addOutputStream(logStream);
       });
 
+      function getLogRecords(): string[] {
+        return logStream.toString().split('\n').filter(
+          (line) => line !== '').map(
+          (line) => JSON.parse(line));
+      }
+
+      it('should have all the expected level functions', () => {
+        for (const levelName of Object.keys(levelFromName)) {
+          expect(alogCore).to.have.property(levelName);
+        }
+      });
+
+      it('should log with a level-function when enabled by the default level', () => {
+        alogCore.debug('TEST', "Some fun message");
+        expect(validateLogRecords(getLogRecords(), [
+          {
+            channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
+            timestamp: IS_PRESENT, num_indent: 0,
+            message: "Some fun message",
+          },
+        ])).to.be.true;
+      });
+
+      it('should not log with a level-function when disabled by the default level', () => {
+        alogCore.debug3('TEST', "Some fun message");
+        expect(validateLogRecords(getLogRecords(), [])).to.be.true;
+      });
+
+      it('should log with a level-function when enabled by the filters', () => {
+        alogCore.debug2('HIGHER', "Some fun message");
+        expect(validateLogRecords(getLogRecords(), [
+          {
+            channel: 'HIGHER', level: alog.DEBUG2, level_str: nameFromLevel[alog.DEBUG2],
+            timestamp: IS_PRESENT, num_indent: 0,
+            message: "Some fun message",
+          },
+        ])).to.be.true;
+      });
+
+      it('should not log with a level-function when disabled by the filters', () => {
+        alogCore.info('LOWER', "Some fun message");
+        expect(validateLogRecords(getLogRecords(), [])).to.be.true;
+      });
     });
 
   }); // AlogCoreSingleton
 
-  // custom stream suite
-  describe("Custom Stream Test Suite", () => {
-    it("Should attach an output string stream", () => {
-      //DEBUG
-    });
-  });
   // configure suite
 
   // pretty print suite
