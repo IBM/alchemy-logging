@@ -392,7 +392,7 @@ function parseConfigureArgs(
 
   // These are the three core pieces of config we need from the various args
   let parsedDefaultLevel: number = OFF;
-  let parsedFilters: { [channelName: string]: number };
+  let parsedFilters: { [channelName: string]: number } = {};
   let parsedFormatter: FormatterFunc = defaultFormatterMap.pretty;
 
   // argOne might be a big map of all the things: (defaultLevel, Filters, formatter)
