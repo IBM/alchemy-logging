@@ -142,7 +142,51 @@ describe('Alog Typescript Public API Test Suite', () => {
   }); // log functions
 
   describe('indentation', () => {
-    //DEBUG
+
+    let logStream: Writable;
+    beforeEach(() => {
+      alog.configure(alog.DEBUG, null, 'json');
+      logStream = new MemoryStreams.WritableStream();
+      alog.addOutputStream(logStream);
+    });
+
+    it('should correctly indent and deindent multiple times', () => {
+      alog.debug('TEST', "Some fun message");
+      alog.indent();
+      alog.debug('TEST', "One level in");
+      alog.indent();
+      alog.debug('TEST', "Two levels in");
+      alog.deindent();
+      alog.debug('TEST', "Back to one level");
+      alog.deindent();
+      alog.debug('TEST', "All the way back");
+      expect(validateLogRecords(getLogRecords(logStream), [
+        {
+          channel: IS_PRESENT, level: IS_PRESENT, level_str: IS_PRESENT, timestamp: IS_PRESENT, message: IS_PRESENT,
+          num_indent: 0,
+        },
+        {
+          channel: IS_PRESENT, level: IS_PRESENT, level_str: IS_PRESENT, timestamp: IS_PRESENT, message: IS_PRESENT,
+          num_indent: 1,
+        },
+        {
+          channel: IS_PRESENT, level: IS_PRESENT, level_str: IS_PRESENT, timestamp: IS_PRESENT, message: IS_PRESENT,
+          num_indent: 2,
+        },
+        {
+          channel: IS_PRESENT, level: IS_PRESENT, level_str: IS_PRESENT, timestamp: IS_PRESENT, message: IS_PRESENT,
+          num_indent: 1,
+        },
+        {
+          channel: IS_PRESENT, level: IS_PRESENT, level_str: IS_PRESENT, timestamp: IS_PRESENT, message: IS_PRESENT,
+          num_indent: 0,
+        },
+      ])).to.be.true;
+    });
+
+    /*
+    // SCOPED INDENT TESTS
+    */
   }); // indentation
 
   describe('metadata', () => {
