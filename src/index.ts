@@ -89,8 +89,17 @@ function isValidConfig(configObject: any): boolean {
   }
 
   // formatter
-  if (configObject.formatter !== undefined && typeof configObject.formatter !== 'function') {
-    return false;
+  if (configObject.formatter !== undefined) {
+    let validFormatter = false;
+    if (typeof configObject.formatter === 'function') {
+      validFormatter = true;
+    } else if (typeof configObject.formatter === 'string'
+      && Object.keys(defaultFormatterMap).includes(configObject.formatter)) {
+      validFormatter = true;
+    }
+    if (!validFormatter) {
+      return false;
+    }
   }
 
   // other
@@ -407,7 +416,12 @@ function parseConfigureArgs(
       } else {
         parsedDefaultLevel = argOne.defaultLevel;
         parsedFilters = argOne.filters || parsedFilters;
-        parsedFormatter = argOne.formatter || parsedFormatter;
+
+        // If formatter is a string, look it up
+        parsedFormatter = (
+          (typeof argOne.formatter === 'string' && defaultFormatterMap[argOne.formatter])
+          || argOne.formatter)
+        || parsedFormatter;
 
         // Return the config directly with defaults
         return {
@@ -512,6 +526,7 @@ export const deindent = AlogCoreSingleton.getInstance().deindent;
 export const addMetadata = AlogCoreSingleton.getInstance().addMetadata;
 export const removeMetadata = AlogCoreSingleton.getInstance().removeMetadata;
 export const isEnabled = AlogCoreSingleton.getInstance().isEnabled;
+export const addOutputStream = AlogCoreSingleton.getInstance().addOutputStream;
 for (const levelName of Object.keys(levelFromName)) {
   exports[levelName] = (AlogCoreSingleton.getInstance() as any)[levelName];
 }
