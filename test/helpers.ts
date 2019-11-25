@@ -4,6 +4,7 @@ import { Writable } from 'stream';
 
 // Third Party
 import MemoryStreams from 'memory-streams';
+const deepCopy = require('deepcopy');
 const deepEqual = require('deep-equal');
 
 /*-- Constants ---------------------------------------------------------------*/
@@ -82,4 +83,17 @@ export function getLogRecords(logStream: Writable): string[] {
   return logStream.toString().split('\n').filter(
     (line) => line !== '').map(
     (line) => JSON.parse(line));
+}
+
+// Helper to create a stub record for validation where all default fields are
+// just set to IS_PRESENT
+export function stubValidationRecord(): any {
+  return deepCopy({
+    channel: IS_PRESENT,
+    level: IS_PRESENT,
+    level_str: IS_PRESENT,
+    timestamp: IS_PRESENT,
+    message: IS_PRESENT,
+    num_indent: IS_PRESENT,
+  });
 }

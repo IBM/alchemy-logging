@@ -12,6 +12,7 @@ import {
   getLogRecords,
   IS_PRESENT,
   sampleLogCode,
+  stubValidationRecord,
   validateLogRecords,
 } from './helpers';
 
@@ -161,26 +162,11 @@ describe('Alog Typescript Public API Test Suite', () => {
       alog.deindent();
       alog.debug('TEST', "All the way back");
       expect(validateLogRecords(getLogRecords(logStream), [
-        {
-          channel: IS_PRESENT, level: IS_PRESENT, level_str: IS_PRESENT, timestamp: IS_PRESENT, message: IS_PRESENT,
-          num_indent: 0,
-        },
-        {
-          channel: IS_PRESENT, level: IS_PRESENT, level_str: IS_PRESENT, timestamp: IS_PRESENT, message: IS_PRESENT,
-          num_indent: 1,
-        },
-        {
-          channel: IS_PRESENT, level: IS_PRESENT, level_str: IS_PRESENT, timestamp: IS_PRESENT, message: IS_PRESENT,
-          num_indent: 2,
-        },
-        {
-          channel: IS_PRESENT, level: IS_PRESENT, level_str: IS_PRESENT, timestamp: IS_PRESENT, message: IS_PRESENT,
-          num_indent: 1,
-        },
-        {
-          channel: IS_PRESENT, level: IS_PRESENT, level_str: IS_PRESENT, timestamp: IS_PRESENT, message: IS_PRESENT,
-          num_indent: 0,
-        },
+        Object.assign(stubValidationRecord(), {num_indent: 0}),
+        Object.assign(stubValidationRecord(), {num_indent: 1}),
+        Object.assign(stubValidationRecord(), {num_indent: 2}),
+        Object.assign(stubValidationRecord(), {num_indent: 1}),
+        Object.assign(stubValidationRecord(), {num_indent: 0}),
       ])).to.be.true;
     });
 
@@ -190,10 +176,36 @@ describe('Alog Typescript Public API Test Suite', () => {
   }); // indentation
 
   describe('metadata', () => {
-    //DEBUG
+
+    let logStream: Writable;
+    beforeEach(() => {
+      alog.configure(alog.DEBUG, undefined, 'json');
+      logStream = new MemoryStreams.WritableStream();
+      alog.addOutputStream(logStream);
+    });
+
+    it('should add and remove metadata correctly', () => {
+      alog.info('TEST', 'A');
+      alog.addMetadata('foo', 1);
+      alog.info('TEST', 'B');
+      alog.removeMetadata('foo');
+      alog.info('TEST', 'C');
+      expect(validateLogRecords(getLogRecords(logStream), [
+        Object.assign(stubValidationRecord(), {message: 'A'}),
+        Object.assign(stubValidationRecord(), {message: 'B', metadata: {foo: 1}}),
+        Object.assign(stubValidationRecord(), {message: 'C'}),
+      ])).to.be.true;
+    });
+
+    /*
+    // SCOPED METADATA TESTS
+    */
+
   }); // metadata
 
   describe('ChannelLog', () => {
-    //DEBUG
+    /*
+    // CHANNEL LOG TESTS
+    */
   }); // ChannelLog
 });
