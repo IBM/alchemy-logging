@@ -97,3 +97,8 @@ export function stubValidationRecord(): any {
     num_indent: IS_PRESENT,
   });
 }
+
+// Helper to directly serialize a record to json with no reformatting
+export function DirectJsonFormatter(record: any): string {
+  return JSON.stringify(record);
+}

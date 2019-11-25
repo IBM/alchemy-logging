@@ -9,6 +9,7 @@ const deepEqual = require('deep-equal');
 
 // Test helpers
 import {
+  DirectJsonFormatter,
   getLogRecords,
   IS_PRESENT,
   sampleLogCode,
@@ -97,7 +98,7 @@ describe('Alog Typescript Public API Test Suite', () => {
           LOWER: alog.WARNING,
           HIGHER: alog.DEBUG2,
         },
-        formatter: 'json',
+        formatter: DirectJsonFormatter,
       });
       logStream = new MemoryStreams.WritableStream();
       alog.addOutputStream(logStream);
@@ -146,7 +147,7 @@ describe('Alog Typescript Public API Test Suite', () => {
 
     let logStream: Writable;
     beforeEach(() => {
-      alog.configure(alog.DEBUG, null, 'json');
+      alog.configure(alog.DEBUG, null, DirectJsonFormatter);
       logStream = new MemoryStreams.WritableStream();
       alog.addOutputStream(logStream);
     });
@@ -179,7 +180,7 @@ describe('Alog Typescript Public API Test Suite', () => {
 
     let logStream: Writable;
     beforeEach(() => {
-      alog.configure(alog.DEBUG, undefined, 'json');
+      alog.configure(alog.DEBUG, undefined, DirectJsonFormatter);
       logStream = new MemoryStreams.WritableStream();
       alog.addOutputStream(logStream);
     });

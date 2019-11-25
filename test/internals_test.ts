@@ -9,6 +9,7 @@ const deepEqual = require('deep-equal');
 
 // Test helpers
 import {
+  DirectJsonFormatter,
   getLogRecords,
   IS_PRESENT,
   sampleLogCode,
@@ -153,7 +154,7 @@ describe("Alog TypeScript Internals Test Suite", () => {
         alogCore.reset();
         alogCore.setDefaultLevel(alog.DEBUG);
         alogCore.setFilters({LOWER: alog.INFO, HIGHER: alog.DEBUG2});
-        alogCore.setFormatter(JsonFormatter);
+        alogCore.setFormatter(DirectJsonFormatter);
         logStream = new MemoryStreams.WritableStream();
         alogCore.addOutputStream(logStream);
       });
@@ -263,7 +264,7 @@ describe("Alog TypeScript Internals Test Suite", () => {
         alogCore.reset();
         alogCore.setDefaultLevel(alog.DEBUG);
         alogCore.setFilters({LOWER: alog.WARNING, HIGHER: alog.DEBUG2});
-        alogCore.setFormatter(JsonFormatter);
+        alogCore.setFormatter(DirectJsonFormatter);
         logStream = new MemoryStreams.WritableStream();
         alogCore.addOutputStream(logStream);
       });
