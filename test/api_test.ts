@@ -9,30 +9,27 @@ const deepEqual = require('deep-equal');
 
 // Test helpers
 import {
+  getLogRecords,
   IS_PRESENT,
   sampleLogCode,
   validateLogRecords,
 } from './helpers';
 
-// For this test, we only import the public API
+// For this test, we are testing the public API. As such, we only want a couple
+// of internals available for validation.
 const alog = require('rewire')('../src');
-
-/*-- Helpers -----------------------------------------------------------------*/
-
-// This is the ONLY place that we should mess with the internals
-function reset() {
-  alog.__get__('AlogCoreSingleton').getInstance().reset();
-}
+const levelFromName = alog.__get__('levelFromName');
+const nameFromLevel = alog.__get__('nameFromLevel');
 
 /*-- Tests -------------------------------------------------------------------*/
 
 describe('Alog Typescript Public API Test Suite', () => {
 
-  describe('configure', () => {
+  beforeEach(() => {
+    alog.__get__('AlogCoreSingleton').getInstance().reset();
+  });
 
-    beforeEach(() => {
-      reset();
-    });
+  describe('configure', () => {
 
     it('should be able to configure with just a default level string', () => {
       alog.configure('debug');
@@ -40,36 +37,108 @@ describe('Alog Typescript Public API Test Suite', () => {
     });
 
     it('should be able to configure with just a default level number', () => {
-      //DEBUG
+      alog.configure(alog.DEBUG);
+      expect(alog.isEnabled('TEST', alog.DEBUG)).to.be.true;
     });
 
     it('should be able to configure with default level string and filter spec string', () => {
-      //DEBUG
+      alog.configure('debug', 'FOO:info');
+      expect(alog.isEnabled('TEST', alog.DEBUG)).to.be.true;
+      expect(alog.isEnabled('FOO', alog.DEBUG)).to.be.false;
     });
 
     it('should be able to configure with default level string and empty filter spec string', () => {
-      //DEBUG
+      alog.configure('debug', '');
+      expect(alog.isEnabled('TEST', alog.DEBUG)).to.be.true;
+      expect(alog.isEnabled('FOO', alog.DEBUG)).to.be.true;
     });
 
     it('should be able to configure with default level number and filter object', () => {
-      //DEBUG
+      alog.configure(alog.DEBUG, {FOO: alog.INFO});
+      expect(alog.isEnabled('TEST', alog.DEBUG)).to.be.true;
+      expect(alog.isEnabled('FOO', alog.DEBUG)).to.be.false;
     });
 
     it('should be able to configure with default level number and formatter string', () => {
-      //DEBUG
+      alog.configure(alog.DEBUG, '', 'json');
+      expect(alog.isEnabled('TEST', alog.DEBUG)).to.be.true;
+      expect(alog.isEnabled('FOO', alog.DEBUG)).to.be.true;
     });
 
     it('should be able to configure with default level number and formatter function', () => {
-      //DEBUG
+      let loggedIt: boolean = false;
+      alog.configure(alog.DEBUG, '', () => { loggedIt =  true; });
+      expect(alog.isEnabled('TEST', alog.DEBUG)).to.be.true;
+      expect(alog.isEnabled('FOO', alog.DEBUG)).to.be.true;
+      alog.debug('TEST', 'This is a test');
+      expect(loggedIt).to.be.true;
     });
 
     it('should be able to configure with config object', () => {
-      //DEBUG
+      alog.configure({
+        defaultLevel: alog.DEBUG,
+        filters: {
+          FOO: alog.INFO,
+        },
+      });
+      expect(alog.isEnabled('TEST', alog.DEBUG)).to.be.true;
+      expect(alog.isEnabled('FOO', alog.DEBUG)).to.be.false;
     });
   }); // configure
 
   describe('log functions', () => {
-    //DEBUG
+
+    let logStream: Writable;
+    beforeEach(() => {
+      alog.configure({
+        defaultLevel: alog.DEBUG,
+        filters: {
+          LOWER: alog.WARNING,
+          HIGHER: alog.DEBUG2,
+        },
+        formatter: 'json',
+      });
+      logStream = new MemoryStreams.WritableStream();
+      alog.addOutputStream(logStream);
+    });
+
+    it('should have all the expected level functions', () => {
+      for (const levelName of Object.keys(levelFromName)) {
+        expect(alog).to.have.property(levelName);
+      }
+    });
+
+    it('should log with a level-function when enabled by the default level', () => {
+      alog.debug('TEST', "Some fun message");
+      expect(validateLogRecords(getLogRecords(logStream), [
+        {
+          channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
+          timestamp: IS_PRESENT, num_indent: 0,
+          message: "Some fun message",
+        },
+      ])).to.be.true;
+    });
+
+    it('should not log with a level-function when disabled by the default level', () => {
+      alog.debug3('TEST', "Some fun message");
+      expect(validateLogRecords(getLogRecords(logStream), [])).to.be.true;
+    });
+
+    it('should log with a level-function when enabled by the filters', () => {
+      alog.debug2('HIGHER', "Some fun message");
+      expect(validateLogRecords(getLogRecords(logStream), [
+        {
+          channel: 'HIGHER', level: alog.DEBUG2, level_str: nameFromLevel[alog.DEBUG2],
+          timestamp: IS_PRESENT, num_indent: 0,
+          message: "Some fun message",
+        },
+      ])).to.be.true;
+    });
+
+    it('should not log with a level-function when disabled by the filters', () => {
+      alog.info('LOWER', "Some fun message");
+      expect(validateLogRecords(getLogRecords(logStream), [])).to.be.true;
+    });
   }); // log functions
 
   describe('indentation', () => {

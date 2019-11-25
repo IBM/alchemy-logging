@@ -9,6 +9,7 @@ const deepEqual = require('deep-equal');
 
 // Test helpers
 import {
+  getLogRecords,
   IS_PRESENT,
   sampleLogCode,
   validateLogRecords,
@@ -157,16 +158,10 @@ describe("Alog TypeScript Internals Test Suite", () => {
         alogCore.addOutputStream(logStream);
       });
 
-      function getLogRecords(): string[] {
-        return logStream.toString().split('\n').filter(
-          (line) => line !== '').map(
-          (line) => JSON.parse(line));
-      }
-
       it("should be able to log with signature 1", () => {
         alogCore.log(alog.DEBUG, 'TEST', sampleLogCode, () => "This is a generated message", {foo: 'bar'});
         alogCore.log(alog.INFO, 'FOO', sampleLogCode, () => "This is a second generated message");
-        expect(validateLogRecords(getLogRecords(), [
+        expect(validateLogRecords(getLogRecords(logStream), [
           {
             channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
             timestamp: IS_PRESENT, num_indent: 0,
@@ -186,7 +181,7 @@ describe("Alog TypeScript Internals Test Suite", () => {
       it("should be able to log with signature 2", () => {
         alogCore.log(alog.DEBUG, 'TEST', sampleLogCode, "This is NOT a generated message", {foo: 'bar'});
         alogCore.log(alog.INFO, 'FOO', sampleLogCode, "This is NOT a second generated message");
-        expect(validateLogRecords(getLogRecords(), [
+        expect(validateLogRecords(getLogRecords(logStream), [
           {
             channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
             timestamp: IS_PRESENT, num_indent: 0,
@@ -206,7 +201,7 @@ describe("Alog TypeScript Internals Test Suite", () => {
       it("should be able to log with signature 3", () => {
         alogCore.log(alog.DEBUG, 'TEST', () => "This is a generated message", {foo: 'bar'});
         alogCore.log(alog.INFO, 'FOO', () => "This is a second generated message");
-        expect(validateLogRecords(getLogRecords(), [
+        expect(validateLogRecords(getLogRecords(logStream), [
           {
             channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
             timestamp: IS_PRESENT, num_indent: 0,
@@ -224,7 +219,7 @@ describe("Alog TypeScript Internals Test Suite", () => {
       it("should be able to log with signature 4", () => {
         alogCore.log(alog.DEBUG, 'TEST', "This is NOT a generated message", {foo: 'bar'});
         alogCore.log(alog.INFO, 'FOO', "This is NOT a second generated message");
-        expect(validateLogRecords(getLogRecords(), [
+        expect(validateLogRecords(getLogRecords(logStream), [
           {
             channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
             timestamp: IS_PRESENT, num_indent: 0,
@@ -243,7 +238,7 @@ describe("Alog TypeScript Internals Test Suite", () => {
         alogCore.addMetadata('baz', 1);
         alogCore.log(alog.DEBUG, 'TEST', "This is NOT a generated message", {foo: 'bar'});
         alogCore.log(alog.INFO, 'FOO', "This is NOT a second generated message");
-        expect(validateLogRecords(getLogRecords(), [
+        expect(validateLogRecords(getLogRecords(logStream), [
           {
             channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
             timestamp: IS_PRESENT, num_indent: 0,
@@ -273,12 +268,6 @@ describe("Alog TypeScript Internals Test Suite", () => {
         alogCore.addOutputStream(logStream);
       });
 
-      function getLogRecords(): string[] {
-        return logStream.toString().split('\n').filter(
-          (line) => line !== '').map(
-          (line) => JSON.parse(line));
-      }
-
       it('should have all the expected level functions', () => {
         for (const levelName of Object.keys(levelFromName)) {
           expect(alogCore).to.have.property(levelName);
@@ -287,7 +276,7 @@ describe("Alog TypeScript Internals Test Suite", () => {
 
       it('should log with a level-function when enabled by the default level', () => {
         alogCore.debug('TEST', "Some fun message");
-        expect(validateLogRecords(getLogRecords(), [
+        expect(validateLogRecords(getLogRecords(logStream), [
           {
             channel: 'TEST', level: alog.DEBUG, level_str: nameFromLevel[alog.DEBUG],
             timestamp: IS_PRESENT, num_indent: 0,
@@ -298,12 +287,12 @@ describe("Alog TypeScript Internals Test Suite", () => {
 
       it('should not log with a level-function when disabled by the default level', () => {
         alogCore.debug3('TEST', "Some fun message");
-        expect(validateLogRecords(getLogRecords(), [])).to.be.true;
+        expect(validateLogRecords(getLogRecords(logStream), [])).to.be.true;
       });
 
       it('should log with a level-function when enabled by the filters', () => {
         alogCore.debug2('HIGHER', "Some fun message");
-        expect(validateLogRecords(getLogRecords(), [
+        expect(validateLogRecords(getLogRecords(logStream), [
           {
             channel: 'HIGHER', level: alog.DEBUG2, level_str: nameFromLevel[alog.DEBUG2],
             timestamp: IS_PRESENT, num_indent: 0,
@@ -314,7 +303,7 @@ describe("Alog TypeScript Internals Test Suite", () => {
 
       it('should not log with a level-function when disabled by the filters', () => {
         alogCore.info('LOWER', "Some fun message");
-        expect(validateLogRecords(getLogRecords(), [])).to.be.true;
+        expect(validateLogRecords(getLogRecords(logStream), [])).to.be.true;
       });
     });
 

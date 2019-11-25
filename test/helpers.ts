@@ -76,3 +76,10 @@ export function validateLogRecords(records: any[], expecteds: any[]): boolean {
   }
   return res;
 }
+
+// Get a list of records from a writable stream
+export function getLogRecords(logStream: Writable): string[] {
+  return logStream.toString().split('\n').filter(
+    (line) => line !== '').map(
+    (line) => JSON.parse(line));
+}
