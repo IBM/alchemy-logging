@@ -108,10 +108,71 @@ function isValidConfig(configObject: any): boolean {
 }
 
 // Formatters //////////////////////////////////////////////////////////////////
+//
+// Formatter functions take in a record (by reference) and produce a string
+// representation. Note that the record MAY be modified in place as the core
+// will guarantee that it is a clean copy of any/all data used to construct it.
+////////////////////////////////////////////////////////////////////////////////
 
-function PrettyFormatter(record: any): string {
-  //DEBUG
-  return 'THIS IS A STUB !';
+// Map from level to 4-character string for pretty-print header
+const prettyLevelNames: {[key: number]: string} = {
+  [FATAL]: "FATL",
+  [ERROR]: "ERRR",
+  [WARNING]: "WARN",
+  [INFO]: "INFO",
+  [TRACE]: "TRCE",
+  [DEBUG]: "DBUG",
+  [DEBUG1]: "DBG1",
+  [DEBUG2]: "DBG2",
+  [DEBUG3]: "DBG3",
+  [DEBUG4]: "DBG4",
+}
+
+// The pretty-print representation of an indentation
+const indentation = '  ';
+
+function PrettyFormatter(record: any, channelLength: number = 5): string {
+
+  //// Make the header ////
+  let header: string = '';
+
+  // Timestamp
+  header += record.timestamp;
+
+  // Channel
+  const chan: string = record.channel.substring(0, channelLength)
+    + ' '.repeat(Math.max(0, channelLength - record.channel.length));
+  header += ` [${chan}`;
+
+  // Level
+  header += `:${prettyLevelNames[record.level] || 'UNKN'}]`;
+
+  // Log Code
+  if (record.log_code !== undefined) {
+    header += ` ${record.log_code}`;
+  }
+
+  // Indent
+  header += indentation.repeat(record.num_indent);
+
+  //// Log each line in the message ////
+  let outStr = '';
+  for (const line of record.message.split('\n')) {
+    outStr += `${header} ${line}\n`;
+  }
+
+  //// Add Metadata ////
+
+  if (record.metadata !== undefined) {
+    for (const key of Object.keys(record.metadata)) {
+      const val: string = (typeof record.metadata[key] === 'string' && record.metadata[key])
+        || JSON.stringify(record.metadata[key]);
+      outStr += `${header} * ${key}: ${val}\n`;
+    }
+  }
+
+  // Strip off the final newline and return
+  return outStr.trimRight();
 }
 
 function JsonFormatter(record: any): string {
