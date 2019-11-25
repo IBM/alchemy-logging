@@ -115,7 +115,14 @@ function PrettyFormatter(record: any): string {
 }
 
 function JsonFormatter(record: any): string {
-  return JSON.stringify(record);
+  // Flatten the metadata into the record and serialize
+  if (record.metadata !== undefined) {
+    const metadata: any = record.metadata;
+    delete record.metadata;
+    return JSON.stringify(Object.assign(metadata, record));
+  } else {
+    return JSON.stringify(record);
+  }
 }
 
 const defaultFormatterMap: {[key: string]: FormatterFunc} = {
@@ -283,16 +290,19 @@ class AlogCoreSingleton {
     if (AlogCoreSingleton.getInstance().isEnabled(channel, level)) {
 
       // Create the base log record
+      //
+      // NOTE: The order of the fields here will correspond to their serialized
+      //  json order
       const record: LogRecord = {
+        timestamp: new Date().toISOString(),
         channel,
         level,
         level_str: nameFromLevel[level],
-        timestamp: new Date().toISOString(),
-        message: '',
         num_indent: AlogCoreSingleton.getInstance().numIndent,
+        message: '',
       };
 
-      // If there is global metadata configured, add it
+      // If there is global metadata configured, add it as a clean copy
       if (Object.keys(AlogCoreSingleton.getInstance().metadata).length) {
         record.metadata = deepCopy(AlogCoreSingleton.getInstance().metadata);
       }
