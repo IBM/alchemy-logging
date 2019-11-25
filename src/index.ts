@@ -358,7 +358,10 @@ function levelFromArg(level: string | number): number {
 }
 
 function filtersFromArg(filters: FilterMap | string): FilterMap {
-  if (typeof filters === 'object') {
+
+  if (filters === null || filters === undefined) {
+    return {};
+  } else if (typeof filters === 'object') {
     if (!isValidFilterConfig(filters)) {
       throw new AlogConfigError(`Invalid filter config: ${JSON.stringify(filters)}`);
     }
