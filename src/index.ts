@@ -129,7 +129,7 @@ const prettyLevelNames: {[key: number]: string} = {
 }
 
 // The pretty-print representation of an indentation
-const indentation = '  ';
+const prettyIndentation = '  ';
 
 function PrettyFormatter(record: any, channelLength: number = 5): string {
 
@@ -153,7 +153,7 @@ function PrettyFormatter(record: any, channelLength: number = 5): string {
   }
 
   // Indent
-  header += indentation.repeat(record.num_indent);
+  header += prettyIndentation.repeat(record.num_indent);
 
   //// Log each line in the message ////
   let outStr = '';
@@ -165,8 +165,7 @@ function PrettyFormatter(record: any, channelLength: number = 5): string {
 
   if (record.metadata !== undefined) {
     for (const key of Object.keys(record.metadata)) {
-      const val: string = (typeof record.metadata[key] === 'string' && record.metadata[key])
-        || JSON.stringify(record.metadata[key]);
+      const val: string = JSON.stringify(record.metadata[key]);
       outStr += `${header} * ${key}: ${val}\n`;
     }
   }

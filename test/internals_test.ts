@@ -12,6 +12,8 @@ import {
   DirectJsonFormatter,
   getLogRecords,
   IS_PRESENT,
+  makeTestRecord,
+  parsePPLine,
   sampleLogCode,
   validateLogRecords,
 } from './helpers';
@@ -310,11 +312,126 @@ describe("Alog TypeScript Internals Test Suite", () => {
 
   }); // AlogCoreSingleton
 
-  // configure suite
-
   // pretty print suite
+  describe("PrettyFormatter", () => {
+
+    it('should correctly format a basic line without metadata or log_code', () => {
+      const formatted: string = PrettyFormatter(makeTestRecord({
+        message: 'This is a test',
+      }));
+      const parsed: any = parsePPLine(formatted);
+      expect(parsed.is_metadata).to.be.false;
+      expect(parsed).to.have.property('timestamp');
+      expect(parsed).to.have.property('channel');
+      expect(parsed).to.have.property('level');
+      expect(parsed).to.have.property('level_str');
+      expect(parsed).to.have.property('num_indent');
+      expect(parsed.message).to.equal('This is a test');
+      expect(parsed).to.not.have.property('log_code');
+    });
+
+    it('should format a line with a long channel by truncating it', () => {
+      const formatted: string = PrettyFormatter(makeTestRecord({channel: 'LONG-NAME'}));
+      const parsed: any = parsePPLine(formatted);
+      expect(parsed.channel).to.equal('LONG-');
+    });
+
+    it('should format a line with a shoft channel by padding it', () => {
+      const formatted: string = PrettyFormatter(makeTestRecord({channel: 'SHRT'}));
+      const parsed: any = parsePPLine(formatted);
+      expect(parsed.channel).to.equal('SHRT ');
+    });
+
+    it('should format with the correct number of indentations', () => {
+      const formatted: string = PrettyFormatter(makeTestRecord({num_indent: 2}));
+      const parsed: any = parsePPLine(formatted);
+      expect(parsed.num_indent).to.equal(2);
+    });
+
+    it('should format a line with a log code correctly', () => {
+      const formatted: string = PrettyFormatter(makeTestRecord({log_code: sampleLogCode}));
+      const parsed: any = parsePPLine(formatted);
+      expect(parsed.log_code).to.equal(sampleLogCode);
+    });
+
+    it('should format a line with a log code and indentation correctly', () => {
+      const formatted: string = PrettyFormatter(makeTestRecord({
+        log_code: sampleLogCode, num_indent: 3,
+      }));
+      const parsed: any = parsePPLine(formatted);
+      expect(parsed.log_code).to.equal(sampleLogCode);
+      expect(parsed.num_indent).to.equal(3);
+    });
+
+    it('should correctly split a multi-line record and add the header to each line', () => {
+      const formatted: string = PrettyFormatter(makeTestRecord({
+        message: `This is a test
+with a second line
+and a third!`}));
+      const formattedLines = formatted.split('\n');
+      expect(formattedLines.length).to.equal(3);
+      expect(parsePPLine(formattedLines[0]).message).to.equal('This is a test');
+      expect(parsePPLine(formattedLines[1]).message).to.equal('with a second line');
+      expect(parsePPLine(formattedLines[2]).message).to.equal('and a third!');
+    });
+
+    it('should correctly format metadata as a list after the main line', () => {
+      const formatted: string = PrettyFormatter(makeTestRecord({
+        message: 'This is a test', metadata: {
+          key: 1,
+          foo: 'bar',
+          baz: {
+            biz: ['buz'],
+          }
+        }}));
+      const formattedLines = formatted.split('\n');
+      expect(formattedLines.length).to.equal(4);
+      expect(parsePPLine(formattedLines[0]).message).to.equal('This is a test');
+      expect(parsePPLine(formattedLines[1]).is_metadata).to.be.true;
+      expect(parsePPLine(formattedLines[1])).to.not.have.property('message');
+      expect(parsePPLine(formattedLines[1]).key).to.equal(1);
+      expect(parsePPLine(formattedLines[2]).is_metadata).to.be.true;
+      expect(parsePPLine(formattedLines[2])).to.not.have.property('message');
+      expect(parsePPLine(formattedLines[2]).foo).to.equal('bar');
+      expect(parsePPLine(formattedLines[3]).is_metadata).to.be.true;
+      expect(parsePPLine(formattedLines[3])).to.not.have.property('message');
+      expect(parsePPLine(formattedLines[3]).baz).to.deep.equal({biz: ['buz']});
+    });
+  });
 
   // json suite
+  describe("JsonFormatter", () => {
+
+    it('should serialize a record without metadata correctly', () => {
+      const formatted: string = JsonFormatter(makeTestRecord({
+        message: 'This is a test',
+      }));
+      const parsed: any = JSON.parse(formatted);
+      expect(parsed).to.have.property('timestamp');
+      expect(parsed).to.have.property('channel');
+      expect(parsed).to.have.property('level');
+      expect(parsed).to.have.property('level_str');
+      expect(parsed).to.have.property('num_indent');
+      expect(parsed.message).to.equal('This is a test');
+      expect(parsed).to.not.have.property('log_code');
+    });
+
+    it('should flatten metadata into the main record when serializing', () => {
+      const formatted: string = JsonFormatter(makeTestRecord({
+        metadata: {
+          key: 1,
+          foo: 'bar',
+          baz: {
+            biz: ['buz'],
+          },
+        },
+      }));
+      const parsed: any = JSON.parse(formatted);
+      expect(parsed.key).to.equal(1);
+      expect(parsed.foo).to.equal('bar');
+      expect(parsed.baz).to.deep.equal({biz: ['buz']});
+    });
+  });
 
   // input validation suite
   describe("Input validation suite", () => {

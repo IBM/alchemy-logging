@@ -7,10 +7,21 @@ import MemoryStreams from 'memory-streams';
 const deepCopy = require('deepcopy');
 const deepEqual = require('deep-equal');
 
+// Alog guts
+const alog = require('rewire')('../src');
+const prettyLevelNames = alog.__get__('prettyLevelNames');
+const prettyIndentation = alog.__get__('prettyIndentation');
+const levelFromName = alog.__get__('levelFromName');
+const nameFromLevel = alog.__get__('nameFromLevel');
+
 /*-- Constants ---------------------------------------------------------------*/
 
+// Sample log code so that the check_unique_log_codes script doesn't pick up the
+// same value in multiple places
 export const sampleLogCode = '<TST00000000I>';
 
+// Sentinel string for validation functions to just check for the presence of a
+// given key
 export const IS_PRESENT = '__is_present__';
 
 /*-- Helpers -----------------------------------------------------------------*/
@@ -101,4 +112,94 @@ export function stubValidationRecord(): any {
 // Helper to directly serialize a record to json with no reformatting
 export function DirectJsonFormatter(record: any): string {
   return JSON.stringify(record);
+}
+
+//// Pretty Print Regexes ////
+//
+// These regexes are used to parse out the various parts of a pretty-printed
+// line. For clarity, they're broken up here into subparts.
+////
+// e.g. "2019-11-25T22:48:12.993Z"
+const ppTimestampRegex = /([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}Z)/;
+
+// e.g. "[CHANN:INFO] <TST00001000I>     "
+const ppHeaderRegex = /\[([^:]*):([^\]:]*)\]( ?<[^\s]*>)? ([\s]*)/;
+
+// e.g. "2019-11-25T22:48:12.993Z [CHANN:INFO] <TST00001000I>   "
+const ppFullHeaderRegex = new RegExp(`^${ppTimestampRegex.source} ${ppHeaderRegex.source}`);
+
+// e.g. "This is a test"
+const ppMessageRegex = /([^\s].*)\n?/;
+
+// e.g. "* key: val"
+const ppMetadataRegex = /\* (.+): (.+)\n?/;
+
+// e.g.  "2019-11-25T22:48:12.993Z [CHANN:INFO] <TST00001000I>   This is a test"
+const ppMessageLineRegex = new RegExp(`${ppFullHeaderRegex.source}${ppMessageRegex.source}$`);
+
+// e.g.  "2019-11-25T22:48:12.993Z [CHANN:INFO] <TST00001000I>   * key: val"
+const ppMetadataLineRegex = new RegExp(`${ppFullHeaderRegex.source}${ppMetadataRegex.source}$`);
+
+// Inverted mapping from level shortname to numeric value
+const levelFromPrettyName: {[prettyName: string]: number} = {};
+Object.keys(prettyLevelNames).forEach((levelName: string) => {
+  levelFromPrettyName[prettyLevelNames[levelName]] = levelFromName[levelName];
+});
+
+// Parse a pretty-print line into a record. The special field `is_metadata` will
+// be populated to indicate whether it is a metadata line or not
+export function parsePPLine(line: string): any {
+
+  // Try to match first as metadata, then as a normal line
+  let isMetadata: boolean = true;
+  let match = line.match(ppMetadataLineRegex);
+  if (!match) {
+    isMetadata = false;
+    match = line.match(ppMessageLineRegex);
+  }
+  if (!match) {
+    const msg = `Un-parsable pretty-print line: [${line}]`;
+    testFailureLog(msg);
+    throw new Error(msg)
+  }
+
+  // Add the parts of the header that are always there
+  const record: any = {
+    is_metadata: isMetadata,
+    timestamp: match[1],
+    channel: match[2],
+    level: levelFromPrettyName[match[3]],
+    level_str: nameFromLevel[levelFromPrettyName[match[3]]],
+  };
+
+  // log code
+  if (match[4]) {
+    record.log_code = match[4].trimLeft();
+  }
+
+  // indent
+  record.num_indent = match[5].length / prettyIndentation.length;
+
+  // message or metadata
+  if (isMetadata) {
+    const key = match[6];
+    const val = JSON.parse(match[7]);
+    record[key] = val;
+  } else {
+    record.message = match[6];
+  }
+
+  return record;
+}
+
+// Helper to make a record for testing
+export function makeTestRecord(overrides?: any): any {
+  return Object.assign({
+    timestamp: '2019-11-25T22:48:12.993Z',
+    channel: 'TEST',
+    level: alog.INFO,
+    level_str: nameFromLevel[alog.INFO],
+    num_indent: 0,
+    message: 'asdf',
+  }, overrides);
 }
