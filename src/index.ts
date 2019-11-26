@@ -131,7 +131,7 @@ const prettyLevelNames: {[key: number]: string} = {
 // The pretty-print representation of an indentation
 const prettyIndentation = '  ';
 
-function PrettyFormatter(record: any, channelLength: number = 5): string {
+export function PrettyFormatter(record: any, channelLength: number = 5): string {
 
   //// Make the header ////
   let header: string = '';
@@ -174,7 +174,7 @@ function PrettyFormatter(record: any, channelLength: number = 5): string {
   return outStr.trimRight();
 }
 
-function JsonFormatter(record: any): string {
+export function JsonFormatter(record: any): string {
   // Flatten the metadata into the record and serialize
   if (record.metadata !== undefined) {
     const metadata: any = record.metadata;

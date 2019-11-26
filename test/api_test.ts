@@ -12,6 +12,7 @@ import {
   DirectJsonFormatter,
   getLogRecords,
   IS_PRESENT,
+  parsePPLine,
   sampleLogCode,
   stubValidationRecord,
   validateLogRecords,
@@ -87,12 +88,27 @@ describe('Alog Typescript Public API Test Suite', () => {
         filters: {
           FOO: alog.INFO,
         },
+        formatter: alog.PrettyFormatter,
       });
       expect(alog.isEnabled('TEST', alog.DEBUG)).to.be.true;
       expect(alog.isEnabled('FOO', alog.DEBUG)).to.be.false;
     });
-  }); // configure
 
+    it('should be able to format with a pretty-print wrapper with a longer channel length', () => {
+      alog.configure({
+        defaultLevel: alog.DEBUG,
+        filters: {
+          FOO: alog.INFO,
+        },
+        formatter: (record: alog.LogRecord): string => alog.PrettyFormatter(record, 12),
+      });
+      const logStream = new MemoryStreams.WritableStream();
+      alog.addOutputStream(logStream);
+      alog.debug('LONG-CHANNEL-NAME', 'Hi there!');
+      const parsed = parsePPLine(logStream.toString().trim());
+      expect(parsed.channel).to.equal('LONG-CHANNEL-NAME'.substring(0, 12));
+    });
+  }); // configure
   describe('log functions', () => {
 
     let logStream: Writable;
