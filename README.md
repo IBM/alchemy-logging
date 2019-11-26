@@ -90,3 +90,50 @@ alog.configure('debug', '', 'json');
 const logFileStream = createWriteStream('output.json');
 alog.addOutputStream(logFileStream);
 ```
+## Logging
+
+### Top-Level Log Functions
+
+The simplest way to log information is to use the top-level log functions. For example:
+
+```ts
+alog.info('CHANL', 'Hello from alog!');
+```
+
+All log functions have several required and optional components:
+
+* `channel` (required): The first argument is always the channel.
+* `log_code` (optional): If desired, a `log_code` can be given as the second argument, following the [NLU Logging Guidelines](https://github.ibm.com/watson-nlu/nlu-documentation/blob/master/guidelines/logging_guidelines.md#log-codes). For example:
+
+    ```ts
+    alog.info('CHANL', '<LOG12345678I>', 'This is a log that we want to be able to look up in prod');
+    ```
+
+* `message` (required): The `message` argument can be either a string or a generator function that takes no arguments and lazily creates the log message. A generator function can be useful when the string is expensive to construct. For example:
+
+    ```ts
+    alog.debug4('CHANL', () => {
+        let message: string = '[ ';
+        for (const entry of bigArray) {
+            string += `${entry} `;
+        }
+        message += ']';
+        return message;
+    });
+    ```
+
+* `metadata` (optional): A map of JSON-serializable `metadata` can be added as the last argument to any log function. For example:
+
+    ```ts
+    try {
+        thisIsNotGoingToWork();
+    } catch (e) {
+        alog.warning('CHANL', 'Something is wrong, but life goes on!', {
+            error: {
+                message: e.message,
+                filename: e.fileName,
+                line_number: e.lineNumber,
+            },
+        });
+    }
+    ```
