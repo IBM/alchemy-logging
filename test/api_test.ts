@@ -19,16 +19,21 @@ import {
 
 // For this test, we are testing the public API. As such, we only want a couple
 // of internals available for validation.
-const alog = require('rewire')('../src');
-const levelFromName = alog.__get__('levelFromName');
-const nameFromLevel = alog.__get__('nameFromLevel');
+const alogInternals = require('rewire')('../src');
+const levelFromName = alogInternals.__get__('levelFromName');
+const nameFromLevel = alogInternals.__get__('nameFromLevel');
+
+// Import in the properly typescript-y way to ensure that the expected API usage
+// compiles happily with typescript
+import * as alog from '../src';
+
 
 /*-- Tests -------------------------------------------------------------------*/
 
 describe('Alog Typescript Public API Test Suite', () => {
 
   beforeEach(() => {
-    alog.__get__('AlogCoreSingleton').getInstance().reset();
+    alogInternals.__get__('AlogCoreSingleton').getInstance().reset();
   });
 
   describe('configure', () => {
@@ -69,7 +74,7 @@ describe('Alog Typescript Public API Test Suite', () => {
 
     it('should be able to configure with default level number and formatter function', () => {
       let loggedIt: boolean = false;
-      alog.configure(alog.DEBUG, '', () => { loggedIt =  true; });
+      alog.configure(alog.DEBUG, '', () => { loggedIt =  true; return 'Logged It'; });
       expect(alog.isEnabled('TEST', alog.DEBUG)).to.be.true;
       expect(alog.isEnabled('FOO', alog.DEBUG)).to.be.true;
       alog.debug('TEST', 'This is a test');
@@ -106,7 +111,11 @@ describe('Alog Typescript Public API Test Suite', () => {
 
     it('should have all the expected level functions', () => {
       for (const levelName of Object.keys(levelFromName)) {
-        expect(alog).to.have.property(levelName);
+        if (levelName === 'off') {
+          expect(alog).to.not.have.property(levelName);
+        } else {
+          expect(alog).to.have.property(levelName);
+        }
       }
     });
 

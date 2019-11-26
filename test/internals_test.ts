@@ -273,7 +273,11 @@ describe("Alog TypeScript Internals Test Suite", () => {
 
       it('should have all the expected level functions', () => {
         for (const levelName of Object.keys(levelFromName)) {
-          expect(alogCore).to.have.property(levelName);
+          if (levelName === 'off') {
+            expect(alog).to.not.have.property(levelName);
+          } else {
+            expect(alog).to.have.property(levelName);
+          }
         }
       });
 
