@@ -90,7 +90,10 @@ alog.configure('debug', '', 'json');
 const logFileStream = createWriteStream('output.json');
 alog.addOutputStream(logFileStream);
 ```
+
 ## Logging
+
+Now that the framework has been configured, it's time to actually make log entries!
 
 ### Top-Level Log Functions
 
@@ -137,3 +140,50 @@ All log functions have several required and optional components:
         });
     }
     ```
+
+## Utilities
+
+### Global Metadata
+
+Sometimes there are additional pieces of information that you want attached to all log entries (e.g. an env-based deployment identifier). This is supported via the `alog.addMetadata` and `alog.removeMetadata` functions. For example:
+
+```ts
+import * as alog from 'alog';
+alog.configure('debug');
+
+if (process.env.DEPLOYMENT_ID) {
+    alog.addMetadata('deployment_id', process.env.DEPLOYMENT_ID);
+}
+```
+
+### Indentation
+
+To support the the mission of making logs that are easy to read at dev-time, `alog` supports the notion of `indentation` which allows the `PrettyFormatter` to display nested logs with easy-to-read indentation. This can be performed manually using `alog.indent` and `alog.deindent`. For example:
+
+```ts
+import * as alog from 'alog';
+alog.configure('debug3');
+
+function doit(arrayOfStuff) {
+    alog.debug('CHANL', 'Doing it!');
+    alog.indent();
+    arrayOfStuff.forEach((entry) => {
+        alog.debug3('CHANL', `Found entry ${entry}`);
+    });
+    alog.deindent();
+    alog.debug('CHANL', 'Done with it');
+}
+
+doit([1, 2, 3, 4]);
+```
+
+The resulting output looks like
+
+```
+2019-11-26T18:34:15.488Z [CHANL:DBUG] Doing it!
+2019-11-26T18:34:15.490Z [CHANL:DBG3]   Found entry 1
+2019-11-26T18:34:15.490Z [CHANL:DBG3]   Found entry 2
+2019-11-26T18:34:15.491Z [CHANL:DBG3]   Found entry 3
+2019-11-26T18:34:15.491Z [CHANL:DBG3]   Found entry 4
+2019-11-26T18:34:15.491Z [CHANL:DBUG] Done with it
+```
