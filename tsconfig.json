@@ -4,8 +4,8 @@
         "esModuleInterop": true,
         "noImplicitAny": true,
         "moduleResolution": "node",
-        "allowJs": true,
         "outDir": "dist",
+        "declaration": true,
         "baseUrl": ".",
         "sourceMap": true,
         "lib": [
