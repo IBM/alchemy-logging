@@ -2,7 +2,8 @@
   "name": "alog",
   "version": "0.1.1",
   "description": "Alog implementation in NodeJS/TypeScript wrapping around the Bunyan logging framework",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "NODE_ENV=test nyc mocha --exit --require ts-node/register 'test/**/*.ts'",
     "lint": "./node_modules/tslint/bin/tslint --project . --config ./tslint.json",
