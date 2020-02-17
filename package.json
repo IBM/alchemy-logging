@@ -7,6 +7,7 @@
   "scripts": {
     "test": "NODE_ENV=test nyc mocha --exit --require ts-node/register 'test/**/*.ts'",
     "lint": "./node_modules/tslint/bin/tslint --project . --config ./tslint.json",
+    "build:clean": "rm -rf dist",
     "build:local": "tsc"
   },
   "repository": {
