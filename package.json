@@ -10,7 +10,7 @@
     "clean": "rm -rf dist",
     "build": "tsc",
     "prepare": "npm run build",
-    "preinstall": "npm run build"
+    "preinstall": "npm install && npm run build"
   },
   "repository": {
     "type": "git",
