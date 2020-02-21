@@ -9,8 +9,7 @@
     "lint": "./node_modules/tslint/bin/tslint --project . --config ./tslint.json",
     "clean": "rm -rf dist",
     "build": "tsc",
-    "prepare": "npm run build",
-    "preinstall": "npm install --production && npm run build"
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",
