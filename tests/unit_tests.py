@@ -461,6 +461,13 @@ class TestisEnabled(unittest.TestCase):
         self.assertFalse(ch1.isEnabled('debug2'))
         self.assertFalse(ch2.isEnabled('debug2'))
 
+    def test_is_enabled_for_numeric_values(self):
+        '''Tests that isEnabled works with the numeric level values'''
+        alog.configure('info')
+        ch = alog.use_channel('TEST')
+        self.assertFalse(ch.isEnabled(alog.g_alog_name_to_level['trace']))
+        self.assertFalse(ch.isEnabled(alog.g_alog_name_to_level['debug2']))
+
 if __name__ == "__main__":
     # has verbose output of tests; otherwise just says all passed or not
     unittest.main(verbosity=2)
