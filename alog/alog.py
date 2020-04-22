@@ -291,9 +291,8 @@ def _add_level_fn(name, value):
 
 def _add_is_enabled():
     is_enabled_func = lambda self, level: \
-        self._isEnabledFor(level if isinstance(level, int) else g_alog_name_to_level.get(level))
-    setattr(logging.Logger, '_isEnabledFor', getattr(logging.Logger, 'isEnabledFor'))
-    setattr(logging.Logger, 'isEnabledFor', is_enabled_func)
+        self.isEnabledFor(level if isinstance(level, int) else g_alog_name_to_level.get(level))
+    setattr(logging.Logger, 'isEnabled', is_enabled_func)
 
 def _setup_formatter(formatter):
     # If the formatter is a string, pull it from the defaults
