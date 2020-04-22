@@ -422,6 +422,45 @@ class TestTimedLoggers(unittest.TestCase):
         self.assertTrue(timed_message.startswith('timed: 0:'))
         self.assertTrue(re.match(r'^timed: [0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9]+$', timed_message))
 
+class TestisEnabled(unittest.TestCase):
+    def test_is_enabled_for_true(self):
+        '''Tests when a level is enabled, it returns true'''
+        alog.configure('info')
+        ch = alog.use_channel('TEST')
+        self.assertTrue(ch.isEnabled('info'))
+        self.assertTrue(ch.isEnabled('warning'))
+
+    def test_is_enabled_for_false(self):
+        '''Tests when a level is disabled, it returns true'''
+        alog.configure('info')
+        ch = alog.use_channel('TEST')
+        self.assertFalse(ch.isEnabled('trace'))
+        self.assertFalse(ch.isEnabled('debug2'))
+
+    def test_is_enabled_for_off(self):
+        '''Tests when a channel is fully off, it always returns false'''
+        alog.configure('off')
+        ch = alog.use_channel('TEST')
+        self.assertFalse(ch.isEnabled('error'))
+        self.assertFalse(ch.isEnabled('trace'))
+        self.assertFalse(ch.isEnabled('debug2'))
+
+    def test_is_enabled_for_filters(self):
+        '''Tests that different channels on different levels respond correctly
+        '''
+        alog.configure('warning', 'MAIN:debug')
+        ch1 = alog.use_channel('TEST')
+        ch2 = alog.use_channel('MAIN')
+
+        self.assertTrue(ch1.isEnabled('error'))
+        self.assertTrue(ch2.isEnabled('error'))
+
+        self.assertFalse(ch1.isEnabled('info'))
+        self.assertTrue (ch2.isEnabled('info'))
+
+        self.assertFalse(ch1.isEnabled('debug2'))
+        self.assertFalse(ch2.isEnabled('debug2'))
+
 if __name__ == "__main__":
     # has verbose output of tests; otherwise just says all passed or not
     unittest.main(verbosity=2)
