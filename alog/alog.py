@@ -289,6 +289,12 @@ def _add_level_fn(name, value):
         _log_with_code_method_override(logging, value, arg_one, *args, **kwargs)
     setattr(logging, name, log_using_logging_func)
 
+def _add_is_enabled():
+    is_enabled_func = lambda self, level: \
+        self._isEnabledFor(level if isinstance(level, int) else g_alog_name_to_level.get(level))
+    setattr(logging.Logger, '_isEnabledFor', getattr(logging.Logger, 'isEnabledFor'))
+    setattr(logging.Logger, 'isEnabledFor', is_enabled_func)
+
 def _setup_formatter(formatter):
     # If the formatter is a string, pull it from the defaults
     global g_alog_formatter
@@ -393,6 +399,9 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
     for level, name in g_alog_level_to_name.items():
         if name not in ["off", "notset"]:
             _add_level_fn(name, level)
+
+    # Patch over isEnabledFor to support level names
+    _add_is_enabled()
 
     # Set default level
     default_level_val = g_alog_name_to_level.get(default_level, None)
