@@ -118,7 +118,14 @@ def do_foo():
 
 ## Unit testing
 
-Currently the unit tests live in `tests/unit_tests.py`. To run these unit tests you may use the command:
-`python3 tests/unit_tests.py`.
-Note: you may have to set `export PYTHONPATH=.` to avoid confusion with the top-level `__init__.py` when running the unit tests.
-A few tests still live in `alog/alog.py` that should be migrated over to the unit tests directory as time permits.
+Currently the unit tests live in `tests/unit_tests.py`. You can run them with the following:
+
+```sh
+# One-time setup to get the development environmet set up
+python setup.py develop
+
+# Run the tests
+python tests/unit_tests.py
+```
+
+Note: A few tests still live in `alog/alog.py` that should be migrated over to the unit tests directory as time permits.
