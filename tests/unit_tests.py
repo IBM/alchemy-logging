@@ -28,7 +28,7 @@ import alog.alog as alog
 # for these tests. Instead, we run python subprocesses and capture the logging
 # results.
 
-test_code = "<TST00000000I>"
+test_code = "<TST93344011I>"
 
 def get_subproc_cmds(lines):
     commands_to_run = "python3 -c \"\"\"import alog\n"
