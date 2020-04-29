@@ -263,7 +263,7 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
     and support functionality like:
 
     ch = alog.use_channel('FOO')
-    ch.debug('<FOO12345678I>', 'Logging is fun!')
+    ch.debug('<FOO80349757I>', 'Logging is fun!')
     """
 
     # If no positional args, arg_one is message
@@ -673,7 +673,7 @@ if __name__ == '__main__':
     use_channel("BAR").debug4("""Large, deep debugging entry with multiple
 lines of text!""")
     test_ch = use_channel("TEST")
-    test_ch.info("<TST12345678I>", "This is a line with a log code")
+    test_ch.info("<TST72904181I>", "This is a line with a log code")
 
     # Sample scoped timer
     with ContextTimer(test_ch.info, 'Finished timer context: ') as t:
