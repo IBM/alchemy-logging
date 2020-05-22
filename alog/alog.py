@@ -82,7 +82,7 @@ class AlogJsonFormatter(AlogFormatterBase):
     @staticmethod
     def _map_to_common_key_name(log_record_keyname):
         if log_record_keyname == 'levelname':
-            return 'level_str'
+            return 'level'
         elif log_record_keyname == 'asctime':
             return 'timestamp'
         elif log_record_keyname == 'exc_text':
@@ -112,7 +112,7 @@ class AlogJsonFormatter(AlogFormatterBase):
                 else:
                     out[self._map_to_common_key_name(field_name)] = record_field
 
-        out["level_str"] = out["level_str"].lower()
+        out["level"] = out["level"].lower()
         return out
 
     def format(self, record):
