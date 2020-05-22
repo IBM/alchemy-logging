@@ -13,9 +13,10 @@ RUN python3 setup.py bdist_wheel
 #-- Test -----------------------------------------------------------------------
 FROM base as test
 
+COPY requirements_test.txt /src/requirements_test.txt
 COPY --from=wheel /src/dist/alog-*-py3-none-any.whl /src/dist/
 RUN pip3 install /src/dist/alog-*-py3-none-any.whl \
-    && pip3 install pytest
+    && pip3 install -r /src/requirements_test.txt
 
 COPY tests /src/tests
 
