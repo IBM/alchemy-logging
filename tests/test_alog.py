@@ -15,8 +15,6 @@ import json
 import logging
 import os
 import re
-import shlex
-import subprocess
 import sys
 import threading
 import time
@@ -27,37 +25,7 @@ import alog.alog as alog
 
 ## Helpers #####################################################################
 
-# Note on log capture: In these tests, we could attach a stream capture handler,
-# but logs captured that way will not include formatting, so that doesn't work
-# for these tests. Instead, we run python subprocesses and capture the logging
-# results.
-
-class LogCaptureFormatter(alog.AlogFormatterBase):
-    '''Helper that captures logs, then forwards them to a child
-    '''
-
-    def __init__(self, child_formatter):
-        super().__init__()
-        self.formatter = child_formatter
-        self.formatter._indent = self._indent
-        self.captured = []
-
-    def format(self, record):
-        formatted = self.formatter.format(record)
-        if isinstance(formatted, list):
-            self.captured.extend(formatted)
-        else:
-            self.captured.append(formatted)
-        return formatted
-
 test_code = "<TST93344011I>"
-
-def get_subproc_cmds(lines):
-    commands_to_run = "python3 -c \"\"\"import alog\n"
-    for line in lines:
-        commands_to_run += "%s\n" % line
-    commands_to_run += "\"\"\""
-    return commands_to_run
 
 def pretty_level_to_name(pretty_level):
     for name, pretty_name in alog.AlogPrettyFormatter._LEVEL_MAP.items():
@@ -70,7 +38,9 @@ def parse_pretty_line(line):
     rest_of_regex = r"\[([^:]*):([^\]:]*):?([0-9]*)\]( ?<[^\s]*>)? ([\s]*)([^\s].*)\n?"
     whole_regex = "^%s %s$" % (timestamp_regex, rest_of_regex)
     expr = re.compile(whole_regex)
-    match = expr.match(line.decode('utf-8'))
+    if isinstance(line, bytes):
+        line = line.decode('utf-8')
+    match = expr.match(line)
     assert match is not None
     res = {
         'timestamp': match[1],
@@ -85,25 +55,59 @@ def parse_pretty_line(line):
         res['log_code'] = match[5].strip()
     return res
 
+def is_log_msg(msg):
+    return not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
+
+class LogCaptureFormatter(alog.AlogFormatterBase):
+    '''Helper that captures logs, then forwards them to a child
+    '''
+
+    def __init__(self, child_formatter):
+        super().__init__()
+
+        # Use the _setup_formatter to do all of the standard formatter setup,
+        # then grab a handle to it
+        alog._setup_formatter(child_formatter)
+        self.formatter = alog.g_alog_formatter
+
+        # We need to make sure that the inner formatter is sharing the same
+        # indentation
+        self.formatter._indent = self._indent
+
+        # Keep track of the lines that have been captured
+        self.captured = []
+
+    def format(self, record):
+        formatted = self.formatter.format(record)
+        if isinstance(formatted, list):
+            self.captured.extend(formatted)
+        else:
+            self.captured.append(formatted)
+        return formatted
+
+    def get_json_records(self):
+        return [json.loads(e) for e in self.captured]
+
+    def get_pretty_records(self):
+        return [parse_pretty_line(e) for e in self.captured]
+
 ## Tests #######################################################################
 
 class TestJsonCompatibility(unittest.TestCase):
     '''Ensures that printed messages are valid json format when json formatting is specified'''
 
     def test_merge_msg_json(self):
-        '''Tests that dict messages are merged when using json format. May be too complicated...'''
-        # Set up the subprocess command
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='json')",
-            "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info(dict({'test_msg':1}))",
-        ])
+        '''Tests that dict messages are merged when using json format'''
 
-        # run in subprocess and capture stderr
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = json.loads(stderr)
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
 
-        self.assertIsNotNone(logged_output)
+        # Log a dict message
+        test_channel.info(dict({'test_msg':1}))
+        self.assertEqual(len(capture_formatter.captured), 1)
+        logged_output = json.loads(capture_formatter.captured[0])
         self.assertIsInstance(logged_output, dict)
 
         for key in logged_output.keys():
@@ -115,19 +119,20 @@ class TestJsonCompatibility(unittest.TestCase):
         self.assertEqual(logged_output['test_msg'], 1)
 
     def test_empty_msg_json(self):
-        '''Tests that logs are in json format with an empty message. May be too complicated...'''
-        # Set up the subprocess command
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='json')",
-            "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info('')",
-        ])
+        '''Tests that logs are in json format with an empty message'''
 
-        # run in subprocess and capture stderr
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = json.loads(stderr)
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
 
-        self.assertIsInstance(logged_output, dict)
+        # Log an empty message
+        test_channel.info('')
+
+        # Validate that we get a dict back
+        logged_output = capture_formatter.get_json_records()
+        self.assertEqual(len(logged_output), 1)
+        self.assertIsInstance(logged_output[0], dict)
 
 class TestCustomFormatter(unittest.TestCase):
     def test_pretty_with_args(self):
@@ -137,168 +142,158 @@ class TestCustomFormatter(unittest.TestCase):
 class TestThreadId(unittest.TestCase):
     def test_thread_id_json(self):
         '''Test that the thread id is given with json formatting'''
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
-            "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info('This is a test')",
-        ])
+
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', thread_id=True, formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        # Log a sample message
+        test_channel.info('This is a test')
 
         # run in subprocess and capture stderr
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = json.loads(stderr)
-
-        # Make sure the thread_id key is present
-        self.assertIsInstance(logged_output, dict)
-        self.assertIn('thread_id', logged_output)
+        logged_output = capture_formatter.get_json_records()
+        self.assertEqual(len(logged_output), 1)
+        self.assertIn('thread_id', logged_output[0])
 
     def test_thread_id_pretty(self):
         '''Test that the thread id is given with pretty formatting'''
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
-            "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info('This is a test')",
-        ])
+
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('pretty')
+        alog.configure(default_level='info', thread_id=True, formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        # Log a sample message
+        test_channel.info('This is a test')
 
         # run in subprocess and capture stderr
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
-
-        # Parse the line header
-        self.assertEqual(len(logged_output), 1)
-        line = logged_output[0]
-        parts = parse_pretty_line(line)
-        self.assertIn('thread_id', parts)
+        self.assertTrue(len(capture_formatter.captured), 1)
+        logged_output = capture_formatter.get_pretty_records()[0]
+        self.assertIn('thread_id', logged_output)
 
 class TestLogCode(unittest.TestCase):
     def test_log_code_dict(self):
         '''Test that logging a dict with a log code and message adds the code to
         the header as expected
         '''
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
-            "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info({'log_code': '%s', 'message': 'This is a test'})" % test_code,
-            "test_channel.info({'log_code': '<>', 'message': 'https://url.com/a%20b'})",
-        ])
 
-        # run in subprocess and capture stderr
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('pretty')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
 
-        # Parse the line header
+        # Log with a code
+        test_channel.info({'log_code': test_code, 'message': 'This is a test'})
+        test_channel.info({'log_code': '<>', 'message': 'https://url.com/a%20b'})
+        logged_output = capture_formatter.get_pretty_records()
+
+        # Make sure the code and message came through as fields
         self.assertEqual(len(logged_output), 2)
-        line = logged_output[0]
-        parts = parse_pretty_line(line)
-        self.assertIn('log_code', parts)
-        self.assertEqual(parts['log_code'], test_code)
-        self.assertIn('message', parts)
-        self.assertEqual(parts['message'], 'This is a test')
+        record = logged_output[0]
+        self.assertIn('log_code', record)
+        self.assertEqual(record['log_code'], test_code)
+        self.assertIn('message', record)
+        self.assertEqual(record['message'], 'This is a test')
 
-        url_parts = parse_pretty_line(logged_output[1])
-        self.assertEquals('https://url.com/a%20b', url_parts['message'])
+        # Make sure the percent encoding in the message was preserved
+        self.assertEquals('https://url.com/a%20b', logged_output[1]['message'])
 
     def test_log_code_arg(self):
         '''Test that logging with the first argument as a log code adds the code
         to the header correctly
         '''
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
-            "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info('%s', 'This is a test')" % test_code,
-        ])
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('pretty')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
 
-        # run in subprocess and capture stderr
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
+        # Log with a code
+        test_channel.info(test_code, 'This is a test')
+        logged_output = capture_formatter.get_pretty_records()
 
-        # Parse the line header
+        # Make sure the code and message came through as fields
         self.assertEqual(len(logged_output), 1)
-        line = logged_output[0]
-        parts = parse_pretty_line(line)
-        self.assertIn('log_code', parts)
-        self.assertEqual(parts['log_code'], test_code)
-        self.assertIn('message', parts)
-        self.assertEqual(parts['message'], 'This is a test')
+        record = logged_output[0]
+        self.assertIn('log_code', record)
+        self.assertEqual(record['log_code'], test_code)
+        self.assertIn('message', record)
+        self.assertEqual(record['message'], 'This is a test')
 
     def test_log_code_with_formatting(self):
         '''Test that logging with a log code and formatting arguments to the message.
         '''
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
-            "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info('%s', 'This is a test %%d', 1)" % test_code,
-        ])
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('pretty')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
 
-        # run in subprocess and capture stderr
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
+        # Log with a code and a lazy formatting arg
+        test_channel.info(test_code, 'This is a test %d', 1)
+        logged_output = capture_formatter.get_pretty_records()
 
-        # Parse the line header
+        # Make sure the code and message came through as fields
         self.assertEqual(len(logged_output), 1)
-        line = logged_output[0]
-        parts = parse_pretty_line(line)
-        self.assertIn('log_code', parts)
-        self.assertEqual(parts['log_code'], test_code)
-        self.assertIn('message', parts)
-        self.assertEqual(parts['message'], 'This is a test 1')
+        record = logged_output[0]
+        self.assertIn('log_code', record)
+        self.assertEqual(record['log_code'], test_code)
+        self.assertIn('message', record)
+        self.assertEqual(record['message'], 'This is a test 1')
 
     def test_native_logging(self):
         '''Test that logging with the native logger works, despite overridden functions.
         '''
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
-            "import logging",
-            "logging.info('This is a test %d', 1)",
-        ])
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('pretty')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
 
-        # run in subprocess and capture stderr
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
+        import logging
+        logging.info('This is a test %d', 1)
+        logged_output = capture_formatter.get_pretty_records()
 
-        # Parse the line header
+        # Make sure the output was handled by the pretty formatter
         self.assertEqual(len(logged_output), 1)
-        line = logged_output[0]
-        parts = parse_pretty_line(line)
-        self.assertNotIn('log_code', parts)
-        self.assertIn('message', parts)
-        self.assertEqual(parts['message'], 'This is a test 1')
+        record = logged_output[0]
+        self.assertNotIn('log_code', record)
+        self.assertIn('message', record)
+        self.assertEqual(record['message'], 'This is a test 1')
 
     def test_log_code_json(self):
         '''Test that logging with a log code and the json formatter works as expected.
         '''
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
-            "test_channel = alog.use_channel('test_merge_msg_json')",
-            "test_channel.info('%s', 'This is a test')" % test_code,
-        ])
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
 
-        # run in subprocess and capture stderr
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
+        # Log with a code
+        test_channel.info({'log_code': test_code, 'message': 'This is a test'})
+        logged_output = capture_formatter.get_json_records()
 
-        # Parse the line header
+        # Make sure the code and message came through as fields
         self.assertEqual(len(logged_output), 1)
-        line = logged_output[0]
-        parts = json.loads(line)
-        self.assertIn('log_code', parts)
-        self.assertEqual(parts['log_code'], test_code)
-        self.assertIn('message', parts)
-        self.assertEqual(parts['message'], 'This is a test')
+        record = logged_output[0]
+        self.assertIn('log_code', record)
+        self.assertEqual(record['log_code'], test_code)
+        self.assertIn('message', record)
+        self.assertEqual(record['message'], 'This is a test')
 
 class TestScopedLoggers(unittest.TestCase):
     def test_context_managed_scoping(self):
         '''Test that deindent happens when with statement goes out of scope.'''
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
-            "test_channel = alog.use_channel('test_log_scoping')",
-            "with alog.ContextLog(test_channel.info, 'inner'):",
-            "   test_channel.info('%s', 'This should be scoped')" % test_code,
-            "test_channel.info('%s', 'This should not be scoped')" % test_code
-        ])
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        # Log with a context timer
+        with alog.ContextLog(test_channel.info, 'inner'):
+           test_channel.info(test_code, 'This should be scoped')
+        test_channel.info(test_code, 'This should not be scoped')
+        logged_output = capture_formatter.get_json_records()
+
         # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
-        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
         self.assertEqual(len(logged_output), 4)
         # Parse out the two messages we explicitly logged. Only the first should be indented
         in_scope_log, out_scope_log = [line for line in logged_output if is_log_msg(line['message'])]
@@ -308,18 +303,18 @@ class TestScopedLoggers(unittest.TestCase):
     def test_direct_scoping(self):
         '''Test to make sure that log scoping works correctly by just calling the initializer
         and the finalizer directly.'''
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
-            "test_channel = alog.use_channel('test_log_scoping')",
-            "inner_scope = alog.ScopedLog(test_channel.info, 'inner')",
-            "test_channel.info('%s', 'This should be scoped')" % test_code,
-            "del inner_scope",
-            "test_channel.info('%s', 'This should not be scoped')" % test_code
-        ])
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        inner_scope = alog.ScopedLog(test_channel.info, 'inner')
+        test_channel.info(test_code, 'This should be scoped')
+        del inner_scope
+        test_channel.info(test_code, 'This should not be scoped')
+        logged_output = capture_formatter.get_json_records()
+
         # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
-        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
         self.assertEqual(len(logged_output), 4)
         # Parse out the two messages we explicitly logged. Only the first should be indented
         in_scope_log, out_scope_log = [line for line in logged_output if is_log_msg(line['message'])]
@@ -329,19 +324,19 @@ class TestScopedLoggers(unittest.TestCase):
     def test_direct_function_logger(self):
         '''Test to make sure that scoped function logger works.
         '''
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
-            "test_channel = alog.use_channel('test_log_scoping')",
-            "def test():",
-            "    _ = alog.FunctionLog(test_channel.info, 'inner')",
-            "    test_channel.info('%s', 'This should be scoped')" % test_code,
-            "test()",
-            "test_channel.info('%s', 'This should not be scoped')" % test_code
-        ])
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        def test():
+            _ = alog.FunctionLog(test_channel.info, 'inner')
+            test_channel.info(test_code, 'This should be scoped')
+        test()
+        test_channel.info(test_code, 'This should not be scoped')
+        logged_output = capture_formatter.get_json_records()
+
         # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
-        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
         self.assertEqual(len(logged_output), 4)
         # Parse out the two messages we explicitly logged. Only the first should be indented
         in_scope_log, out_scope_log = [line for line in logged_output if is_log_msg(line['message'])]
@@ -351,19 +346,19 @@ class TestScopedLoggers(unittest.TestCase):
     def test_decorated_function_logger(self):
         '''Test to make sure that function logger works with decorators.
         '''
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
-            "test_channel = alog.use_channel('test_log_scoping')",
-            "@alog.logged_function(test_channel.info, 'inner')",
-            "def test():",
-            "    test_channel.info('%s', 'This should be scoped')" % test_code,
-            "test()",
-            "test_channel.info('%s', 'This should not be scoped')" % test_code
-        ])
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        @alog.logged_function(test_channel.info, 'inner')
+        def test():
+            test_channel.info(test_code, 'This should be scoped')
+        test()
+        test_channel.info(test_code, 'This should not be scoped')
+        logged_output = capture_formatter.get_json_records()
+
         # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
-        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
         self.assertEqual(len(logged_output), 4)
         # Parse out the two messages we explicitly logged. Only the first should be indented
         in_scope_log, out_scope_log = [line for line in logged_output if is_log_msg(line['message'])]
@@ -372,24 +367,20 @@ class TestScopedLoggers(unittest.TestCase):
 
 class TestTimedLoggers(unittest.TestCase):
     def test_context_managed_timer(self):
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
-            "test_channel = alog.use_channel('test_log_scoping')",
-            "with alog.ContextTimer(test_channel.info, 'timed: '):",
-            "   test_channel.info('%s', 'Test message.')" % test_code,
-        ])
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        with alog.ContextTimer(test_channel.info, 'timed: '):
+           test_channel.info(test_code, 'Test message.')
+        logged_output = capture_formatter.get_json_records()
+
         # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
-        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
         self.assertEqual(len(logged_output), 2)
 
         # Parse out the two messages we explicitly logged. Only the first should be indented
         test_log, timed_log = [line for line in logged_output if is_log_msg(line['message'])]
-
-        # verify number of fields
-        self.assertEqual(len(test_log), 8)
-        self.assertEqual(len(timed_log), 7)
 
         # ensure timer outputs a timedelta
         timed_message = timed_log['message']
@@ -397,26 +388,22 @@ class TestTimedLoggers(unittest.TestCase):
         self.assertTrue(re.match(r'^timed: [0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9]+$', timed_message))
 
     def test_scoped_timer(self):
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
-            "test_channel = alog.use_channel('test_log_scoping')",
-            "def test():",
-            "    _ = alog.ScopedTimer(test_channel.info, 'timed: ')",
-            "    test_channel.info('%s', 'Test message.')" % test_code,
-            "test()",
-        ])
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        def test():
+            _ = alog.ScopedTimer(test_channel.info, 'timed: ')
+            test_channel.info(test_code, 'Test message.')
+        test()
+        logged_output = capture_formatter.get_json_records()
+
         # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
-        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
         self.assertEqual(len(logged_output), 2)
 
         # Parse out the two messages we explicitly logged. Only the first should be indented
         test_log, timed_log = [line for line in logged_output if is_log_msg(line['message'])]
-
-        # verify number of fields
-        self.assertEqual(len(test_log), 8)
-        self.assertEqual(len(timed_log), 7)
 
         # ensure timer outputs a timedelta
         timed_message = timed_log['message']
@@ -424,26 +411,22 @@ class TestTimedLoggers(unittest.TestCase):
         self.assertTrue(re.match(r'^timed: [0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9]+$', timed_message))
 
     def test_decorated_timer(self):
-        commands_to_run = get_subproc_cmds([
-            "alog.configure(default_level='info', filters='', formatter='json', thread_id=True)",
-            "test_channel = alog.use_channel('test_log_scoping')",
-            "@alog.timed_function(test_channel.info, 'timed: ')",
-            "def test():",
-            "    test_channel.info('%s', 'Test message.')" % test_code,
-            "test()",
-        ])
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        @alog.timed_function(test_channel.info, 'timed: ')
+        def test():
+            test_channel.info(test_code, 'Test message.')
+        test()
+        logged_output = capture_formatter.get_json_records()
+
         # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
-        is_log_msg = lambda msg: not msg.startswith(alog.scope_start_str) and not msg.startswith(alog.scope_end_str)
-        _, stderr = subprocess.Popen(shlex.split(commands_to_run), stderr=subprocess.PIPE).communicate()
-        logged_output = [json.loads(line) for line in stderr.split(b'\n') if len(line) > 0]
         self.assertEqual(len(logged_output), 2)
 
         # Parse out the two messages we explicitly logged. Only the first should be indented
         test_log, timed_log = [line for line in logged_output if is_log_msg(line['message'])]
-
-        # verify number of fields
-        self.assertEqual(len(test_log), 8)
-        self.assertEqual(len(timed_log), 7)
 
         # ensure timer outputs a timedelta
         timed_message = timed_log['message']
