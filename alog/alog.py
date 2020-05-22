@@ -471,19 +471,33 @@ class _ScopedLogBase:
         self.format_str = format_str
         self.args = args
 
+        # This context is enabled IFF the function bound to it is enabled. To
+        # get at that information, we need to figure out which function it is,
+        # and to do that, we need to poke around in the guts of it.
+        assert hasattr(self.log_fn, '__self__') and hasattr(self.log_fn.__self__, 'info'), \
+            'Cannot use non-logging function for scoped log'
+        level = 'off'
+        for level_name in g_alog_name_to_level.keys():
+            if self.log_fn == getattr(self.log_fn.__self__, level_name):
+                level = level_name
+                break
+        self.enabled = self.log_fn.__self__.isEnabled(level)
+
     def _start_scoped_log(self):
         """Log the start message for a scoped logger and increment the indentor.
         """
-        self.log_fn(scope_start_str + str(self.format_str), *self.args)
-        global g_alog_formatter
-        g_alog_formatter.indent()
+        if self.enabled:
+            self.log_fn(scope_start_str + str(self.format_str), *self.args)
+            global g_alog_formatter
+            g_alog_formatter.indent()
 
     def _end_scoped_log(self):
         """Log the end message for a scoped logger and decrement the indentor.
         """
-        global g_alog_formatter
-        g_alog_formatter.deindent()
-        self.log_fn(scope_end_str + str(self.format_str), *self.args)
+        if self.enabled:
+            global g_alog_formatter
+            g_alog_formatter.deindent()
+            self.log_fn(scope_end_str + str(self.format_str), *self.args)
 
 # pylint: disable=too-few-public-methods
 class ScopedLog(_ScopedLogBase):
