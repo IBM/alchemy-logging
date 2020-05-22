@@ -19,8 +19,9 @@ RUN pip3 install /src/dist/alog-*-py3-none-any.whl \
     && pip3 install -r /src/requirements_test.txt
 
 COPY tests /src/tests
+COPY ci/run-tests.sh /src/ci/run-tests.sh
 
-RUN python3 -m pytest /src/tests/test_alog.py
+RUN /src/ci/run-tests.sh
 
 #-- Publish --------------------------------------------------------------------
 FROM wheel as publish
