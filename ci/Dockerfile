@@ -18,7 +18,7 @@ RUN pip3 install /src/dist/alog-*-py3-none-any.whl
 
 COPY tests /src/tests
 
-RUN python3 /src/tests/unit_tests.py
+RUN python3 /src/tests/test_alog.py
 
 #-- Publish --------------------------------------------------------------------
 FROM wheel as publish
