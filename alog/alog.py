@@ -27,8 +27,22 @@ g_thread_id_enabled = False
 class AlogFormatterBase(logging.Formatter):
     """Base class with common functionality for alog formatters.
     """
+
+    class ThreadIndent(threading.local):
+        '''Private subclass of threading.local which initializes to 0 on
+        construction
+        '''
+        def __init__(self):
+            self.indent = 0
+
     def __init__(self):
-        self._indent = 0
+        # Hold a thread-local map for storing indentation so that the counts are
+        # kept independently for each thread. Note that threading.local values
+        # are cleaned up when their local thread dies, so this is safe to use
+        # with ephemeral threads.
+        self._indent = AlogFormatterBase.ThreadIndent()
+
+        # Initialize the underlying logger with this formatter
         logging.Formatter.__init__(self)
 
     def formatTime(self, record, datefmt=None):
@@ -45,15 +59,15 @@ class AlogFormatterBase(logging.Formatter):
         return datetime.utcfromtimestamp(record.created).isoformat()
 
     def indent(self):
-        """Add a level of indentation.
+        """Add a level of indentation for this thread.
         """
-        self._indent += 1
+        self._indent.indent += 1
 
     def deindent(self):
-        """Remove a level of indentation.
+        """Remove a level of indentation for this thread.
         """
-        if self._indent > 0:
-            self._indent -= 1
+        if self._indent.indent > 0:
+            self._indent.indent -= 1
 
 class AlogJsonFormatter(AlogFormatterBase):
     """Log formatter which prints messages a single-line json.
@@ -127,7 +141,7 @@ class AlogJsonFormatter(AlogFormatterBase):
         log_record = self._extract_fields_from_record_as_dict(record)
 
         # Add indent to all log records
-        log_record['num_indent'] = self._indent
+        log_record['num_indent'] = self._indent.indent
 
         # If enabled, add thread id
         if g_thread_id_enabled:
@@ -213,7 +227,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
         log_code = record.log_code if hasattr(record, 'log_code') else None
         header = self._make_header(timestamp, channel, level, log_code)
         # Pretty format the message
-        indent = self._INDENT*self._indent
+        indent = self._INDENT*self._indent.indent
         if isinstance(record.message, str):
             formatted = ['%s %s%s' % (header, indent, line) for line in record.message.split('\n')]
             formatted = '\n'.join(formatted)
