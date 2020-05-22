@@ -660,37 +660,3 @@ def timed_function(log_fn, format_str="", *fmt_args):
                 return func(*args, **kwargs)
         return wrapper
     return decorator
-
-## Testing #####################################################################
-
-def demo_function(val):
-    chan = logging.getLogger("FOO")
-    fn_scope = FnLog(chan.info)
-    chan.debug3("This is a test")
-    chan.error({"test_json": True, "outer_message": "testing json logging"})
-    # Test scoped logging
-    with ContextLog(chan.info, "inner"):
-        chan.info("I am scoped")
-        chan.info({"test_json": True, "inner_message": "Log with "+str(val)+" val"})
-    chan.info("Log outside inner scope")
-
-if __name__ == '__main__':
-    import sys
-    import time
-    default_level = sys.argv[1] if len(sys.argv) > 1 else "info"
-    filters = sys.argv[2] if len(sys.argv) > 2 else ""
-    formatter = sys.argv[3] if len(sys.argv) > 3 else "pretty"
-    configure(default_level=default_level, filters=filters, formatter=formatter)
-
-    logging.info("TEST info")
-    demo_function("bar")
-    use_channel("FOO").debug2("Debug2 line %d", 10)
-    use_channel("BAR").debug4("""Large, deep debugging entry with multiple
-lines of text!""")
-    test_ch = use_channel("TEST")
-    test_ch.info("<TST72904181I>", "This is a line with a log code")
-
-    # Sample scoped timer
-    with ContextTimer(test_ch.info, 'Finished timer context: ') as t:
-        time.sleep(1)
-        test_ch.info('Done with the scope')
