@@ -14,19 +14,41 @@ import io
 import json
 import logging
 import os
+import re
 import shlex
 import subprocess
 import sys
+import threading
+import time
 import unittest
-import re
 
 # Import the implementation details so that we can test them
 import alog.alog as alog
+
+## Helpers #####################################################################
 
 # Note on log capture: In these tests, we could attach a stream capture handler,
 # but logs captured that way will not include formatting, so that doesn't work
 # for these tests. Instead, we run python subprocesses and capture the logging
 # results.
+
+class LogCaptureFormatter(alog.AlogFormatterBase):
+    '''Helper that captures logs, then forwards them to a child
+    '''
+
+    def __init__(self, child_formatter):
+        super().__init__()
+        self.formatter = child_formatter
+        self.formatter._indent = self._indent
+        self.captured = []
+
+    def format(self, record):
+        formatted = self.formatter.format(record)
+        if isinstance(formatted, list):
+            self.captured.extend(formatted)
+        else:
+            self.captured.append(formatted)
+        return formatted
 
 test_code = "<TST93344011I>"
 
@@ -62,6 +84,8 @@ def parse_pretty_line(line):
     if match[5] is not None:
         res['log_code'] = match[5].strip()
     return res
+
+## Tests #######################################################################
 
 class TestJsonCompatibility(unittest.TestCase):
     '''Ensures that printed messages are valid json format when json formatting is specified'''
@@ -471,6 +495,63 @@ class TestisEnabled(unittest.TestCase):
         ch = alog.use_channel('TEST')
         self.assertFalse(ch.isEnabled(alog.g_alog_name_to_level['trace']))
         self.assertFalse(ch.isEnabled(alog.g_alog_name_to_level['debug2']))
+
+class TestThreading(unittest.TestCase):
+    '''Test how alog plays with multithreading
+    '''
+
+    def test_thread_local_indent(self):
+        '''Make sure that indent counts are kept on a per-thread basis'''
+        capture_formatter = LogCaptureFormatter(alog.AlogJsonFormatter())
+        alog.configure('info', thread_id=True, formatter=capture_formatter)
+
+        # Make a small function that does some logging with indentation and some
+        # small sleeps in between to encourage thread swapping
+        ch = alog.use_channel('TEST')
+        def doit():
+            ch.info('Indent 0')
+            with alog.ContextLog(ch.info, 'scope 1'):
+                ch.info('Indent 1')
+                time.sleep(0.001)
+                with alog.ContextLog(ch.info, 'scope 2'):
+                    ch.info('Indent 2')
+                    time.sleep(0.001)
+                ch.info('Indent 1 (number two)')
+                time.sleep(0.001)
+            ch.info('Indent 0 (number two)')
+
+        # Create two threads that each execute it
+        th1 = threading.Thread(target=doit)
+        th2 = threading.Thread(target=doit)
+
+        # Run them in parallel
+        th1.start()
+        th2.start()
+        th1.join()
+        th2.join()
+
+        # Make sure that the lines were captured correctly
+        entries = capture_formatter.captured
+        self.assertEqual(len(entries), 18)
+
+        # Sort the lines by thread ID
+        entries_by_thread = {}
+        for entry in entries:
+            entry = json.loads(entry)
+            entries_by_thread.setdefault(entry['thread_id'], []).append(entry)
+        thread_entries = list(entries_by_thread.values())
+        self.assertEqual(len(thread_entries), 2)
+
+        # Make sure that the sequence of indentations for each thread lines up
+        thread0_indents = [e['num_indent'] for e in thread_entries[0]]
+        thread1_indents = [e['num_indent'] for e in thread_entries[1]]
+        per_thread_indents = list(zip(thread0_indents, thread1_indents))
+        self.assertTrue(all([a == b for a, b in per_thread_indents]))
+
+        # Make sure all expected indentation levels are present
+        self.assertIn(0, thread0_indents)
+        self.assertIn(1, thread0_indents)
+        self.assertIn(2, thread0_indents)
 
 if __name__ == "__main__":
     # has verbose output of tests; otherwise just says all passed or not
