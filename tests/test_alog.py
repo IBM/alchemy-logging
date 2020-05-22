@@ -384,6 +384,26 @@ class TestScopedLoggers(unittest.TestCase):
         self.assertGreaterEqual(in_scope_log['num_indent'], 1)
         self.assertEqual(out_scope_log['num_indent'], 0)
 
+    def test_disabled_scope_indentation(self):
+        '''Test to make sure that scoped indentation is only applied if a given
+        scope is enabled
+        '''
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        # Create a scope on a disabled level, but log on an enabled level inside
+        with alog.ContextLog(test_channel.debug):
+            test_channel.info('See me')
+
+        logged_output = capture_formatter.get_json_records()
+        self.assertEqual(len(logged_output), 1)
+
+        # Make sure there was no identation on the record
+        record = logged_output[0]
+        self.assertEqual(record['num_indent'], 0)
+
 class TestTimedLoggers(unittest.TestCase):
     def test_context_managed_timer(self):
         # Configure for log capture
