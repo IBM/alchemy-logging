@@ -1,7 +1,0 @@
-[run]
-omit =
-    # Skip individual scrapers in coverage
-    src/scrapers/NA/*
-    src/scrapers/SA/*
-    src/scrapers/EU/*
-    src/scrapers/WORLD/*
