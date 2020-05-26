@@ -40,7 +40,7 @@ class AlogFormatterBase(logging.Formatter):
         # kept independently for each thread. Note that threading.local values
         # are cleaned up when their local thread dies, so this is safe to use
         # with ephemeral threads.
-        self._indent = AlogFormatterBase.ThreadLocalIndent()
+        self._indent = self.ThreadLocalIndent()
 
         # Initialize the underlying logger with this formatter
         logging.Formatter.__init__(self)
