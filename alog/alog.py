@@ -272,7 +272,8 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
 
     # If arg_one looks like a log code, use the first positional arg as message
     elif is_log_code(arg_one):
-        self.log(value, {"log_code": arg_one, "message": args[0] % tuple(args[1:])}, **kwargs)
+        message = args[0] % tuple(args[1:]) if len(args) > 1 else args[0]
+        self.log(value, {"log_code": arg_one, "message": message}, **kwargs)
 
     # Otherwise, treat arg_one as the message
     else:

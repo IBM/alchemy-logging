@@ -154,6 +154,7 @@ class TestLogCode(unittest.TestCase):
             "alog.configure(default_level='info', filters='', formatter='pretty', thread_id=True)",
             "test_channel = alog.use_channel('test_merge_msg_json')",
             "test_channel.info({'log_code': '%s', 'message': 'This is a test'})" % test_code,
+            "test_channel.info({'log_code': '<>', 'message': 'https://url.com/a%20b'})",
         ])
 
         # run in subprocess and capture stderr
@@ -161,13 +162,16 @@ class TestLogCode(unittest.TestCase):
         logged_output = [line for line in stderr.split(b'\n') if len(line) > 0]
 
         # Parse the line header
-        self.assertEqual(len(logged_output), 1)
+        self.assertEqual(len(logged_output), 2)
         line = logged_output[0]
         parts = parse_pretty_line(line)
         self.assertIn('log_code', parts)
         self.assertEqual(parts['log_code'], test_code)
         self.assertIn('message', parts)
         self.assertEqual(parts['message'], 'This is a test')
+
+        url_parts = parse_pretty_line(logged_output[1])
+        self.assertEquals('https://url.com/a%20b', url_parts['message'])
 
     def test_log_code_arg(self):
         '''Test that logging with the first argument as a log code adds the code
