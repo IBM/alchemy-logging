@@ -125,7 +125,7 @@ Currently the unit tests live in `tests/unit_tests.py`. You can run them with th
 python setup.py develop
 
 # Run the tests
-python tests/unit_tests.py
+./ci/run-tests.sh
 ```
 
 Note: A few tests still live in `alog/alog.py` that should be migrated over to the unit tests directory as time permits.

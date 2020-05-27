@@ -13,12 +13,15 @@ RUN python3 setup.py bdist_wheel
 #-- Test -----------------------------------------------------------------------
 FROM base as test
 
+COPY requirements_test.txt /src/requirements_test.txt
 COPY --from=wheel /src/dist/alog-*-py3-none-any.whl /src/dist/
-RUN pip3 install /src/dist/alog-*-py3-none-any.whl
+RUN pip3 install /src/dist/alog-*-py3-none-any.whl \
+    && pip3 install -r /src/requirements_test.txt
 
 COPY tests /src/tests
+COPY ci/run-tests.sh /src/ci/run-tests.sh
 
-RUN python3 /src/tests/unit_tests.py
+RUN /src/ci/run-tests.sh
 
 #-- Publish --------------------------------------------------------------------
 FROM wheel as publish

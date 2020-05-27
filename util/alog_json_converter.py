@@ -34,7 +34,11 @@ try:
                 m.levelname = m.level_str
 
                 # Set the formatter's indentation
-                alog.alog.g_alog_formatter._indent = m.num_indent
+                # NOTE: Handle per-thread indent implementation change
+                if hasattr(alog.alog.AlogFormatterBase, 'ThreadLocalIndent'):
+                    alog.alog.g_alog_formatter._indent.indent = m.num_indent
+                else:
+                    alog.alog.g_alog_formatter._indent = m.num_indent
 
                 # Remove all entries that are not needed anymore
                 for k in ['timestamp', 'channel', 'level_str', 'num_indent']:
