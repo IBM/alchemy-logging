@@ -134,6 +134,24 @@ class TestJsonCompatibility(unittest.TestCase):
         self.assertEqual(len(logged_output), 1)
         self.assertIsInstance(logged_output[0], dict)
 
+    def test_json_level_formatting(self):
+        '''Make sure that the key used for the level is 'level' and that the value is lowercase'''
+
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        # Log an empty message
+        test_channel.info('test')
+
+        # Validate that we get a dict back
+        logged_output = capture_formatter.get_json_records()
+        self.assertEqual(len(logged_output), 1)
+        self.assertIsInstance(logged_output[0], dict)
+        self.assertIn('level', logged_output[0])
+        self.assertEqual(logged_output[0]['level'].lower(), logged_output[0]['level'])
+
 class TestCustomFormatter(unittest.TestCase):
     def test_pretty_with_args(self):
         '''Tests that a manually constructed AlogPrettyFormatter can be used'''
