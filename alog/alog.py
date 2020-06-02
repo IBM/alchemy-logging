@@ -478,7 +478,7 @@ class _ScopedLogBase:
             'Cannot use non-logging function for scoped log'
         level = 'off'
         for level_name in g_alog_name_to_level.keys():
-            if self.log_fn == getattr(self.log_fn.__self__, level_name):
+            if hasattr(self.log_fn.__self__, level_name) and self.log_fn == getattr(self.log_fn.__self__, level_name):
                 level = level_name
                 break
         self.enabled = self.log_fn.__self__.isEnabled(level)
