@@ -6,7 +6,6 @@ from random import randint
 import re
 import sys
 
-PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Things that are good well formatted logs should match the following regex
 LOG_PATTERN = re.compile("<[A-Z]{3}[0-9]{8}[FEWID]>")
 # In general log codes look like this - if things match this & don't match the
@@ -26,6 +25,9 @@ def parse_args():
     '''Parses arguments and adjust them as needed. Ensure that if we're running in validate mode
     that a prefix is set if one isn't provided.'''
     parser = argparse.ArgumentParser(description='Finds and replaces duplicate log codes.')
+
+    parser.add_argument('-d', '--dir', type=str, required=True,
+        help='Root directory of project to parse for log codes.')
     parser.add_argument('-v', '--validate-only', action="store_true", default=False, 
         help='If enabled, throws an error if duplicates are found. Otherwise, replaces them.')
     parser.add_argument('--prefix', type=str, required=False,
@@ -40,13 +42,23 @@ def parse_args():
         raise ValueError('ERROR: Prefix [{}] must be of length 3'.format(args.prefix))
     elif args.prefix is not None:
         args.prefix = args.prefix.upper()
+    # Ensure that a project directory is specified
+    if not os.path.isdir(args.dir):
+        raise IOError('ERROR: Project directory [{}] does not exist!'.format(args.dir))
+    else:
+        args.dir = os.path.abspath(args.dir)
+        print('Project root: {}'.format(args.dir))
     return args
 
-def get_log_code_map():
+def get_log_code_map(project_dir):
     '''Create dictionary mapping discovered log codes from the parent search directory to the
     files in which they are found. Each log code will be mapped to a list of tuples containing
     the line number of discovery, the Regex match object, and the file of discovery. Anything
     that ends up with more than one entry is a duplicated log code.
+
+    Args:
+        project_dir str:
+            Root of the project directory whose log codes we are validating or correcting.
 
     Returns:
         list: contains 3 collection.defaultdict objects, each of which map types of log codes
@@ -61,9 +73,13 @@ def get_log_code_map():
     gen_sub_code_map = defaultdict(list)
 
     # Recursively grab all of the python files from the root directory
-    python_files = glob("{}/**/*.py".format(PARENT_DIR), recursive=True)
-    # Delete this file from the list of Python files
-    python_files.remove(os.path.abspath(__file__))
+    python_files = glob("{}/**/*.py".format(project_dir), recursive=True)
+
+    # If this file is on our search path, skip it, because we don't care about it
+    this_file_path = os.path.abspath(__file__)
+    if this_file_path in python_files:
+        python_files.remove(this_file_path)
+
     # Parse one file at a time & pull out all of the things that look like log codes,
     # also saving the whitespace indentation & line number that they were discovered on
     for py_file in python_files:
@@ -303,7 +319,7 @@ def show_duplicate_log_codes_and_exit(substitution_map):
 if __name__ == '__main__':
     print('[VALIDATING UNIQUE LOG CODES]')
     args = parse_args()
-    code_map, sub_code_map, gen_sub_code_map = get_log_code_map()
+    code_map, sub_code_map, gen_sub_code_map = get_log_code_map(args.dir)
     substitution_map = get_substitution_map(code_map, sub_code_map, gen_sub_code_map, args.prefix)
     if args.validate_only and substitution_map:
         show_duplicate_log_codes_and_exit(substitution_map)
