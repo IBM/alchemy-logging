@@ -565,61 +565,109 @@ void ALOG_RESET();
 /*-- Log Macros --------------------------------------------------------------*/
 
 /** Log a line on the given channel at the given level */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG(channel, level, ...) ALOG_CHANNEL_IMPL(#channel, level, __VA_ARGS__)
+#else
+#define ALOG(channel, level, ...)
+#endif
 
 /** Log a line on the class' native channel at the given level */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOGthis(level, ...) ALOG_CHANNEL_IMPL(getLogChannel(), level, __VA_ARGS__)
+#else
+#define ALOGthis(level, ...)
+#endif
 
 /** Log a wchar line on the given channel at the given level */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOGW(channel, level, ...) ALOGW_CHANNEL_IMPL(#channel, level, __VA_ARGS__)
+#else
+#define ALOGW(channel, level, ...)
+#endif
 
 /** Log a wchar line on the class' native channel at the given level */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOGWthis(level, ...) ALOGW_CHANNEL_IMPL(getLogChannel(), level, __VA_ARGS__)
+#else
+#define ALOGWthis(level, ...)
+#endif
 
 /** Log an arbitrary key/value structure on the given channel/level */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_MAP(channel, level, map) ALOG_MAP_IMPL(#channel, level, map)
+#else
+#define ALOG_MAP(channel, level, map)
+#endif
 
 /** Log an arbitrary key/value structure on the class' native channel */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_MAPthis(level, map) ALOG_MAP_IMPL(getLogChannel(), level, map)
+#else
+#define ALOG_MAPthis(level, map)
+#endif
 
 /** Log a line that explicitly includes the thread id regardless of the global
  * setting */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_THREAD(channel, level, ...)\
   { auto& sngl = logging::detail::CLogChannelRegistrySingleton::instance();\
     bool currentlyEnabled = sngl->threadIDEnabled();\
     if (not currentlyEnabled) sngl->enableThreadID();\
     ALOG(channel, level, __VA_ARGS__);\
     if (not currentlyEnabled) sngl->disableThreadID(); }
+#else
+#define ALOG_THREAD(channel, level, ...)
+#endif
 
 /** Log a line that includes the current thread's thread id to the class'
  * native channel */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_THREADthis(level, ...)\
   { auto& sngl = logging::detail::CLogChannelRegistrySingleton::instance();\
     bool currentlyEnabled = sngl->threadIDEnabled();\
     if (not currentlyEnabled) sngl->enableThreadID();\
     ALOGthis(level, __VA_ARGS__);\
     if (not currentlyEnabled) sngl->disableThreadID(); }
+#else
+#define ALOG_THREADthis(level, ...)
+#endif
 
 /** Set up a Start/End block of logging based on the scope. Note that only a
  * single call to ALOG_SCOPED_BLOCK may be made within a given scope */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_SCOPED_BLOCK(channel, level, ...)\
   ALOG_SCOPED_BLOCK_IMPL(#channel, level, __VA_ARGS__)
+#else
+#define ALOG_SCOPED_BLOCK(channel, level, ...)
+#endif
 
 /** Set up a Start/End block of logging based on the scope using class' native
  * channel */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_SCOPED_BLOCKthis(level, ...)\
   ALOG_SCOPED_BLOCK_IMPL(getLogChannel(), level, __VA_ARGS__)
+#else
+#define ALOG_SCOPED_BLOCKthis(level, ...)
+#endif
 
 /** Set up a timer that will time the work done in the current scope and
  * report the duration upon scope completion */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_SCOPED_TIMER(channel, level, ...)\
   ALOG_SCOPED_TIMER_IMPL(#channel, level, __VA_ARGS__)
+#else
+#define ALOG_SCOPED_TIMER(channel, level, ...)
+#endif
 
 /** Set up a timer that will time the work done in the current scope and
  * report the duration upon scope completion using current class' native
  * channel */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_SCOPED_TIMERthis(level, ...)\
   ALOG_SCOPED_TIMER_IMPL(getLogChannel(), level, __VA_ARGS__)
+#else
+#define ALOG_SCOPED_TIMERthis(level, ...)
+#endif
 
 /** Create a new instance of a scoped timer that can be queried for the current
  * duration and will report total time upon destruction
@@ -640,49 +688,93 @@ void ALOG_RESET();
 
 /** Set up a metadata scope that will add a key to the metadata that will be
  * removed when the current scope closes */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_SCOPED_METADATA(...)\
   ALOG_SCOPED_METADATA_IMPL(__VA_ARGS__)
+#else
+#define ALOG_SCOPED_METADATA(...)
+#endif
 
 /** Add a level of indentation to the current scope */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_SCOPED_INDENT() logging::detail::CLogScopedIndent \
   ALOG_UNIQUE_VAR_NAME_IMPL(__alog_scoped_indent__)
+#else
+#define ALOG_SCOPED_INDENT()
+#endif
 
 /** Add a level of indentation to the current scope if the given channel/level
  * is enabled */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_SCOPED_INDENT_IF(channel, level) ALOG_SCOPED_INDENT_IF_IMPL(#channel, level)
+#else
+#define ALOG_SCOPED_INDENT_IF(channel, level)
+#endif
 
 /** Add a level of indentation to the current scope if the given level is
  * enabled for the configured channel */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_SCOPED_INDENT_IFthis(level) ALOG_SCOPED_INDENT_IF_IMPL(getLogChannel(), level)
+#else
+#define ALOG_SCOPED_INDENT_IFthis(level)
+#endif
 
 /** Add a Start/End indented block with the current function name on trace */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_FUNCTION(channel, ...) ALOG_FUNCTION_IMPL(#channel, trace, __VA_ARGS__)
+#else
+#define ALOG_FUNCTION(channel, ...)
+#endif
 
 /** Add a Start/End indented block with the current function name on trace
  * using native channel */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_FUNCTIONthis(...) ALOG_FUNCTION_IMPL(getLogChannel(), trace, __VA_ARGS__)
+#else
+#define ALOG_FUNCTIONthis(...)
+#endif
 
 /** Add a Start/End indented block with the current function name on designated
  * level. Used for lower-level functions that log on debug levels */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_DETAIL_FUNCTION(channel, level, ...) ALOG_FUNCTION_IMPL(#channel, level, __VA_ARGS__)
+#else
+#define ALOG_DETAIL_FUNCTION(channel, level, ...)
+#endif
 
 /** Add a Start/End indented block with the current function name on designated
  * level on the native channel. Used for lower-level functions that log on
  * debug levels */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_DETAIL_FUNCTIONthis(level, ...) ALOG_FUNCTION_IMPL(getLogChannel(), level, __VA_ARGS__)
+#else
+#define ALOG_DETAIL_FUNCTIONthis(level, ...)
+#endif
 
 /** This macro sends a warning to cerr and to the the log */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_WARNING(msg)\
   ALOG(WARN, warning, msg);\
   std::cerr << "WARNING: " << msg << std::endl
+#else
+#define ALOG_WARNING(msg)
+#endif
 
 /** Resolve to a statement which is true if the given channel/level is enabled
  * and false otherwise */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_IS_ENABLED(channel, level) ALOG_IS_ENABLED_IMPL(#channel, level)
+#else
+#define ALOG_IS_ENABLED(channel, level) false
+#endif
 
 /** Resolve to a statement which is true if the given level is enabled for the
  * native channel and false otherwise */
+#ifndef ALOG_DISABLE_LOGGING
 #define ALOG_IS_ENABLEDthis(level) ALOG_IS_ENABLED_IMPL(getLogChannel(), level)
+#else
+#define ALOG_IS_ENABLEDthis(level) false
+#endif
 
 /** Convert a value for use in map data. Note that this will be called inside
  * regular code, so it cannot be compiled out. **/
