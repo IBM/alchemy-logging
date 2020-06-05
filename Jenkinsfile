@@ -63,7 +63,8 @@ pipeline {
       steps {
         ansiColor('xterm') {
           script {
-            sh 'docker build . --target=test -f ./ci/Dockerfile'
+            sh 'docker build . --target=test_wheel -f ./ci/Dockerfile'
+            sh 'docker build . --target=test_source -f ./ci/Dockerfile'
           }
         }
       }
