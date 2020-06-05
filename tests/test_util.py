@@ -1,6 +1,19 @@
+# *****************************************************************
+#
+# Licensed Materials - Property of IBM
+#
+# (C) Copyright IBM Corp. 2020. All Rights Reserved.
+#
+# US Government Users Restricted Rights - Use, duplication or
+# disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+# *****************************************************************
+'''ALog utils unit tests.
+'''
 import os
 import pytest
 import unittest
+from glob import glob
 
 from util import correct_log_codes
 
@@ -34,6 +47,13 @@ class TestLogCorrection(unittest.TestCase):
             prefix=self.prefix,
             validate_only=False,
             copy=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Delete all copy files created from tests
+        copy_files = glob("{}/**/*_copy.py".format(cls.fixtures_dir), recursive=True)
+        for cp_file in copy_files:
+            os.remove(cp_file)
 
     def test_log_code_regex_positive_cases(self):
         '''Example positive cases for main log code regex'''
