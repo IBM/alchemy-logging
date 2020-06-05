@@ -33,8 +33,8 @@ class TestLogCorrection(unittest.TestCase):
     no_duplicates_file = os.path.join(duplicate_file_dir, 'test_case_2.py')
 
     placholders_file_dir = os.path.join(fixtures_dir, 'placeholders')
-    prefix_file = os.path.join(placholders_file_dir, 'test_case_1.py')
-    prefixless_file = os.path.join(placholders_file_dir, 'test_case_2.py')
+    prefix_file = os.path.join(placholders_file_dir, 'test_case_3.py')
+    prefixless_file = os.path.join(placholders_file_dir, 'test_case_4.py')
     prefix = '<REP'
 
     @pytest.fixture(scope="session", autouse=True)
@@ -98,12 +98,12 @@ class TestLogCorrection(unittest.TestCase):
         res_file = get_copy_file_name(self.duplicates_file)
         # Get the original log code lineset (anything giving a hit for our log code regex)
         with open(self.duplicates_file) as dup_file:
-            original_codes = [x.strip() for x in dup_file.readlines() if  get_code_match(x)]
+            original_codes = [get_code_match(x).group() for x in dup_file.readlines() if get_code_match(x)]
             num_codes = len(original_codes)
             unique_original_codes = set(original_codes)
         # Get the output log code lineset
         with open(res_file) as out_file:
-            out_lines = set([x.strip() for x in out_file.readlines() if get_code_match(x)])
+            out_lines = set([get_code_match(x).group() for x in out_file.readlines() if get_code_match(x)])
         # Duplicate file should only have one log code
         self.assertEqual(len(unique_original_codes), 1)
         # But there should be lots of occurrences of that code
@@ -129,7 +129,7 @@ class TestLogCorrection(unittest.TestCase):
                 new_start, new_end = new.span()
                 self.assertEqual(old_start, new_start)
                 self.assertEqual(old_end, new_end)
-        # Make sure  we actually verified span boundaries at least once
+        # Make sure we actually verified span boundaries at least once
         self.assertTrue(at_least_one)
 
     def test_it_fills_prefixed_placeholders(self):
@@ -152,7 +152,7 @@ class TestLogCorrection(unittest.TestCase):
                 self.assertEqual(old_prefix, new_prefix)
                 # Ensure that the prefix used was not the override prefix
                 self.assertNotEqual(new_prefix, self.prefix)
-        # Make sure  we actually verified prefixes at least once
+        # Make sure we actually verified prefixes at least once
         self.assertTrue(at_least_one)
 
     def test_it_fills_prefixless_placeholders(self):
@@ -173,5 +173,5 @@ class TestLogCorrection(unittest.TestCase):
                 new_prefix = new_lines[idx][code_start: code_start + 4]
                 # Ensure that the prefix used was the override
                 self.assertEqual(new_prefix, self.prefix)
-        # Make sure  we actually verified prefixes at least once
+        # Make sure we actually verified prefixes at least once
         self.assertTrue(at_least_one)
