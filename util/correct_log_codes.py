@@ -28,10 +28,12 @@ def parse_args():
 
     parser.add_argument('-d', '--dir', type=str, required=True,
         help='Root directory of project to parse for log codes.')
-    parser.add_argument('-v', '--validate-only', action="store_true", default=False, 
+    parser.add_argument('-v', '--validate-only', action='store_true', default=False, 
         help='If enabled, throws an error if duplicates are found. Otherwise, replaces them.')
     parser.add_argument('--prefix', type=str, required=False,
         help='3 letter prefix to be used for replace placeholders matching r\'<X{3}[FEWID]>.\'')
+    parser.add_argument('-c', '--copy', action='store_true', default=False,
+        help='Write output of path/to/file.py to path/to/file_copy.py instead of correcting in place.')
     args = parser.parse_args()
     # If we're in validate mode, make sure we have a prefix so that we log problem placeholders
     if args.validate_only and args.prefix is None:
@@ -269,29 +271,33 @@ def generate_random_log_code(duplicate_code, code_map, generated_codes, sub_pref
         is_unique = gen_code not in code_map.keys() and gen_code not in generated_codes
     return gen_code
 
-def replace_duplicates(substitution_map):
+def replace_duplicates(substitution_map, copy):
     '''Given a substitution map, load each of the files needing a replacement sequentially. For
     each file, load the lines as a list, replace the span matched by the log code Regex with the
     generated duplicate, and rewrite the file.
 
     Args:
-        substitution_map(collections.defaultdict):
+        substitution_map collections.defaultdict:
             Dictionary mapping files to substitution info.
+        copy bool:
+            Indicates whether or path/to/file.py should be corrected to path/to/file_copy.py or
+            not if corrections are needed. This is mostly used for testing.
     '''
     # Consider every file in the substitution map
-    for py_file in substitution_map.keys():
+    for sub_file in substitution_map.keys():
+        out_file = sub_file if not copy else '{}_copy.py'.format(os.path.splitext(sub_file)[0])
         # For each one, get all lines in the file
-        with open(py_file, 'r', encoding='utf-8') as p_file:
+        with open(sub_file, 'r', encoding='utf-8') as p_file:
             file_lines = p_file.readlines()
         # Then replace all substitution lines based on the matched regex span
-        for (line_no, search_res, new_code, _) in substitution_map[py_file]:
+        for (line_no, search_res, new_code, _) in substitution_map[sub_file]:
             # Use the regex match information & loaded file lines to replace the code
             start, stop = search_res.span()
             repl_line = file_lines[line_no][:start] + new_code + file_lines[line_no][stop:]
             file_lines[line_no] = repl_line
-            print('Substituting: {} -> {}  in [{}]'.format(search_res.group(), new_code, py_file))
+            print('Substituting: {} -> {}  in [{}]'.format(search_res.group(), new_code, out_file))
         # Now that we've substituted each of the lines that had duplicates, let's rewrite the file
-        with open(py_file, 'w', encoding='utf-8') as p_file:
+        with open(out_file, 'w', encoding='utf-8') as p_file:
             p_file.writelines(file_lines)
 
 def show_duplicate_log_codes_and_exit(substitution_map):
@@ -323,5 +329,5 @@ if __name__ == '__main__':
     substitution_map = get_substitution_map(code_map, sub_code_map, gen_sub_code_map, args.prefix)
     if args.validate_only and substitution_map:
         show_duplicate_log_codes_and_exit(substitution_map)
-    replace_duplicates(substitution_map)
+    replace_duplicates(substitution_map, args.copy)
     print('[LOG CODES VALIDATED]')
