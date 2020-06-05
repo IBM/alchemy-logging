@@ -10,18 +10,28 @@ WORKDIR /src
 
 RUN python3 setup.py bdist_wheel
 
-#-- Test -----------------------------------------------------------------------
-FROM base as test
+#-- Test Wheel -----------------------------------------------------------------
+FROM base as test_wheel
 
 COPY requirements_test.txt /src/requirements_test.txt
 COPY --from=wheel /src/dist/alog-*-py3-none-any.whl /src/dist/
 RUN pip3 install /src/dist/alog-*-py3-none-any.whl \
     && pip3 install -r /src/requirements_test.txt
 
-COPY tests /src/tests
+COPY tests/test_alog.py /src/tests/
 COPY ci/run-tests.sh /src/ci/run-tests.sh
 
 RUN /src/ci/run-tests.sh
+
+#-- Test Source ----------------------------------------------------------------
+FROM test_wheel as test_source
+
+COPY alog /src/alog
+COPY util /src/util
+COPY tests /src/tests
+
+RUN cd /src \
+    && ./ci/run-tests.sh
 
 #-- Publish --------------------------------------------------------------------
 FROM wheel as publish
