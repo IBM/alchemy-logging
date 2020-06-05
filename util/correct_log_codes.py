@@ -322,12 +322,17 @@ def show_duplicate_log_codes_and_exit(substitution_map):
     print('ERROR: failed due to prefixless substitution matches, or duplicated log codes')
     sys.exit(1)
 
-if __name__ == '__main__':
-    print('[VALIDATING UNIQUE LOG CODES]')
-    args = parse_args()
-    code_map, sub_code_map, gen_sub_code_map = get_log_code_map(args.dir)
-    substitution_map = get_substitution_map(code_map, sub_code_map, gen_sub_code_map, args.prefix)
-    if args.validate_only and substitution_map:
+def validate_or_correct_log_codes(root_dir, prefix, validate_only, copy):
+    '''Wrapper for primarily logic of this script - args mirror --help [see main below].
+    We wrap this so that we can easily test without having to use subprocesses.'''
+    code_map, sub_code_map, gen_sub_code_map = get_log_code_map(root_dir)
+    substitution_map = get_substitution_map(code_map, sub_code_map, gen_sub_code_map, prefix)
+    if validate_only and substitution_map:
         show_duplicate_log_codes_and_exit(substitution_map)
-    replace_duplicates(substitution_map, args.copy)
-    print('[LOG CODES VALIDATED]')
+    replace_duplicates(substitution_map, copy)
+
+if __name__ == '__main__':
+    print('[PROCESSING LOG CODES]')
+    args = parse_args()
+    validate_or_correct_log_codes(args.dir, args.prefix, args.validate_only, args.copy)
+    print('[DONE PROCESSING LOG CODES]')
