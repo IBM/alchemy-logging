@@ -230,9 +230,14 @@ class AlogPrettyFormatter(AlogFormatterBase):
         indent = self._INDENT*self._indent.indent
         if isinstance(record.message, str):
             formatted = ['%s %s%s' % (header, indent, line) for line in record.message.split('\n')]
-            formatted = '\n'.join(formatted)
         else:
-            formatted = '%s %s%s' % (header, indent, str(record.message))
+            formatted = ['%s %s%s' % (header, indent, str(record.message))]
+
+        # Add stack trace if present
+        if record.exc_info:
+            formatted.extend(['%s %s%s' % (header, indent, line) for line in self.formatException(record.exc_info).split('\n')])
+
+        formatted = '\n'.join(formatted)
         return formatted
 
 ## Constants ###################################################################
