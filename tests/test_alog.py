@@ -41,7 +41,7 @@ def parse_pretty_line(line):
     if isinstance(line, bytes):
         line = line.decode('utf-8')
     match = expr.match(line)
-    assert match is not None
+    assert match is not None, 'Failed to parse pretty line: [[%s]]' % line
     res = {
         'timestamp': match[1],
         'channel': match[2].strip(),
@@ -82,7 +82,7 @@ class LogCaptureFormatter(alog.AlogFormatterBase):
         if isinstance(formatted, list):
             self.captured.extend(formatted)
         else:
-            self.captured.append(formatted)
+            self.captured.extend(formatted.split('\n'))
         return formatted
 
     def get_json_records(self):
@@ -451,7 +451,7 @@ class TestTimedLoggers(unittest.TestCase):
         self.assertTrue(timed_message.startswith('timed: 0:'))
         self.assertTrue(re.match(r'^timed: [0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9]+$', timed_message))
 
-class TestisEnabled(unittest.TestCase):
+class TestIsEnabled(unittest.TestCase):
     def test_is_enabled_for_true(self):
         '''Tests when a level is enabled, it returns true'''
         alog.configure('info')
@@ -553,6 +553,43 @@ class TestThreading(unittest.TestCase):
         self.assertIn(0, thread0_indents)
         self.assertIn(1, thread0_indents)
         self.assertIn(2, thread0_indents)
+
+class TestExcInfo(unittest.TestCase):
+
+    def test_exc_info_json(self):
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('json')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        try:
+            raise ValueError('throw it')
+        except ValueError:
+            test_channel.info('caught it!', exc_info=True)
+            test_channel.info('nothing to see here', exc_info=False)
+        logged_output = capture_formatter.get_json_records()
+
+        # Make sure a two lines logged with 'exception' populated in the first
+        # but not the second
+        self.assertEqual(len(logged_output), 2)
+        self.assertIsNotNone(logged_output[0]['exception'])
+        self.assertIsNone(logged_output[1]['exception'])
+
+    def test_exc_info_pretty(self):
+        # Configure for log capture
+        capture_formatter = LogCaptureFormatter('pretty')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        try:
+            raise ValueError('throw it')
+        except ValueError:
+            test_channel.info('caught it!', exc_info=True)
+            test_channel.info('nothing to see here', exc_info=False)
+        logged_output = capture_formatter.get_pretty_records()
+
+        # Six lines: One message, four stack trace, one message
+        self.assertEqual(len(logged_output), 6)
 
 if __name__ == "__main__":
     # has verbose output of tests; otherwise just says all passed or not
