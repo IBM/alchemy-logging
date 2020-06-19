@@ -22,7 +22,11 @@ try:
             if chan.isEnabledFor(alog.alog.g_alog_name_to_level[js['level_str']]):
 
                 # Parse the timestamp
-                timestamp = datetime.strptime(js['timestamp'], '%Y-%m-%dT%H:%M:%S.%f')
+                # NOTE: DIfferent languages format their timestamps slightly differently
+                try:
+                    timestamp = datetime.strptime(js['timestamp'], '%Y-%m-%dT%H:%M:%S.%f')
+                except ValueError:
+                    timestamp = datetime.strptime(js['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
 
                 # Create a munch to simulate a log record
                 m = munch.DefaultMunch(None, js)
