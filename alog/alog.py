@@ -309,10 +309,12 @@ def _add_level_fn(name, value):
 
     log_using_self_func = lambda self, arg_one, *args, **kwargs: \
         _log_with_code_method_override(self, value, arg_one, *args, **kwargs)
+    setattr(log_using_self_func, '_value', value)
     setattr(logging.Logger, name, log_using_self_func)
 
     log_using_logging_func = lambda arg_one, *args, **kwargs: \
         _log_with_code_method_override(logging, value, arg_one, *args, **kwargs)
+    setattr(log_using_logging_func, '_value', value)
     setattr(logging, name, log_using_logging_func)
 
 def _add_is_enabled():
