@@ -35,6 +35,12 @@ class AlogFormatterBase(logging.Formatter):
         def __init__(self):
             self.indent = 0
 
+        def __getstate__(self):
+            return None
+
+        def __setstate__(self, d):
+            pass
+
     def __init__(self):
         # Hold a thread-local map for storing indentation so that the counts are
         # kept independently for each thread. Note that threading.local values
