@@ -476,14 +476,9 @@ class _ScopedLogBase:
         # This context is enabled IFF the function bound to it is enabled. To
         # get at that information, we need to figure out which function it is,
         # and to do that, we need to poke around in the guts of it.
-        assert hasattr(self.log_fn, '__self__') and hasattr(self.log_fn.__self__, 'info'), \
+        assert hasattr(self.log_fn, '_value'), \
             'Cannot use non-logging function for scoped log'
-        level = 'off'
-        for level_name in g_alog_name_to_level.keys():
-            if hasattr(self.log_fn.__self__, level_name) and self.log_fn == getattr(self.log_fn.__self__, level_name):
-                level = level_name
-                break
-        self.enabled = self.log_fn.__self__.isEnabled(level)
+        self.enabled = self.log_fn.__self__.isEnabledFor(self.log_fn._value)
 
     def _start_scoped_log(self):
         """Log the start message for a scoped logger and increment the indentor.
