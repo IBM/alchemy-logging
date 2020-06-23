@@ -14,6 +14,7 @@ import io
 import json
 import logging
 import os
+import pickle
 import re
 import sys
 import threading
@@ -590,6 +591,20 @@ class TestExcInfo(unittest.TestCase):
 
         # Six lines: One message, four stack trace, one message
         self.assertEqual(len(logged_output), 6)
+
+class TestPickling(unittest.TestCase):
+    '''Test that alog configuration components can be pickled
+    '''
+
+    def test_pickle_custom_formatter(self):
+        '''Make sure an instance of AlogPrettyFormatter can be pickled. This is
+        important for sending log configuration between processes when using
+        multiprocessing and 'spawn'.
+        '''
+        fmt = alog.AlogPrettyFormatter(12)
+        dumped = pickle.dumps(fmt)
+        fmt2 = pickle.loads(dumped)
+        self.assertEqual(fmt.channel_len, fmt2.channel_len)
 
 if __name__ == "__main__":
     # has verbose output of tests; otherwise just says all passed or not
