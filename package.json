@@ -1,5 +1,5 @@
 {
-  "name": "alog",
+  "name": "alog-ts",
   "version": "0.1.1",
   "description": "Alog implementation in NodeJS/TypeScript wrapping around the Bunyan logging framework",
   "main": "dist/index.js",
@@ -32,7 +32,7 @@
     ],
     "all": true
   },
-  "author": "",
+  "author": "Gabe Goodhart",
   "license": "ISC",
   "dependencies": {
     "@types/node": "^12.12.5",
