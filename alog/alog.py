@@ -475,7 +475,12 @@ class _ScopedLogBase:
 
         # This context is enabled IFF the function bound to it is enabled. To
         # get at that information, we need to figure out which function it is,
-        # and to do that, we need to poke around in the guts of it.
+        # and to do that, we need to poke around in the guts of it. The actual
+        # steps to figure it out are:
+        #
+        # 1. Get the parent channel (logging.Logger) instance from __self__
+        # 2. Get the numeric level value of the bound function from _level_value
+        # 3. Check if that level value is enabled for that logger
         assert hasattr(self.log_fn, '_level_value'), \
             'Cannot use non-logging function for scoped log'
         self.enabled = self.log_fn.__self__.isEnabledFor(self.log_fn._level_value)
