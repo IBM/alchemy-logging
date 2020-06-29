@@ -309,12 +309,12 @@ def _add_level_fn(name, value):
 
     log_using_self_func = lambda self, arg_one, *args, **kwargs: \
         _log_with_code_method_override(self, value, arg_one, *args, **kwargs)
-    setattr(log_using_self_func, '_value', value)
+    setattr(log_using_self_func, '_level_value', value)
     setattr(logging.Logger, name, log_using_self_func)
 
     log_using_logging_func = lambda arg_one, *args, **kwargs: \
         _log_with_code_method_override(logging, value, arg_one, *args, **kwargs)
-    setattr(log_using_logging_func, '_value', value)
+    setattr(log_using_logging_func, '_level_value', value)
     setattr(logging, name, log_using_logging_func)
 
 def _add_is_enabled():
@@ -476,9 +476,9 @@ class _ScopedLogBase:
         # This context is enabled IFF the function bound to it is enabled. To
         # get at that information, we need to figure out which function it is,
         # and to do that, we need to poke around in the guts of it.
-        assert hasattr(self.log_fn, '_value'), \
+        assert hasattr(self.log_fn, '_level_value'), \
             'Cannot use non-logging function for scoped log'
-        self.enabled = self.log_fn.__self__.isEnabledFor(self.log_fn._value)
+        self.enabled = self.log_fn.__self__.isEnabledFor(self.log_fn._level_value)
 
     def _start_scoped_log(self):
         """Log the start message for a scoped logger and increment the indentor.
