@@ -26,7 +26,7 @@ pipeline {
   }
 
   triggers {
-    cron( BRANCH_NAME=="master" ? "H H(3-6) * * 1" : "")
+    cron( BRANCH_NAME=="main" ? "H H(3-6) * * 1" : "")
   }
 
   stages {
@@ -74,7 +74,7 @@ pipeline {
     // Publish the wheel
     stage('Publish') {
       when {
-        expression { return (env.BRANCH_NAME == "master" || env.PUBLISH_WHEEL == "true") }
+        expression { return (env.BRANCH_NAME == "main" || env.PUBLISH_WHEEL == "true") }
       }
       steps {
         ansiColor('xterm') {
@@ -95,7 +95,7 @@ pipeline {
   post {
     regression {
       script {
-        if (env.BRANCH_NAME == "deploy" || env.BRANCH_NAME == "develop" || env.BRANCH_NAME == "master") {
+        if (env.BRANCH_NAME == "deploy" || env.BRANCH_NAME == "develop" || env.BRANCH_NAME == "main") {
           slackSend channel: 'nlu-alerts', color: 'warning', message: "<!here>: *${env.JOB_NAME}*: <${env.BUILD_URL}console|build ${env.BUILD_DISPLAY_NAME}> failed."
         } else {
           slackSend channel: 'nlu-alerts', color: 'warning', message: "*${env.JOB_NAME}*: <${env.BUILD_URL}console|build ${env.BUILD_DISPLAY_NAME}> failed."
@@ -104,7 +104,7 @@ pipeline {
     }
     fixed {
       script {
-        if (env.BRANCH_NAME == "deploy" || env.BRANCH_NAME == "develop" || env.BRANCH_NAME == "master") {
+        if (env.BRANCH_NAME == "deploy" || env.BRANCH_NAME == "develop" || env.BRANCH_NAME == "main") {
           slackSend channel: 'nlu-alerts', color: 'good', message: "<!here>: *${env.JOB_NAME}*: <${env.BUILD_URL}console|build ${env.BUILD_DISPLAY_NAME}> fixed."
         } else {
           slackSend channel: 'nlu-alerts', color: 'good', message: "*${env.JOB_NAME}*: <${env.BUILD_URL}console|build ${env.BUILD_DISPLAY_NAME}> fixed."
