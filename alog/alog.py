@@ -411,7 +411,11 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
     g_thread_id_enabled = thread_id
 
     # Remove any existing handlers
-    formatters = [h for h in logging.root.handlers if isinstance(h.formatter, AlogFormatterBase)]
+    # NOTE: We remove *all* handlers, even those added by other logging
+    #   frameworks. In order to support custom formatters, alog needs to have
+    #   control over the formatting, so a user must derive custom formatters
+    #   from AlogFormatterBase and pass them to `configure` directly.
+    formatters = [h for h in logging.root.handlers]
     for handler in formatters:
         logging.root.removeHandler(handler)
 
