@@ -18,7 +18,7 @@ COPY --from=wheel /src/dist/alog-*-py3-none-any.whl /src/dist/
 RUN pip3 install /src/dist/alog-*-py3-none-any.whl \
     && pip3 install -r /src/requirements_test.txt
 
-COPY tests/test_alog.py /src/tests/
+COPY tests/test_alog* /src/tests/
 COPY ci/run-tests.sh /src/ci/run-tests.sh
 
 RUN /src/ci/run-tests.sh
