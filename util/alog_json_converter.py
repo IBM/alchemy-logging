@@ -26,7 +26,10 @@ try:
 
             # Only print it if enabled
             chan = alog.use_channel(js['channel'])
-            if chan.isEnabledFor(alog.alog.g_alog_name_to_level[js['level_str']]):
+            level = js.get('level_str')
+            if level is None:
+                level = js.get('level')
+            if chan.isEnabledFor(alog.alog.g_alog_name_to_level[level]):
 
                 # Parse the timestamp
                 # NOTE: DIfferent languages format their timestamps slightly differently
@@ -38,11 +41,16 @@ try:
                 # Create a munch to simulate a log record
                 m = munch.DefaultMunch(None, js)
 
+                # If there is no 'message' field in the json, add an empty one
+                js.setdefault('message', '')
+
                 # Add in the internal names of the fileds
                 m.created = timestamp.timestamp()
                 m.msg = js
                 m.name = m.channel
                 m.levelname = m.level_str
+                if m.levelname is None:
+                    m.levelname = m.level
 
                 # Set the formatter's indentation
                 # NOTE: Handle per-thread indent implementation change
@@ -52,8 +60,9 @@ try:
                     alog.alog.g_alog_formatter._indent = m.num_indent
 
                 # Remove all entries that are not needed anymore
-                for k in ['timestamp', 'channel', 'level_str', 'num_indent']:
-                    del js[k]
+                for k in ['timestamp', 'channel', 'level_str', 'level', 'num_indent']:
+                    if k in js:
+                        del js[k]
 
                 # Remove any keys whose value is None
                 null_keys = []
