@@ -92,6 +92,53 @@ class LogCaptureFormatter(alog.AlogFormatterBase):
 
 ## Tests #######################################################################
 
+class TestConfigure(unittest.TestCase):
+    '''Tests for the functionality of alog.configure
+    '''
+
+    def test_default_level(self):
+        '''Test that setting the default_level applies to multiple channels
+        created both before and after the configure call
+        '''
+        ch1 = alog.use_channel('CH1')
+        alog.configure(default_level='info')
+        ch2 = alog.use_channel('CH2')
+        self.assertTrue(ch1.isEnabled('info'))
+        self.assertFalse(ch1.isEnabled('debug'))
+        self.assertTrue(ch2.isEnabled('info'))
+        self.assertFalse(ch2.isEnabled('debug'))
+
+    def test_filters(self):
+        '''Test that setting the level for a given channel via a filter after
+        the channel has been created works
+        '''
+        ch1 = alog.use_channel('CH1')
+        alog.configure(default_level='info', filters='CH1:error,CH2:debug')
+        ch2 = alog.use_channel('CH2')
+        self.assertFalse(ch1.isEnabled('info'))
+        self.assertFalse(ch1.isEnabled('debug'))
+        self.assertTrue(ch2.isEnabled('info'))
+        self.assertTrue(ch2.isEnabled('debug'))
+
+    def test_reconfigure(self):
+        '''Test that re-invoking confgure changes the enablement as expected
+        '''
+        ch1 = alog.use_channel('CH1')
+        alog.configure(default_level='info', filters='CH1:error')
+        ch2 = alog.use_channel('CH2')
+
+        self.assertFalse(ch1.isEnabled('info'))
+        self.assertFalse(ch1.isEnabled('debug'))
+        self.assertTrue(ch2.isEnabled('info'))
+        self.assertFalse(ch2.isEnabled('debug'))
+
+        alog.configure(default_level='error', filters='CH1:info')
+
+        self.assertTrue(ch1.isEnabled('info'))
+        self.assertFalse(ch1.isEnabled('debug'))
+        self.assertFalse(ch2.isEnabled('info'))
+        self.assertFalse(ch2.isEnabled('debug'))
+
 class TestJsonCompatibility(unittest.TestCase):
     '''Ensures that printed messages are valid json format when json formatting is specified'''
 
@@ -673,6 +720,18 @@ class TestLazyInterp(unittest.TestCase):
 
         capturer = TestLazyInterp.StringifyCapturer()
         test_channel.debug('<FOO12345123D>', '%s', capturer)
+        self.assertFalse(capturer.called_str)
+
+    def test_disabled_by_filter_with_log_code(self):
+        '''Test that a log line made on a channel/level that is disabled by a
+        filter does not call __str__
+        '''
+
+        alog.configure(default_level='info', filters='TEST:error')
+        test_channel = alog.use_channel('TEST')
+
+        capturer = TestLazyInterp.StringifyCapturer()
+        test_channel.info('<FOO52345123D>', '%s', capturer)
         self.assertFalse(capturer.called_str)
 
 if __name__ == "__main__":
