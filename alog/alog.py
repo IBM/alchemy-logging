@@ -314,11 +314,6 @@ def _add_level_fn(name, value):
     setattr(log_using_self_func, '_level_value', value)
     setattr(logging.Logger, name, log_using_self_func)
 
-    log_using_logging_func = lambda arg_one, *args, **kwargs: \
-        _log_with_code_method_override(logging, value, arg_one, *args, **kwargs)
-    setattr(log_using_logging_func, '_level_value', value)
-    setattr(logging, name, log_using_logging_func)
-
 def _add_is_enabled():
     is_enabled_func = lambda self, level: \
         self.isEnabledFor(level if isinstance(level, int) else g_alog_name_to_level.get(level))
