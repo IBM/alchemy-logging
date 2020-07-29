@@ -289,8 +289,12 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
     ch.debug('<FOO80349757I>', 'Logging is fun!')
     """
 
+    # If this level is disabled, don't do any of the other expensive work here
+    if not self.isEnabledFor(value):
+        return
+
     # If no positional args, arg_one is message
-    if len(args) == 0:
+    elif len(args) == 0:
         self.log(value, arg_one, **kwargs)
 
     # If arg_one looks like a log code, use the first positional arg as message
