@@ -273,7 +273,12 @@ scope_end_str = "END: "
 
 ## Implementation Details ######################################################
 
+# The current global formatter
 g_alog_formatter = None
+
+# The current set of channel names that are managed via filters. This is
+# necessary to enable reconfiguring dynamically
+g_filtered_channels = []
 
 def is_log_code(arg):
     return arg.startswith('<') and arg.endswith('>')
@@ -440,9 +445,20 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
     else:
         logging.warning("Invalid default_level [%s]", default_level)
 
+    # Parse the filters
+    parsed_filters = _parse_filters(filters)
+
+    # There seems to be no way to reattach a logger to the root after being
+    # separated as an independent filter, so instead, we simply "re-filter" the
+    # channels that are no longer being managed by filters back to the default.
+    global g_filtered_channels
+    for chan in g_filtered_channels:
+        if chan not in parsed_filters:
+            parsed_filters[chan] = default_level
+
     # Add level filters by name
     # NOTE: All levels assumed valid after call to _parse_filters
-    for chan, level_name in _parse_filters(filters).items():
+    for chan, level_name in parsed_filters.items():
         level = g_alog_name_to_level[level_name]
         handler = logging.StreamHandler()
         handler.setFormatter(g_alog_formatter)
@@ -450,7 +466,12 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
         lgr = logging.getLogger(chan)
         lgr.setLevel(level)
         lgr.propagate = False
+        while len(lgr.handlers):
+            lgr.removeHandler(lgr.handlers[0])
         lgr.addHandler(handler)
+
+    # Store the names of all channels currently managed by filters
+    g_filtered_channels = list(parsed_filters.keys())
 
 def use_channel(channel):
     """Interface wrapper for python alog implementation to keep consistency with
