@@ -624,6 +624,57 @@ class TestPickling(unittest.TestCase):
         fmt2 = pickle.loads(dumped)
         self.assertEqual(fmt.channel_len, fmt2.channel_len)
 
+class TestLazyInterp(unittest.TestCase):
+    '''Test that interpolation ONLY happens for enabled channel/level combos
+    '''
+
+    class StringifyCapturer:
+        '''Small dummy class that will keep track of if its __str__ method are
+        called
+        '''
+        def __init__(self):
+            self.called_str = False
+            # self.called_repr = False
+        def __str__(self):
+            self.called_str = True
+            return 'StringifyCapturer'
+
+    def test_enabled(self):
+        '''Test that a log line made on an enabled channel/level does call
+        __str__
+        '''
+
+        alog.configure(default_level='info')
+        test_channel = alog.use_channel('TEST')
+
+        capturer = TestLazyInterp.StringifyCapturer()
+        test_channel.info('%s', capturer)
+        self.assertTrue(capturer.called_str)
+
+    def test_disabled_without_log_code(self):
+        '''Test that a log line made on a disabled channel/level without a log
+        code does not call __str__
+        '''
+
+        alog.configure(default_level='info')
+        test_channel = alog.use_channel('TEST')
+
+        capturer = TestLazyInterp.StringifyCapturer()
+        test_channel.debug('%s', capturer)
+        self.assertFalse(capturer.called_str)
+
+    def test_disabled_with_log_code(self):
+        '''Test that a log line made on a disabled channel/level with a log
+        code does not call __str__
+        '''
+
+        alog.configure(default_level='info')
+        test_channel = alog.use_channel('TEST')
+
+        capturer = TestLazyInterp.StringifyCapturer()
+        test_channel.debug('<FOO12345123D>', '%s', capturer)
+        self.assertFalse(capturer.called_str)
+
 if __name__ == "__main__":
     # has verbose output of tests; otherwise just says all passed or not
     unittest.main(verbosity=2)
