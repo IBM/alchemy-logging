@@ -634,7 +634,7 @@ class TestLazyInterp(unittest.TestCase):
         '''
         def __init__(self):
             self.called_str = False
-            # self.called_repr = False
+
         def __str__(self):
             self.called_str = True
             return 'StringifyCapturer'
