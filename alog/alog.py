@@ -289,8 +289,12 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
     ch.debug('<FOO80349757I>', 'Logging is fun!')
     """
 
+    # If this level is disabled, don't do any of the other expensive work here
+    if not self.isEnabledFor(value):
+        return
+
     # If no positional args, arg_one is message
-    if len(args) == 0:
+    elif len(args) == 0:
         self.log(value, arg_one, **kwargs)
 
     # If arg_one looks like a log code, use the first positional arg as message
@@ -309,11 +313,6 @@ def _add_level_fn(name, value):
         _log_with_code_method_override(self, value, arg_one, *args, **kwargs)
     setattr(log_using_self_func, '_level_value', value)
     setattr(logging.Logger, name, log_using_self_func)
-
-    log_using_logging_func = lambda arg_one, *args, **kwargs: \
-        _log_with_code_method_override(logging, value, arg_one, *args, **kwargs)
-    setattr(log_using_logging_func, '_level_value', value)
-    setattr(logging, name, log_using_logging_func)
 
 def _add_is_enabled():
     is_enabled_func = lambda self, level: \
