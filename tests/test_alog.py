@@ -139,6 +139,16 @@ class TestConfigure(unittest.TestCase):
         self.assertFalse(ch2.isEnabled('info'))
         self.assertFalse(ch2.isEnabled('debug'))
 
+    def test_configure_multi_formatter(self):
+        '''Make sure that configure correctly removes all previously-configured
+        handlers from the logging core.
+        '''
+        import logging
+        logging.basicConfig()
+        import alog
+        alog.configure('info')
+        self.assertEqual(len(logging.root.handlers), 1)
+
 class TestJsonCompatibility(unittest.TestCase):
     '''Ensures that printed messages are valid json format when json formatting is specified'''
 
