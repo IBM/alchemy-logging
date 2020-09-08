@@ -27,6 +27,8 @@ The primary components of the system are **channels** and **levels** which allow
     1. `debug3`: Low-level debugging statements such as computed values inside loops.
     1. `debug4`: Ultra-low-level debugging statements such as data dumps and/or statements inside multiple nested loops.
 
+**NOTE**: The level string `'disable'` can be used to fully disable *all* logging. This is not a conventional `level` in the sense that it is not providing a sequential comparison that each message is checked against. Instead, it fully disables all logging using the underlying `logging` framework.
+
 Using this combination of **Channels** and **Levels**, you can fine-tune what log statements are enabled when you run your application under different circumstances.
 
 ## Standard Configuration

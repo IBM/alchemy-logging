@@ -139,6 +139,37 @@ class TestConfigure(unittest.TestCase):
         self.assertFalse(ch2.isEnabled('info'))
         self.assertFalse(ch2.isEnabled('debug'))
 
+    def test_configure_multi_formatter(self):
+        '''Make sure that configure correctly removes all previously-configured
+        handlers from the logging core.
+        '''
+        import logging
+        logging.basicConfig()
+        import alog
+        alog.configure('info')
+        self.assertEqual(len(logging.root.handlers), 1)
+
+    def test_disable(self):
+        '''Test that logging can be fully disabled
+        '''
+        capture_formatter = LogCaptureFormatter('pretty')
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel = alog.use_channel('TEST')
+
+        # Make sure it is enabled now
+        test_channel.info('test')
+        self.assertEqual(len(capture_formatter.captured), 1)
+
+        # Reconfigure to disable
+        alog.configure(default_level='disable')
+        test_channel.error('test')
+        self.assertEqual(len(capture_formatter.captured), 1)
+
+        # Reconfigure to re-enable
+        alog.configure(default_level='info', formatter=capture_formatter)
+        test_channel.error('test')
+        self.assertEqual(len(capture_formatter.captured), 2)
+
 class TestJsonCompatibility(unittest.TestCase):
     '''Ensures that printed messages are valid json format when json formatting is specified'''
 

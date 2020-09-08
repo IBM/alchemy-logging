@@ -260,6 +260,9 @@ g_alog_level_to_name.update({
     6: "debug4",
 })
 
+# Special "level" used to disable all logging
+g_disable_level = "disable"
+
 g_alog_name_to_level = {name: level for level, name in g_alog_level_to_name.items()}
 
 # Global map of default formatters
@@ -407,6 +410,17 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
         thread_id       bool
             If true, include thread
     """
+
+    # If the default_level is the disable value, make sure no other values are
+    # given, then do the disable
+    if default_level == g_disable_level:
+        if filters:
+            logging.warning("Cannot set filters with [%s]" % g_disable_level)
+        logging.disable(logging.FATAL)
+        return
+    else:
+        logging.disable(logging.NOTSET)
+
     # Set up the formatter if different type
     _setup_formatter(formatter)
 
