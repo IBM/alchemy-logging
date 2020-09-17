@@ -723,3 +723,8 @@ def timed_function(log_fn, format_str="", *fmt_args):
                 return func(*args, **kwargs)
         return wrapper
     return decorator
+
+# Run a static configure when first imported to ensure that all custom logging
+# configuration (including function names) is available before user-provided
+# configure is called.
+configure("off")
