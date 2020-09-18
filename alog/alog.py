@@ -388,27 +388,36 @@ def _parse_str_of_filters(filters):
 
 ## Core ########################################################################
 
-def configure(default_level, filters="", formatter='pretty', thread_id=False):
+def configure(
+    default_level,
+    filters="",
+    formatter='pretty',
+    thread_id=False,
+    handler_generator=None,
+):
     """Top-level configuration function for the alog module. This function
     configures the logging package to use the given default level and
     overwrites the levels for all filters as specified. It can also configure
     the formatter type.
 
     Args:
-        default_level   str
+        default_level:  str
             This is the level that will be enabled for a given channel when a
             specific level has not been set in the filters.
-        filters         str/dict
+        filters:  str/dict
             This is a mapping from channel name to level that allows levels to
             be set on a per-channel basis. If a string, it is formatted as
             "CHAN:info,FOO:debug". If a dict, it should map from channel string
             to level string.
-        formatter       str ('pretty' or 'json')/AlogFormatterBase
+        formatter:  str ('pretty' or 'json')/AlogFormatterBase
             The formatter is either the string 'pretty' or 'json' to indicate
             one of the default formatting options or an instance of
             AlogFormatterBase for a custom formatter implementation
-        thread_id       bool
+        thread_id:  bool
             If true, include thread
+        handler_generator:  function () -> logging.Handler
+            A function which takes no args and generates a logging handler. If
+            not provided, this defaults to `lambda: logging.StreamHandler()`
     """
 
     # If the default_level is the disable value, make sure no other values are
@@ -437,8 +446,12 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
     for handler in formatters:
         logging.root.removeHandler(handler)
 
+    # Set the handler generator
+    if handler_generator is None:
+        handler_generator = lambda: logging.StreamHandler()
+
     # Add the formatter
-    handler = logging.StreamHandler()
+    handler = handler_generator()
     handler.setFormatter(g_alog_formatter)
     logging.root.addHandler(handler)
 
@@ -474,7 +487,7 @@ def configure(default_level, filters="", formatter='pretty', thread_id=False):
     # NOTE: All levels assumed valid after call to _parse_filters
     for chan, level_name in parsed_filters.items():
         level = g_alog_name_to_level[level_name]
-        handler = logging.StreamHandler()
+        handler = handler_generator()
         handler.setFormatter(g_alog_formatter)
         handler.setLevel(level)
         lgr = logging.getLogger(chan)
