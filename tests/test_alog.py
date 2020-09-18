@@ -170,6 +170,30 @@ class TestConfigure(unittest.TestCase):
         test_channel.error('test')
         self.assertEqual(len(capture_formatter.captured), 2)
 
+    def test_custom_handler(self):
+        '''Test that a custom handler can be given and that it works with both
+        default levels and filtered levels
+        '''
+
+        stream = io.StringIO()
+        alog.configure(
+            default_level='info',
+            filters='BAR:debug',
+            handler_generator=lambda: logging.StreamHandler(stream))
+
+        # Set up two channels (one filtered and one defaulted)
+        foo = alog.use_channel('FOO')
+        bar = alog.use_channel('BAR')
+
+        # Log to the two channels to make sure that both behave as expected
+        foo.info('Should show up')
+        foo.debug('Should not show up')
+        bar.info('Should show up')
+        bar.debug('Should show up')
+
+        all_lines = [l for l in stream.getvalue().split('\n') if l]
+        self.assertEqual(len(all_lines), 3)
+
 class TestJsonCompatibility(unittest.TestCase):
     '''Ensures that printed messages are valid json format when json formatting is specified'''
 
