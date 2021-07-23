@@ -1,11 +1,3 @@
-#*****************************************************************#
-# (C) Copyright IBM Corporation 2020.                             #
-#                                                                 #
-# The source code for this program is not published or otherwise  #
-# divested of its trade secrets, irrespective of what has been    #
-# deposited with the U.S. Copyright Office.                       #
-#*****************************************************************#
-
 import argparse
 from collections import defaultdict
 from glob import glob
@@ -36,7 +28,7 @@ def parse_args():
 
     parser.add_argument('-d', '--dir', type=str, required=True,
         help='Root directory of project to parse for log codes.')
-    parser.add_argument('-v', '--validate-only', action='store_true', default=False, 
+    parser.add_argument('-v', '--validate-only', action='store_true', default=False,
         help='If enabled, throws an error if duplicates are found. Otherwise, replaces them.')
     parser.add_argument('--prefix', type=str, required=False,
         help='3 letter prefix to be used for replace placeholders matching r\'<X{3}[FEWID]>.\'')
@@ -73,7 +65,7 @@ def get_log_code_map(project_dir):
     Returns:
         list: contains 3 collection.defaultdict objects, each of which map types of log codes
             to occurrences of code like objects matching on different patterns.
-    '''    
+    '''
     # Mantain one dictionary where we keep all valid log codes that we find, where we substitute
     # if we discover any codes with cardinality > 1
     code_map = defaultdict(list)
@@ -102,7 +94,7 @@ def get_log_codes(py_file, code_map, sub_code_map, gen_sub_code_map):
     later to check for collisions.
 
     Args:
-        py_file str: 
+        py_file str:
             Path to the file containing Python code to be parsed for log codes & log code
             lookalikes. Duplicates will later be substituted.
         code_map collections.defaultdict:
@@ -150,7 +142,7 @@ def get_log_codes(py_file, code_map, sub_code_map, gen_sub_code_map):
             if not has_updated and general_res is not None:
                 print('WARN: possible malformatted code [{}] found in [{}] on line [{}]'.format(
                     general_res.group(),
-                    py_file, 
+                    py_file,
                     line_no))
 
 def update_dict_on_match(py_file, line_no, line, pattern, update_dict):
