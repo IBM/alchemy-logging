@@ -1,7 +1,7 @@
 """A setuptools setup module for py_scripting
 """
 
-from setuptools import setup, find_packages
+from setuptools import setup
 from os import path
 
 with open(path.join(path.abspath(path.dirname(__file__)), "README.md")) as f:
@@ -29,5 +29,5 @@ setup(
         "Programming Language :: Python :: 3.10",
     ],
     keywords="logging",
-    packages=find_packages(),
+    packages=["alog"],
 )
