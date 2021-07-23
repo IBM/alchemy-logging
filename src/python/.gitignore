@@ -1,0 +1,8 @@
+alog.egg-info
+build
+dist
+__pycache__/
+htmlcov
+.coverage
+# output files from util tests
+tests/**/*_copy.py 

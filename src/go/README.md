@@ -1,10 +1,10 @@
-# Alchemy Logging (alog)
-The `alog` framework provides tunable logging with easy-to-use defaults and power-user capabilities. The mantra of `alog` is **"Log Early And Often"**. To accomplish this goal, `alog` makes it easy to enable verbose logging at develop/debug time and trim the verbosity at production run time, all while avoiding performance degredation by using lazily evaluated log messages which only render if enabled. The `alog` project maintains language-naitve implementations in many popular programming languages with the goal of giving a consistent application logging experience both when writing your code and when administering a cloud service written in multiple programming languages.
+# Alchemy Logging (alog) - Go
+The `alog` framework provides tunable logging with easy-to-use defaults and power-user capabilities. The mantra of `alog` is **"Log Early And Often"**. To accomplish this goal, `alog` makes it easy to enable verbose logging at develop/debug time and trim the verbosity at production run time.
 
-## Framework
+## Channels and Levels
+The primary components of the system are **channels** and **levels** which allow for each log statement to be enabled or disabled when appropriate.
 
-### Channels and Levels
-The primary components of the framework are **channels** and **levels** which allow for each log statement to be enabled or disabled when appropriate.
+1. **Channels**: Each logging statement is made to a specific channel. Channels are independent of one another and allow for logical grouping of log messages by functionality. A channel can be any string.
 
 1. **Levels**: Each logging statement is made at a specific level. Levels provide sequential granularity, allowing detailed debugging statements to be placed in the code without clogging up the logs at runtime. The sequence of levels and their general usage is as follows:
 
@@ -20,32 +20,14 @@ The primary components of the framework are **channels** and **levels** which al
     1. `debug3`: Low-level debugging statements such as computed values inside loops.
     1. `debug4`: Ultra-low-level debugging statements such as data dumps and/or statements inside multiple nested loops.
 
-1. **Channels**: Each logging statement is made to a specific channel. Channels are independent of one another and allow for logical grouping of log messages by functionality. A channel can be any string. A channel may have a specific **level** assigned to it, or it may use the configured default level if it is not given a specific level filter.
-
 Using this combination of **Channels** and **Levels**, you can fine-tune what log statements are enabled when you run your application under different circumstances.
 
-### Standard Configuration
+## Standard Configuration
 There are two primary pieces of configuration when setting up the `alog` environment:
 
 1. **default_level**: This is the level that will be enabled for a given channel when a specific level has not been set in the **filters**.
 
 1. **filters**: This is a mapping from channel name to level that allows levels to be set on a per-channel basis.
-
-### Formatting
-All `alog` implementations support two styles of formatting:
-
-1. `pretty`: The **pretty** formatter is designed for development-time logging, making it easy to visually scan your log messages and follow the flow of execution
-
-1. `json`: The **json** formatter is designed for production-runtime logging, making it easy to ingest structured representations of your runtime logs into a cloud log monitoring framework such as [Sysdig](https://sysdig.com/)
-
-As a convenience, a converter is also provided from `json` -> `pretty` so that production logs can be read and visually parsed in a similar manner to development-time logs. The `pretty` -> `json` conversion is not provided since the header formatting for `pretty` logs can be lossy when channel names are truncated.
-
-## Usage
-This section demonstrates basic usage in all of the currently supported languages. For detailed usage and examples, see the individual language implementations' `src` directories.
-
-### Go
-
-#### Configuration
 
 The `alog.Config()` function allows both the default level and filters to be set at once. For example:
 
@@ -64,7 +46,7 @@ func foo() {
 
 In this example, the channel `"FOO"` is set to the `DEBUG` level, the channel `"BAR"` is fully disabled, and all other channels are set to use the `INFO` level.
 
-#### Logging Functions
+## Logging Functions
 The standard logging functions each take a channel, a level, a format string, and optional format values. Each one is a wrapper around the standard logging functions from the `log` package. The functions are:
 
 1. `Log`: Alias to `Printf`. This is the standard logging function.
@@ -87,7 +69,7 @@ func foo(age int) {
 }
 ```
 
-#### Channel Log
+## Channel Log
 In a given portion of code, it often makes sense to have a common channel that is used by many logging statements. Re-typing the channel name can be cumbersome and error-prone, so the concept of the **Channel Log** helps to eliminate this issue. To create a Channel Log, call the `UseChannel` function. This gives you a handle to a channel log which has all of the same standard log functions as the top-level `alog`, but without the requirement to specify a channel. For example:
 
 ```go
@@ -102,7 +84,7 @@ func foo(age int) {
 }
 ```
 
-#### LogScope and FnLog
+## LogScope and FnLog
 One of the most common uses for logging is to note when a certain block of code starts and ends. To facilitate this, `alog` has the concept of the `LogScope`. A `LogScope` is a simple object which logs a `"Start:"` statement at creation time and a `"End:"` statement at `Close()` time. All logging statements which occur between creation and close will be indented, making for a highly readable log, even with very verbose logging. Here's a simple example of `LogScope`:
 
 ```go
@@ -144,7 +126,7 @@ func do_foo() {
 
 **WARNING** If you do not invoke `Close()` on your scope, your application will have a memory leak. The `alog` config object holds a map from goroutine ID to indentation level which is incremented at construct time and decremented at close time. Once back to 0, the map entry is removed. If `Close()` is not invoked, this map will grow indefinitely.
 
-#### Convenience Functions
+## Convenience Functions
 There are several other convenience functions available with the `alog` package:
 
 1. `Indent`/`Deindent`: These functions can be used to manually manage indentation within blocks of code. Note that they carry the same **WARNING** as `LogScope` in that an equal number of `Deindent` calls must be made to match the `Indent` calls or a memory leak will ensue.
@@ -179,7 +161,7 @@ func foo(ages map[string]int) {
 }
 ```
 
-#### Advanced Configuration
+## Advanced Configuration
 In addition to the standard configuration for default level and filters, there are a number of additional configuration functions:
 
 1. `ResetDefaults`: Reset configuration to all standard defaults.
