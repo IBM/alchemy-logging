@@ -1,34 +1,56 @@
-#*****************************************************************#
-# (C) Copyright IBM Corporation 2020.                             #
-#                                                                 #
-# The source code for this program is not published or otherwise  #
-# divested of its trade secrets, irrespective of what has been    #
-# deposited with the U.S. Copyright Office.                       #
-#*****************************************************************#
+################################################################################
+# MIT License
+#
+# Copyright (c) 2021 IBM
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+################################################################################
 """A setuptools setup module for py_scripting
 """
 
-from setuptools import setup, find_packages
+from setuptools import setup
 from os import path
 
 with open(path.join(path.abspath(path.dirname(__file__)), "README.md")) as f:
-  long_description = f.read()
+    long_description = f.read()
 
 setup(
-  name="alog",
-  version="1.2.7",
-  description="A wrapper around the logging package to provide Alchemy Log functionality",
-  long_description=long_description,
-  url="https://github.ibm.com/watson-nlu/alog-py",
-  author="Gabe Goodhart - IBM Watson",
-  author_email="ghart@us.ibm.com",
-  license='Copyright IBM 2019 -- All rights reserved.',
-  classifiers=[
-    'Intended Audience :: Developers',
-    'Topic :: Software Development :: User Interfaces',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.5',
-  ],
-  keywords="logging",
-  packages=find_packages(),
+    name="alchemy-logging",
+    version="1.2.8",
+    description="A wrapper around the logging package to provide Alchemy Logging functionality",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/IBM/alchemy-logging",
+    author="Gabe Goodhart",
+    author_email="ghart@us.ibm.com",
+    license="MIT",
+    classifiers=[
+        "Intended Audience :: Developers",
+        "Topic :: Software Development :: User Interfaces",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+    ],
+    keywords="logging",
+    packages=["alog"],
 )

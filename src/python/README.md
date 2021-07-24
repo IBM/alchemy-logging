@@ -5,7 +5,7 @@ The `alog` framework provides tunable logging with easy-to-use defaults and powe
 To use the `alog` module, simply install it with `pip`:
 
 ```sh
-pip install git+ssh://git@github.ibm.com/watson-nlu/alog-py.git --upgrade
+pip install alchemy-logging
 ```
 
 ## Channels and Levels
