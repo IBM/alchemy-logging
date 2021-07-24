@@ -1,3 +1,24 @@
+# Work In Progress
+
+![Work In Progress](https://freesvg.org/img/Lavori-in-corso.png)
+
+Welcome to the Alchemy Logging (`alog`) project! I'm working on getting each of the implementations prepared and ready for public usage. Thanks for your patience! The current status is:
+
+- [ ] `python`:
+  - [X] Available in `pypi`
+  - [ ] Release Process
+  - [ ] Continuous Integration
+- [ ] `typescript`:
+  - [ ] Available in `npm`
+  - [ ] Release Process
+  - [ ] Continuous Integration
+- [ ] `go`:
+  - [ ] Available as a `go.mod` package
+  - [ ] Release Process
+  - [ ] Continous Integration
+- [ ] `c++`:
+  - [ ] `cmake` build system
+
 # Alchemy Logging (alog)
 The `alog` framework provides tunable logging with easy-to-use defaults and power-user capabilities. The mantra of `alog` is **"Log Early And Often"**. To accomplish this goal, `alog` makes it easy to enable verbose logging at develop/debug time and trim the verbosity at production run time, all while avoiding performance degredation by using lazily evaluated log messages which only render if enabled. The `alog` project maintains language-naitve implementations in many popular programming languages with the goal of giving a consistent application logging experience both when writing your code and when administering a cloud service written in multiple programming languages.
 
