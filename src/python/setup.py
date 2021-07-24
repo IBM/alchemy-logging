@@ -32,7 +32,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), "README.md")) as f:
 
 setup(
     name="alchemy-logging",
-    version="1.2.7",
+    version="1.2.8",
     description="A wrapper around the logging package to provide Alchemy Logging functionality",
     long_description=long_description,
     long_description_content_type="text/markdown",
