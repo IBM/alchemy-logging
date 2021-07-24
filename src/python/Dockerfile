@@ -1,6 +1,4 @@
-FROM python:3.6-slim as base
-
-ARG PYPI_TOKEN
+FROM python:3.6-slim as tests
 
 # This image is only for building, so we run as root
 WORKDIR /src
@@ -20,4 +18,6 @@ COPY . /src
 RUN ./ci/run-tests.sh
 
 # Publish
+FROM tests as publish
+ARG PYPI_TOKEN
 RUN ./ci/publish.sh
