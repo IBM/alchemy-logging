@@ -25,9 +25,8 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      # Runs a single command using the runners shell
+      # Runs the docker build for the unit tests
       - name: Run a one-line script
         run: |
           cd src/python
-          ls
-          docker --version
+          docker build . --target=tests
