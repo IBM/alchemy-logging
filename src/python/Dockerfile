@@ -20,4 +20,5 @@ RUN ./ci/run-tests.sh
 # Publish
 FROM tests as publish
 ARG PYPI_TOKEN
+ARG PYTHON_RELEASE_VERSION
 RUN ./ci/publish.sh
