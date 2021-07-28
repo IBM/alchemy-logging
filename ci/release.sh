@@ -12,7 +12,7 @@ release_type=$(echo $tag | cut -d'-' -f1)
 version=$(echo $tag | cut -d'-' -f2)
 
 # Dispatch to the various types of releases
-if [ "$release_type" == "python" ]
+if [ "$release_type" == "py" ]
 then
     cd src/python
     docker build . \
