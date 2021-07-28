@@ -13,7 +13,6 @@ python setup.py sdist bdist_wheel
 twine upload \
     --username "__token__" \
     --password "$PYPI_TOKEN" \
-    ${UPLOAD_REPO_ARG:-""} \
     dist/*
 
 # Clean up
