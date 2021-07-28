@@ -1,0 +1,13 @@
+# This workflow runs on any release
+name: release
+on:
+  release:
+    types: [published]
+  workflow_dispatch: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Release script
+        run: REF="${{ github.ref }}" ./release.sh
