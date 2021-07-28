@@ -10,4 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Release script
-        run: REF="${{ github.ref }}" ./ci/release.sh
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: REF="${{ github.ref }}" ./release.sh
