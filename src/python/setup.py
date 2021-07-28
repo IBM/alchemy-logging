@@ -25,20 +25,25 @@
 """
 
 from setuptools import setup
-from os import path
+import os
 
-with open(path.join(path.abspath(path.dirname(__file__)), "README.md")) as f:
+# Read the README to provide the long description
+with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md")) as f:
     long_description = f.read()
+
+# Read version from the env
+version = os.environ.get("PYTHON_RELEASE_VERSION")
+assert version is not None, "Must set PYTHON_RELEASE_VERSION"
 
 setup(
     name="alchemy-logging",
-    version="1.2.8",
+    version=version,
     description="A wrapper around the logging package to provide Alchemy Logging functionality",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/IBM/alchemy-logging",
     author="Gabe Goodhart",
-    author_email="ghart@us.ibm.com",
+    author_email="gabe.l.hart@gmail.com",
     license="MIT",
     classifiers=[
         "Intended Audience :: Developers",
