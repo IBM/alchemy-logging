@@ -10,4 +10,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Release script
-        run: REF="${{ github.ref }}" ./release.sh
+        run: REF="${{ github.ref }}" ./ci/release.sh
