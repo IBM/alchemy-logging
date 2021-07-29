@@ -141,17 +141,3 @@ foo()
 2021-07-29T19:19:47.468428 [DEMO :DBUG] This is a test
 2021-07-29T19:19:48.471788 [DEMO :TRCE] 0:00:01.003284
 ```
-
-## Unit testing
-
-Currently the unit tests live in `tests/unit_tests.py`. You can run them with the following:
-
-```sh
-# One-time setup to get the development environmet set up
-python setup.py develop
-
-# Run the tests
-./ci/run-tests.sh
-```
-
-Note: A few tests still live in `alog/alog.py` that should be migrated over to the unit tests directory as time permits.
