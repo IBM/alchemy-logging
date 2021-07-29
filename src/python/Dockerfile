@@ -49,6 +49,7 @@ ARG PYTHON_RELEASE_VERSION
 COPY ./tests /src/tests
 COPY ./ci/run-tests.sh /src/ci/run-tests.sh
 RUN true && \
+    sleep 30 \
     pip install alchemy-logging==${PYTHON_RELEASE_VERSION} && \
     ./ci/run-tests.sh ./tests/test_alog.py && \
     true
