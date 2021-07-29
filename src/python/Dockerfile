@@ -1,4 +1,8 @@
-FROM python:3.6-slim as tests
+## Base ########################################################################
+#
+# This phase sets up dependencies for the other phases
+##
+FROM python:3.6-slim as base
 
 # This image is only for building, so we run as root
 WORKDIR /src
@@ -11,14 +15,36 @@ RUN true && \
     pip install -r /src/requirements_test.txt && \
     true
 
-# Copy in everything
+## Test ########################################################################
+#
+# This phase runs the unit tests for the library
+##
+FROM base as test
 COPY . /src
-
-# Run tests
 RUN ./ci/run-tests.sh
 
-# Publish
-FROM tests as publish
+## Release #####################################################################
+#
+# This phase builds the release and publishes it to pypi
+##
+FROM test as release
 ARG PYPI_TOKEN
 ARG PYTHON_RELEASE_VERSION
+ARG RELEASE_DRY_RUN
 RUN ./ci/publish.sh
+
+## Release Test ################################################################
+#
+# This phase installs the indicated version from PyPi and runs the unit tests
+# against the installed version.
+#
+# NOTE: This
+##
+FROM base as release_test
+ARG PYTHON_RELEASE_VERSION
+COPY ./tests /src/tests
+COPY ./ci/run-tests.sh /src/ci/run-tests.sh
+RUN true && \
+    pip install alchemy-logging==${PYTHON_RELEASE_VERSION} && \
+    ./ci/run-tests.sh ./tests/test_alog.py && \
+    true
