@@ -8,6 +8,27 @@ To use the `alog` module, simply install it with `pip`:
 pip install alchemy-logging
 ```
 
+## Channels and Levels
+The primary components of the framework are **channels** and **levels** which allow for each log statement to be enabled or disabled when appropriate.
+
+1. **Levels**: Each logging statement is made at a specific level. Levels provide sequential granularity, allowing detailed debugging statements to be placed in the code without clogging up the logs at runtime. The sequence of levels and their general usage is as follows:
+
+    1. `off`: Disable the given channel completely
+    1. `fatal`: A fatal error has occurred. Any behavior after this statement should be regarded as undefined.
+    1. `error`: An unrecoverable error has occurred. Any behavior after this statement should be regarded as undefined unless the error is explicitly handled.
+    1. `warning`: A recoverable error condition has come up that the service maintainer should be aware of.
+    1. `info`: High-level information that is valuable at runtime under moderate load.
+    1. `trace`: Used to log begin/end of functions for debugging code paths.
+    1. `debug`: High-level debugging statements such as function parameters.
+    1. `debug1`: High-level debugging statements.
+    1. `debug2`: Mid-level debugging statements such as computed values.
+    1. `debug3`: Low-level debugging statements such as computed values inside loops.
+    1. `debug4`: Ultra-low-level debugging statements such as data dumps and/or statements inside multiple nested loops.
+
+1. **Channels**: Each logging statement is made to a specific channel. Channels are independent of one another and allow for logical grouping of log messages by functionality. A channel can be any string. A channel may have a specific **level** assigned to it, or it may use the configured default level if it is not given a specific level filter.
+
+Using this combination of **Channels** and **Levels**, you can fine-tune what log statements are enabled when you run your application under different circumstances.
+
 ## Usage
 
 ### Configuration

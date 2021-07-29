@@ -27,28 +27,10 @@
 from setuptools import setup
 import os
 
-# Read the base level README
-python_base = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(python_base, "..", "..", "README.md"), "r") as handle:
-    base_readme_content = handle.read()
-
 # Read the README to provide the long description
+python_base = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(python_base, "README.md"), "r") as handle:
-    readme_content = handle.read()
-
-# Splice in the important sections from the top-level README
-base_parts_with_headers = [
-    (part.split("\n")[0], part)
-    for part in  base_readme_content.split("## ")[1:]
-]
-base_parts_to_keep = [
-    part for (header, part) in base_parts_with_headers
-    if header in ["Channels and Levels", "Standard Configuration", "Formatting"]
-]
-base_readme_section = "## " + "## ".join(base_parts_to_keep)
-readme_parts = readme_content.split("## Setup", 1)
-all_parts = [readme_parts[0], base_readme_section, "\n## Setup" + readme_parts[1]]
-long_description = "".join(all_parts)
+    long_description = handle.read()
 
 # Read version from the env
 version = os.environ.get("PYTHON_RELEASE_VERSION")

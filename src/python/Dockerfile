@@ -21,7 +21,11 @@ RUN true && \
 ##
 FROM base as test
 COPY . /src
-RUN ./ci/run-tests.sh
+RUN true && \
+    ./ci/run-tests.sh && \
+    RELEASE_DRY_RUN=true PYTHON_RELEASE_VERSION=0.0.0 \
+        ./ci/publish.sh && \
+    true
 
 ## Release #####################################################################
 #
