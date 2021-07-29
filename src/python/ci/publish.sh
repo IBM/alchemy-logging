@@ -10,10 +10,15 @@ rm -rf build dist alchemy_logging.egg-info/
 python setup.py sdist bdist_wheel
 
 # Publish to PyPi
-twine upload \
-    --username "__token__" \
-    --password "$PYPI_TOKEN" \
-    dist/*
+if [ "${RELEASE_DRY_RUN}" != "true" ]
+then
+    twine upload \
+        --username "__token__" \
+        --password "$PYPI_TOKEN" \
+        dist/*
+else
+    echo "Release DRY RUN"
+fi
 
 # Clean up
 rm -rf build dist alchemy_logging.egg-info/

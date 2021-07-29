@@ -16,7 +16,7 @@ if [ "$release_type" == "py" ]
 then
     cd src/python
     docker build . \
-        --target=publish \
+        --target=release_test \
         --build-arg PYTHON_RELEASE_VERSION=$version \
         --build-arg PYPI_TOKEN=$PYPI_TOKEN
 else
