@@ -33,10 +33,7 @@
     "all": true
   },
   "author": "Gabe Goodhart",
-  "license": "ISC",
-  "publishConfig": {
-    "registry": "https://na.artifactory.swg-devops.com/artifactory/api/npm/alog"
-  },
+  "license": "MIT",
   "dependencies": {
     "@types/node": "^12.12.5",
     "deepcopy": "^2.0.0",
