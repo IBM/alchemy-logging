@@ -19,6 +19,14 @@ then
         --target=release_test \
         --build-arg PYTHON_RELEASE_VERSION=$version \
         --build-arg PYPI_TOKEN=$PYPI_TOKEN
+elif [ "$release_type" == "ts" ]
+then
+    cd src/ts
+    docker build . \
+        --target=release_test \
+        --build-arg TS_RELEASE_VERSION=$version \
+        --build-arg NPM_TOKEN=$NPM_TOKEN
+
 else
     echo "Unknown release type: [$release_type]"
     exit 1
