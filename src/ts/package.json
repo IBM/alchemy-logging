@@ -1,6 +1,6 @@
 {
   "name": "alchemy-logging",
-  "version": "1.0.1",
+  "version": "0.0.0-REPLACEME",
   "description": "Alchemy Logging implementation in NodeJS/TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -9,14 +9,7 @@ WORKDIR /src
 
 # Install build, test, andn publish dependencies
 COPY *.json /src/
-RUN true && \
-    npm install && \
-    apt-get update && \
-    apt-get install -y jq && \
-    apt-get clean autoclean && \
-    apt-get autoremove -y && \
-    rm -rf /var/lib/{apt,dpkg,cache,log}/ && \
-    true
+RUN npm install
 
 ## Test ########################################################################
 #

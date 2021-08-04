@@ -11,12 +11,19 @@ then
 fi
 
 # Make sure the provided version matches the version in package.json
-package_version=$(cat package.json | jq -r '.version')
-if [ "$TS_RELEASE_VERSION" != $package_version ]
+if [ "$TS_RELEASE_VERSION" == "" ]
 then
-    echo "Version mismatch. Attempting to publish [$TS_RELEASE_VERSION] but package at [$package_version]"
+    echo "Must specify TS_RELEASE_VERSION"
     exit 1
 fi
+version_placeholder="0.0.0-REPLACEME"
+if [[ "$OSTYPE" == "darwin"* ]]
+then
+    sed_cmd="sed -i ''"
+else
+    sed_cmd="sed -i''"
+fi
+$sed_cmd "s,$version_placeholder,$TS_RELEASE_VERSION,g" package.json
 
 # If this is a dry run, add the flag
 dry_run_flag=""
@@ -27,3 +34,6 @@ fi
 
 # Run publish
 npm publish $dry_run_flag
+
+# Replace the placeholder
+$sed_cmd "s,$TS_RELEASE_VERSION,$version_placeholder,g" package.json
