@@ -1,5 +1,5 @@
 # This workflow runs the typescript implementation unit tests
-name: python-tests
+name: ts-tests
 on:
   push:
     branches: [ main ]
@@ -13,5 +13,5 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run unit tests
         run: |
-          cd src/python
+          cd src/ts
           docker build . --target=test
