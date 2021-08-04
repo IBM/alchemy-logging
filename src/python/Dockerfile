@@ -41,15 +41,14 @@ RUN ./ci/publish.sh
 #
 # This phase installs the indicated version from PyPi and runs the unit tests
 # against the installed version.
-#
-# NOTE: This
 ##
 FROM base as release_test
 ARG PYTHON_RELEASE_VERSION
+ARG RELEASE_DRY_RUN
 COPY ./tests /src/tests
 COPY ./ci/run-tests.sh /src/ci/run-tests.sh
 RUN true && \
-    sleep 30 \
+    ([ "$RELEASE_DRY_RUN" != "true" ] && sleep 30 || true) && \
     pip install alchemy-logging==${PYTHON_RELEASE_VERSION} && \
     ./ci/run-tests.sh ./tests/test_alog.py && \
     true
