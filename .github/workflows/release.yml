@@ -13,3 +13,4 @@ jobs:
         run: REF="${{ github.ref }}" ./ci/release.sh
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
