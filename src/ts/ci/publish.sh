@@ -32,6 +32,9 @@ then
     dry_run_flag="--dry-run"
 fi
 
+# Run the build
+npm run build
+
 # Run publish
 npm whoami
 npm publish $dry_run_flag
