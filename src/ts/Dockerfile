@@ -27,7 +27,11 @@ FROM test as release
 ARG NPM_TOKEN
 ARG TS_RELEASE_VERSION
 ARG RELEASE_DRY_RUN
-RUN ./ci/publish.sh
+RUN true && \
+    echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc && \
+    npm whoami && \
+    ./ci/publish.sh && \
+    true
 
 ## Release Test ################################################################
 #
