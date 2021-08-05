@@ -19,11 +19,12 @@ fi
 version_placeholder="0.0.0-REPLACEME"
 if [[ "$OSTYPE" == "darwin"* ]]
 then
-    sed_cmd="sed -i ''"
+    sed_cmd="sed -i .bak"
 else
-    sed_cmd="sed -i''"
+    sed_cmd="sed -i.bak"
 fi
 $sed_cmd "s,$version_placeholder,$TS_RELEASE_VERSION,g" package.json
+rm package.json.bak
 
 # If this is a dry run, add the flag
 dry_run_flag=""
@@ -41,3 +42,4 @@ npm publish $dry_run_flag
 
 # Replace the placeholder
 $sed_cmd "s,$TS_RELEASE_VERSION,$version_placeholder,g" package.json
+rm package.json.bak
