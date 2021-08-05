@@ -33,6 +33,7 @@ then
 fi
 
 # Run publish
+npm whoami
 npm publish $dry_run_flag
 
 # Replace the placeholder
