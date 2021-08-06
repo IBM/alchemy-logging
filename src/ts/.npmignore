@@ -1,0 +1,8 @@
+Dockerfile
+TODO.md
+test
+coverage
+.dockerignore
+.nyc_output
+ci
+tslint.json
