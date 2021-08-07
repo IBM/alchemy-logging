@@ -137,13 +137,13 @@ func matchExp(entry string, exp ExpEntry, verbose bool) bool {
 		}
 		if m[2] != exp.channel {
 			if verbose {
-				fmt.Printf("Channel string mismatch. Expected [], Got []\n", exp.channel, m[1])
+				fmt.Printf("Channel string mismatch. Expected [%s], Got [%s]\n", exp.channel, m[1])
 			}
 			match = false
 		}
 		if m[3] != exp.level {
 			if verbose {
-				fmt.Printf("Level string mismatch. Expected [], Got []\n", exp.level, m[2])
+				fmt.Printf("Level string mismatch. Expected [%s], Got [%s]\n", exp.level, m[2])
 			}
 			match = false
 		}
@@ -208,7 +208,7 @@ func VerifyLogsUnordered(entries []string, expected []ExpEntry) bool {
 			}
 		}
 		if !foundMatch {
-			fmt.Printf("No match found for expected entry [%s]\n", exp)
+			fmt.Printf("No match found for expected entry [%v]\n", exp)
 			match = false
 		}
 	}
@@ -278,7 +278,7 @@ func matchExpJSON(entry string, expected ExpEntry) bool {
 		fmt.Printf("Got unexpected service name [%s]", logEntry.Servicename)
 		match = false
 	} else if nil != expected.servicename && *expected.servicename != logEntry.Servicename {
-		fmt.Printf("Service name mismatch. Got [%s], expected [%s]\n", logEntry.Servicename, expected.servicename)
+		fmt.Printf("Service name mismatch. Got [%s], expected [%s]\n", logEntry.Servicename, *expected.servicename)
 		match = false
 	}
 
