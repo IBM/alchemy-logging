@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.ibm.com/watson-discovery/alog"
+	"github.com/IBM/alchemy-logging/src/go/alog"
 	"os"
 )
 
