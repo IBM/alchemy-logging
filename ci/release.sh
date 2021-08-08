@@ -27,6 +27,19 @@ then
         --build-arg TS_RELEASE_VERSION=$version \
         --build-arg NPM_TOKEN=$NPM_TOKEN
 
+elif [ "$release_type" == "cpp" ]
+then
+    echo "NOT IMPLEMENTED YET!"
+    exit 1
+
+# Go is special and requires valid semantic versioning for its version tags
+elif [[ "$tag" =~ v[0-9]+\.[0-9]+\.[0-9]+.* ]]
+then
+    cd src/go
+    docker build . \
+        --target=release_test \
+        --build-arg GO_RELEASE_VERSION=$tag
+
 else
     echo "Unknown release type: [$release_type]"
     exit 1
