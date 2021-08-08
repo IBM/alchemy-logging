@@ -33,7 +33,7 @@ The `alog.Config()` function allows both the default level and filters to be set
 
 ```go
 import (
-  "github.ibm.com/watson-discovery/alog"
+  "github.com/IBM/alchemy-logging/src/go/alog"
 )
 
 func foo() {
@@ -61,7 +61,7 @@ Here's a simple example of a basic log statement:
 
 ```go
 import (
-  "github.ibm.com/watson-discovery/alog"
+  "github.com/IBM/alchemy-logging/src/go/alog"
 )
 
 func foo(age int) {
@@ -74,7 +74,7 @@ In a given portion of code, it often makes sense to have a common channel that i
 
 ```go
 import (
-  "github.ibm.com/watson-discovery/alog"
+  "github.com/IBM/alchemy-logging/src/go/alog"
 )
 
 var ch = alog.UseChannel("DEMO")
@@ -89,7 +89,7 @@ One of the most common uses for logging is to note when a certain block of code 
 
 ```go
 import (
-  "github.ibm.com/watson-discovery/alog"
+  "github.com/IBM/alchemy-logging/src/go/alog"
 )
 
 var ch = alog.UseChannel("DEMO")
@@ -108,7 +108,7 @@ The most common use of `LogScope` is to log the begin and end of a function. To 
 
 ```go
 import (
-  "github.ibm.com/watson-discovery/alog"
+  "github.com/IBM/alchemy-logging/src/go/alog"
 )
 
 var ch = alog.UseChannel("DEMO")
@@ -144,7 +144,7 @@ There are several other convenience functions available with the `alog` package:
 ```go
 import (
   "fmt"
-  "github.ibm.com/watson-discovery/alog"
+  "github.com/IBM/alchemy-logging/src/go/alog"
 )
 
 var ch = alog.UseChannel("DEMO")
@@ -193,7 +193,7 @@ package main
 
 import (
   "flag"
-  "github.ibm.com/watson-discovery/alog"
+  "github.com/IBM/alchemy-logging/src/go/alog"
 )
 
 var ch = alog.UseChannel("MAIN")
@@ -240,7 +240,7 @@ package main
 
 import (
   "flag"
-  "github.ibm.com/watson-discovery/alog"
+  "github.com/IBM/alchemy-logging/src/go/alog"
   "net/http"
   "strings"
 )

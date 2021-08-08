@@ -1,0 +1,17 @@
+# This workflow runs the go implementation unit tests
+name: go-tests
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run unit tests
+        run: |
+          cd src/go
+          docker build . --target=test

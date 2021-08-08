@@ -1,12 +1,28 @@
-// *************************************************
-// 5737-C06
-// (C) Copyright IBM Corp. 2017 All Rights Reserved.
-// The source code for this program is not published or otherwise
-// divested of its trade secrets, irrespective of what has been
-// deposited with the U.S. Copyright Office.
-// *************************************************
+/*------------------------------------------------------------------------------
+ * MIT License
+ *
+ * Copyright (c) 2021 IBM
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *----------------------------------------------------------------------------*/
 
-package alogtest
+package alog
 
 import (
 	// Standard
@@ -16,9 +32,6 @@ import (
 
 	// Third Party
 	"github.com/stretchr/testify/assert"
-
-	// Local
-	"github.ibm.com/watson-discovery/alog"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,23 +60,23 @@ func Test_Alog_HappyPath(t *testing.T) {
 	ConfigStdLogWriter(&entries)
 
 	// Log with no configuration
-	alog.Log("TEST", alog.INFO, "Test1")
+	Log("TEST", INFO, "Test1")
 	assert.True(t, VerifyLogs(entries, []ExpEntry{}))
 	entries = []string{}
 
 	// Set default level and try again
-	alog.ConfigDefaultLevel(alog.INFO)
-	alog.Log("TEST", alog.INFO, "Test2")
-	alog.Log("TEST", alog.DEBUG, "Debug test!")
+	ConfigDefaultLevel(INFO)
+	Log("TEST", INFO, "Test2")
+	Log("TEST", DEBUG, "Debug test!")
 	assert.True(t, VerifyLogs(entries, []ExpEntry{
 		ExpEntry{channel: "TEST ", level: "INFO", body: "Test2"},
 	}))
 	entries = []string{}
 
 	// Set TEST channel back to OFF
-	alog.ConfigChannel("TEST", alog.OFF)
-	alog.Log("TEST", alog.INFO, "Can't see me...")
-	alog.Log("FOO", alog.INFO, "Use the default!")
+	ConfigChannel("TEST", OFF)
+	Log("TEST", INFO, "Can't see me...")
+	Log("FOO", INFO, "Use the default!")
 	assert.True(t, VerifyLogs(entries, []ExpEntry{
 		ExpEntry{channel: "FOO  ", level: "INFO", body: "Use the default!"},
 	}))
@@ -71,7 +84,7 @@ func Test_Alog_HappyPath(t *testing.T) {
 
 	// Log with some formatting
 	for i := 1; i < 3; i++ {
-		alog.Log("FOO", alog.INFO, "This is formatting test [%d]", i)
+		Log("FOO", INFO, "This is formatting test [%d]", i)
 	}
 	assert.True(t, VerifyLogs(entries, []ExpEntry{
 		ExpEntry{channel: "FOO  ", level: "INFO", body: "This is formatting test [1]"},
@@ -80,14 +93,14 @@ func Test_Alog_HappyPath(t *testing.T) {
 	entries = []string{}
 
 	// Test a really long channel name
-	alog.Log("LONGCHANNEL", alog.INFO, "Line me up nice...")
+	Log("LONGCHANNEL", INFO, "Line me up nice...")
 	assert.True(t, VerifyLogs(entries, []ExpEntry{
 		ExpEntry{channel: "LONGC", level: "INFO", body: "Line me up nice..."},
 	}))
 	entries = []string{}
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -104,21 +117,21 @@ func Test_Alog_HappyPath(t *testing.T) {
 //  -> ...
 ////
 func Test_Alog_Indent(t *testing.T) {
-	alog.ConfigDefaultLevel(alog.DEBUG2)
+	ConfigDefaultLevel(DEBUG2)
 
 	// Set up the writer to capture logged lines
 	entries := []string{}
 	ConfigStdLogWriter(&entries)
 
-	alog.Log("TEST", alog.DEBUG2, "Outside the indent")
-	alog.Indent()
-	alog.Log("TEST", alog.DEBUG2, "Level 1")
-	alog.Indent()
-	alog.Log("TEST", alog.DEBUG2, "Level 2")
-	alog.Deindent()
-	alog.Log("TEST", alog.DEBUG2, "Level 1")
-	alog.Deindent()
-	alog.Log("TEST", alog.DEBUG2, "Made it!")
+	Log("TEST", DEBUG2, "Outside the indent")
+	Indent()
+	Log("TEST", DEBUG2, "Level 1")
+	Indent()
+	Log("TEST", DEBUG2, "Level 2")
+	Deindent()
+	Log("TEST", DEBUG2, "Level 1")
+	Deindent()
+	Log("TEST", DEBUG2, "Made it!")
 
 	// Check the result
 	assert.True(t, VerifyLogs(entries, []ExpEntry{
@@ -130,29 +143,29 @@ func Test_Alog_Indent(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
 // Indent Disabled - Repeat the "Indent" test and ensure no indentation added
 ////
 func Test_Alog_IndentDisabled(t *testing.T) {
-	alog.ConfigDefaultLevel(alog.DEBUG2)
+	ConfigDefaultLevel(DEBUG2)
 
 	// Set up the writer to capture logged lines
 	entries := []string{}
 	ConfigStdLogWriter(&entries)
-	alog.DisableIndent()
+	DisableIndent()
 
-	alog.Log("TEST", alog.DEBUG2, "Outside the indent")
-	alog.Indent()
-	alog.Log("TEST", alog.DEBUG2, "Level 1")
-	alog.Indent()
-	alog.Log("TEST", alog.DEBUG2, "Level 2")
-	alog.Deindent()
-	alog.Log("TEST", alog.DEBUG2, "Level 1")
-	alog.Deindent()
-	alog.Log("TEST", alog.DEBUG2, "Made it!")
+	Log("TEST", DEBUG2, "Outside the indent")
+	Indent()
+	Log("TEST", DEBUG2, "Level 1")
+	Indent()
+	Log("TEST", DEBUG2, "Level 2")
+	Deindent()
+	Log("TEST", DEBUG2, "Level 1")
+	Deindent()
+	Log("TEST", DEBUG2, "Made it!")
 
 	// Check the result
 	assert.True(t, VerifyLogs(entries, []ExpEntry{
@@ -164,7 +177,7 @@ func Test_Alog_IndentDisabled(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -182,18 +195,18 @@ func Test_Alog_Channel(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigStdLogWriter(&entries)
-	alog.ConfigDefaultLevel(alog.DEBUG2)
+	ConfigDefaultLevel(DEBUG2)
 
-	ch := alog.UseChannel("THIS")
-	ch.Log(alog.INFO, "Logged to this!")
+	ch := UseChannel("THIS")
+	ch.Log(INFO, "Logged to this!")
 
 	foo := func() {
-		ch := alog.UseChannel("FOO")
-		ch.Log(alog.INFO, "Doin it in FOO")
+		ch := UseChannel("FOO")
+		ch.Log(INFO, "Doin it in FOO")
 	}
 	foo()
 
-	ch.Log(alog.INFO, "Done with FOO")
+	ch.Log(INFO, "Done with FOO")
 
 	// Check the result
 	assert.True(t, VerifyLogs(entries, []ExpEntry{
@@ -203,7 +216,7 @@ func Test_Alog_Channel(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -225,9 +238,9 @@ func Test_Alog_GID(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigStdLogWriter(&entries)
-	alog.ConfigDefaultLevel(alog.DEBUG3)
-	alog.EnableGID()
-	ch := alog.UseChannel("MAIN")
+	ConfigDefaultLevel(DEBUG3)
+	EnableGID()
+	ch := UseChannel("MAIN")
 
 	waitChans := []chan bool{
 		make(chan bool),
@@ -236,8 +249,8 @@ func Test_Alog_GID(t *testing.T) {
 		make(chan bool),
 	}
 	f := func(i int) {
-		ch := alog.UseChannel("PARLL")
-		ch.Log(alog.INFO, "Logging in a goroutine")
+		ch := UseChannel("PARLL")
+		ch.Log(INFO, "Logging in a goroutine")
 		time.Sleep(time.Duration(i) * time.Millisecond)
 		waitChans[i] <- true
 	}
@@ -246,9 +259,9 @@ func Test_Alog_GID(t *testing.T) {
 	}
 	for i := 0; i < 4; i++ {
 		<-waitChans[i]
-		ch.Log(alog.INFO, "Done with %d", i)
+		ch.Log(INFO, "Done with %d", i)
 	}
-	ch.Log(alog.INFO, "All goroutines done")
+	ch.Log(INFO, "All goroutines done")
 
 	// Check the result
 	assert.True(t, VerifyLogsUnordered(entries, []ExpEntry{
@@ -264,7 +277,7 @@ func Test_Alog_GID(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -284,18 +297,18 @@ func Test_Alog_IsEnabled(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigStdLogWriter(&entries)
-	alog.Config(alog.INFO, alog.ChannelMap{"HIGH": alog.DEBUG4})
-	ch := alog.UseChannel("MAIN")
+	Config(INFO, ChannelMap{"HIGH": DEBUG4})
+	ch := UseChannel("MAIN")
 
-	ch.Log(alog.INFO, "About to check if enabled")
-	if ch.IsEnabled(alog.DEBUG) {
-		ch.Log(alog.INFO, "You can't see me even though I'm on INFO")
+	ch.Log(INFO, "About to check if enabled")
+	if ch.IsEnabled(DEBUG) {
+		ch.Log(INFO, "You can't see me even though I'm on INFO")
 	}
-	if ch.IsEnabled(alog.INFO) {
-		ch.Log(alog.INFO, "HELLO!")
+	if ch.IsEnabled(INFO) {
+		ch.Log(INFO, "HELLO!")
 	}
-	if alog.IsEnabled("HIGH", alog.DEBUG3) {
-		alog.Log("HIGH", alog.DEBUG3, "Deep debugging time!")
+	if IsEnabled("HIGH", DEBUG3) {
+		Log("HIGH", DEBUG3, "Deep debugging time!")
 	}
 
 	// Check the result
@@ -306,17 +319,17 @@ func Test_Alog_IsEnabled(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
 // Scope - Test the functionality of the LogScope
 //
-// 1) Use the defer alog.LogScope(...).Close() paradigm within a local function
+// 1) Use the defer LogScope(...).Close() paradigm within a local function
 //  -> Log a Start and End block around the logging in the internal function
 // 2) Log outside of local function
 //  -> Ensure comes after End block
-// 3) Use defer alog.LogScope(...).Close() paradigm for the test itself
+// 3) Use defer LogScope(...).Close() paradigm for the test itself
 //  -> Start block logged, but End not logged before check
 // 4) Log after test scope
 //  -> Log line shows up after Start block
@@ -326,20 +339,20 @@ func Test_Alog_Scope(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigStdLogWriter(&entries)
-	alog.ConfigDefaultLevel(alog.DEBUG)
-	ch := alog.UseChannel("MAIN")
+	ConfigDefaultLevel(DEBUG)
+	ch := UseChannel("MAIN")
 
 	// Emulate a "local scope" using an anonymous function
-	ch.Log(alog.INFO, "Trying a scope now...")
+	ch.Log(INFO, "Trying a scope now...")
 	func() {
-		defer alog.LogScope("TEST", alog.INFO, "Local scope").Close()
-		alog.Log("TEST", alog.INFO, "inside the scope")
+		defer LogScope("TEST", INFO, "Local scope").Close()
+		Log("TEST", INFO, "inside the scope")
 	}()
-	ch.Log(alog.INFO, "Bye bye scope")
+	ch.Log(INFO, "Bye bye scope")
 
 	// Start/end a block for this test as a function
-	defer ch.LogScope(alog.DEBUG, "End of function scope").Close()
-	ch.Log(alog.DEBUG, "Got something to say??")
+	defer ch.LogScope(DEBUG, "End of function scope").Close()
+	ch.Log(DEBUG, "Got something to say??")
 
 	// Check the result
 	// NOTE: End of "End of function scope" won't have logged yet because it waits
@@ -355,14 +368,14 @@ func Test_Alog_Scope(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 func freeFuncTest() {
-	ch := alog.UseChannel("FREE")
-	defer ch.DetailFnLog(alog.DEBUG, "").Close()
-	ch.Log(alog.INFO, "Something soooooo cool!")
-	ch.Log(alog.DEBUG4, "Hide all the super details")
+	ch := UseChannel("FREE")
+	defer ch.DetailFnLog(DEBUG, "").Close()
+	ch.Log(INFO, "Something soooooo cool!")
+	ch.Log(DEBUG4, "Hide all the super details")
 }
 
 ////
@@ -382,21 +395,21 @@ func Test_Alog_ChFnLog(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigStdLogWriter(&entries)
-	alog.ConfigDefaultLevel(alog.DEBUG)
-	ch := alog.UseChannel("FNLOG")
+	ConfigDefaultLevel(DEBUG)
+	ch := UseChannel("FNLOG")
 
-	ch.Log(alog.INFO, "Let's get started...")
+	ch.Log(INFO, "Let's get started...")
 	foo := 0
 	f := func() {
 		defer ch.FnLog("%d", foo).Close()
 		bar := 1
 		bat := 2
-		ch.Log(alog.INFO, "bar: %d", bar)
-		ch.Log(alog.INFO, "bat: %d", bat)
+		ch.Log(INFO, "bar: %d", bar)
+		ch.Log(INFO, "bat: %d", bat)
 	}
 	f()
 	freeFuncTest()
-	ch.Log(alog.INFO, "... and we're done!")
+	ch.Log(INFO, "... and we're done!")
 
 	// Check the result
 	assert.True(t, VerifyLogs(entries, []ExpEntry{
@@ -412,7 +425,7 @@ func Test_Alog_ChFnLog(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -430,23 +443,23 @@ func Test_Alog_FnLog(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigStdLogWriter(&entries)
-	alog.ConfigDefaultLevel(alog.DEBUG)
+	ConfigDefaultLevel(DEBUG)
 
-	alog.Log("TEST", alog.INFO, "Let's get started...")
+	Log("TEST", INFO, "Let's get started...")
 	foo := 0
 	f1 := func() {
-		defer alog.FnLog("TEST", "%d", foo).Close()
+		defer FnLog("TEST", "%d", foo).Close()
 		bar := 1
 		bat := 2
-		alog.Log("TEST", alog.INFO, "bar: %d", bar)
-		alog.Log("TEST", alog.INFO, "bat: %d", bat)
+		Log("TEST", INFO, "bar: %d", bar)
+		Log("TEST", INFO, "bat: %d", bat)
 	}
 	f2 := func() {
-		defer alog.DetailFnLog("TEST", alog.DEBUG, "").Close()
+		defer DetailFnLog("TEST", DEBUG, "").Close()
 	}
 	f1()
 	f2()
-	alog.Log("TEST", alog.INFO, "... and we're done!")
+	Log("TEST", INFO, "... and we're done!")
 
 	// Check the result
 	assert.True(t, VerifyLogs(entries, []ExpEntry{
@@ -461,7 +474,7 @@ func Test_Alog_FnLog(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -472,15 +485,15 @@ func Test_Alog_FnLog(t *testing.T) {
 //  -> Verify service name is set in message header
 ////
 func Test_Alog_ServiceName(t *testing.T) {
-	alog.ConfigDefaultLevel(alog.DEBUG2)
+	ConfigDefaultLevel(DEBUG2)
 
 	// Set up the writer to capture logged lines
 	entries := []string{}
 	ConfigStdLogWriter(&entries)
 	sn := "test_service"
-	alog.SetServiceName(sn)
+	SetServiceName(sn)
 
-	alog.Log("TEST", alog.INFO, "Hi there")
+	Log("TEST", INFO, "Hi there")
 
 	// Check the result
 	assert.True(t, VerifyLogs(entries, []ExpEntry{
@@ -488,7 +501,7 @@ func Test_Alog_ServiceName(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -498,13 +511,13 @@ func Test_Alog_ServiceName(t *testing.T) {
 //  -> Verify key/val output
 ////
 func Test_Alog_LogMap(t *testing.T) {
-	alog.ConfigDefaultLevel(alog.DEBUG2)
+	ConfigDefaultLevel(DEBUG2)
 
 	// Set up the writer to capture logged lines
 	entries := []string{}
 	ConfigStdLogWriter(&entries)
 
-	alog.LogMap("TEST", alog.INFO, map[string]interface{}{
+	LogMap("TEST", INFO, map[string]interface{}{
 		"b": 1,
 		"a": "two",
 		"c": []string{"e", "f"},
@@ -518,7 +531,7 @@ func Test_Alog_LogMap(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -528,13 +541,13 @@ func Test_Alog_LogMap(t *testing.T) {
 //  -> Verify key/val output
 ////
 func Test_Alog_LogWithMap(t *testing.T) {
-	alog.ConfigDefaultLevel(alog.DEBUG2)
+	ConfigDefaultLevel(DEBUG2)
 
 	// Set up the writer to capture logged lines
 	entries := []string{}
 	ConfigStdLogWriter(&entries)
 
-	alog.LogWithMap("TEST", alog.INFO, map[string]interface{}{
+	LogWithMap("TEST", INFO, map[string]interface{}{
 		"b": 1,
 		"a": "two",
 		"c": []string{"e", "f"},
@@ -549,7 +562,7 @@ func Test_Alog_LogWithMap(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 // JSON Tests //////////////////////////////////////////////////////////////////
@@ -569,14 +582,14 @@ func Test_Alog_JSONBasicChannel(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigJSONLogWriter(&entries)
-	alog.ConfigDefaultLevel(alog.DEBUG)
-	ch := alog.UseChannel("MAIN")
+	ConfigDefaultLevel(DEBUG)
+	ch := UseChannel("MAIN")
 
 	// Log a simple line on info
-	ch.Log(alog.INFO, "[%d] This is a formatted test", 10)
+	ch.Log(INFO, "[%d] This is a formatted test", 10)
 
 	// Log a line on debug3 that shouldn't show up
-	ch.Log(alog.DEBUG3, "This shouldn't show up")
+	ch.Log(DEBUG3, "This shouldn't show up")
 
 	// Check the result
 	assert.True(t, len(entries) == 1)
@@ -585,7 +598,7 @@ func Test_Alog_JSONBasicChannel(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -609,23 +622,23 @@ func Test_Alog_JSONHappyPath(t *testing.T) {
 	ConfigJSONLogWriter(&entries)
 
 	// Log with no configuration
-	alog.Log("TEST", alog.INFO, "Test1")
+	Log("TEST", INFO, "Test1")
 	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{}))
 	entries = []string{}
 
 	// Set default level and try again
-	alog.ConfigDefaultLevel(alog.INFO)
-	alog.Log("TEST", alog.INFO, "Test2")
-	alog.Log("TEST", alog.DEBUG, "Debug test!")
+	ConfigDefaultLevel(INFO)
+	Log("TEST", INFO, "Test2")
+	Log("TEST", DEBUG, "Debug test!")
 	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
 		ExpEntry{channel: "TEST", level: "info", body: "Test2"},
 	}))
 	entries = []string{}
 
 	// Set TEST channel back to OFF
-	alog.ConfigChannel("TEST", alog.OFF)
-	alog.Log("TEST", alog.INFO, "Can't see me...")
-	alog.Log("FOO", alog.INFO, "Use the default!")
+	ConfigChannel("TEST", OFF)
+	Log("TEST", INFO, "Can't see me...")
+	Log("FOO", INFO, "Use the default!")
 	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
 		ExpEntry{channel: "FOO", level: "info", body: "Use the default!"},
 	}))
@@ -633,7 +646,7 @@ func Test_Alog_JSONHappyPath(t *testing.T) {
 
 	// Log with some formatting
 	for i := 1; i < 3; i++ {
-		alog.Log("FOO", alog.INFO, "This is formatting test [%d]", i)
+		Log("FOO", INFO, "This is formatting test [%d]", i)
 	}
 	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
 		ExpEntry{channel: "FOO", level: "info", body: "This is formatting test [1]"},
@@ -642,14 +655,14 @@ func Test_Alog_JSONHappyPath(t *testing.T) {
 	entries = []string{}
 
 	// Test a really long channel name (don't truncate for JSON)
-	alog.Log("LONGCHANNEL", alog.INFO, "Line me up nice...")
+	Log("LONGCHANNEL", INFO, "Line me up nice...")
 	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
 		ExpEntry{channel: "LONGCHANNEL", level: "info", body: "Line me up nice..."},
 	}))
 	entries = []string{}
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -667,15 +680,15 @@ func Test_Alog_JSONServiceName(t *testing.T) {
 	entries := []string{}
 	ConfigJSONLogWriter(&entries)
 	sn := "test_service"
-	alog.SetServiceName(sn)
-	alog.ConfigDefaultLevel(alog.DEBUG)
-	ch := alog.UseChannel("MAIN")
+	SetServiceName(sn)
+	ConfigDefaultLevel(DEBUG)
+	ch := UseChannel("MAIN")
 
 	// Log a simple line on info
-	ch.Log(alog.INFO, "[%d] This is a formatted test", 10)
+	ch.Log(INFO, "[%d] This is a formatted test", 10)
 
 	// Log a line on debug3 that shouldn't show up
-	ch.Log(alog.DEBUG3, "This shouldn't show up")
+	ch.Log(DEBUG3, "This shouldn't show up")
 
 	// Check the result
 	assert.True(t, len(entries) == 1)
@@ -684,7 +697,7 @@ func Test_Alog_JSONServiceName(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -706,17 +719,17 @@ func Test_Alog_JSONIndent(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigJSONLogWriter(&entries)
-	alog.ConfigDefaultLevel(alog.DEBUG2)
+	ConfigDefaultLevel(DEBUG2)
 
-	alog.Log("TEST", alog.DEBUG2, "Outside the indent")
-	alog.Indent()
-	alog.Log("TEST", alog.DEBUG2, "Level 1")
-	alog.Indent()
-	alog.Log("TEST", alog.DEBUG2, "Level 2")
-	alog.Deindent()
-	alog.Log("TEST", alog.DEBUG2, "Level 1")
-	alog.Deindent()
-	alog.Log("TEST", alog.DEBUG2, "Made it!")
+	Log("TEST", DEBUG2, "Outside the indent")
+	Indent()
+	Log("TEST", DEBUG2, "Level 1")
+	Indent()
+	Log("TEST", DEBUG2, "Level 2")
+	Deindent()
+	Log("TEST", DEBUG2, "Level 1")
+	Deindent()
+	Log("TEST", DEBUG2, "Made it!")
 
 	// Check the result
 	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
@@ -728,7 +741,7 @@ func Test_Alog_JSONIndent(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -741,18 +754,18 @@ func Test_Alog_JSONIndentDisabled(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigJSONLogWriter(&entries)
-	alog.ConfigDefaultLevel(alog.DEBUG2)
-	alog.DisableIndent()
+	ConfigDefaultLevel(DEBUG2)
+	DisableIndent()
 
-	alog.Log("TEST", alog.DEBUG2, "Outside the indent")
-	alog.Indent()
-	alog.Log("TEST", alog.DEBUG2, "Level 1")
-	alog.Indent()
-	alog.Log("TEST", alog.DEBUG2, "Level 2")
-	alog.Deindent()
-	alog.Log("TEST", alog.DEBUG2, "Level 1")
-	alog.Deindent()
-	alog.Log("TEST", alog.DEBUG2, "Made it!")
+	Log("TEST", DEBUG2, "Outside the indent")
+	Indent()
+	Log("TEST", DEBUG2, "Level 1")
+	Indent()
+	Log("TEST", DEBUG2, "Level 2")
+	Deindent()
+	Log("TEST", DEBUG2, "Level 1")
+	Deindent()
+	Log("TEST", DEBUG2, "Made it!")
 
 	// Check the result
 	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
@@ -764,7 +777,7 @@ func Test_Alog_JSONIndentDisabled(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -778,7 +791,7 @@ func Test_Alog_JSONLogMap(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigJSONLogWriter(&entries)
-	alog.ConfigDefaultLevel(alog.DEBUG2)
+	ConfigDefaultLevel(DEBUG2)
 
 	// NOTE: The 'c' key works as a []string as well, but the validation fails on
 	// reflect.DeepEqual since you have one []string and one []interface{}
@@ -787,7 +800,7 @@ func Test_Alog_JSONLogMap(t *testing.T) {
 		"test_key2": 23,
 		"c":         []interface{}{string("e"), string("f")},
 	}
-	alog.LogMap("TEST", alog.DEBUG2, md)
+	LogMap("TEST", DEBUG2, md)
 
 	// Check the result
 	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
@@ -795,7 +808,7 @@ func Test_Alog_JSONLogMap(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -811,13 +824,13 @@ func Test_Alog_JSONLogWithMap(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigJSONLogWriter(&entries)
-	alog.ConfigDefaultLevel(alog.DEBUG2)
+	ConfigDefaultLevel(DEBUG2)
 
 	md := map[string]interface{}{
 		"test_key":  "string_val",
 		"test_key2": 23,
 	}
-	alog.LogWithMap("TEST", alog.DEBUG2, md, "Hello logging world, this is a test %d", 1)
+	LogWithMap("TEST", DEBUG2, md, "Hello logging world, this is a test %d", 1)
 
 	// Check the result
 	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
@@ -825,7 +838,7 @@ func Test_Alog_JSONLogWithMap(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////
@@ -840,10 +853,10 @@ func Test_Alog_JSONGID(t *testing.T) {
 	// Configure
 	entries := []string{}
 	ConfigJSONLogWriter(&entries)
-	alog.ConfigDefaultLevel(alog.DEBUG2)
-	alog.EnableGID()
+	ConfigDefaultLevel(DEBUG2)
+	EnableGID()
 
-	alog.Log("TEST", alog.DEBUG2, "Test with GID")
+	Log("TEST", DEBUG2, "Test with GID")
 
 	// Check the result
 	assert.True(t, VerifyJSONLogs(entries, []ExpEntry{
@@ -851,7 +864,7 @@ func Test_Alog_JSONGID(t *testing.T) {
 	}))
 
 	// Reset for next test
-	alog.ResetDefaults()
+	ResetDefaults()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -867,11 +880,11 @@ var parallelConfigMu = sync.Mutex{}
 func configParallelTests() {
 	parallelConfigMu.Lock()
 	if !parallelConfigured {
-		alog.Config(alog.INFO, alog.ChannelMap{
-			"MID":  alog.DEBUG,
-			"HIGH": alog.DEBUG4,
+		Config(INFO, ChannelMap{
+			"MID":  DEBUG,
+			"HIGH": DEBUG4,
 		})
-		alog.EnableGID()
+		EnableGID()
 		parallelConfigured = true
 	}
 	parallelConfigMu.Unlock()
@@ -880,32 +893,32 @@ func configParallelTests() {
 func Test_Alog_Parallel_Basic(t *testing.T) {
 	t.Parallel()
 	configParallelTests()
-	alog.Log("TEST", alog.INFO, "Hi there")
-	alog.Log("TEST", alog.DEBUG, "Invisible")
-	alog.Log("HIGH", alog.DEBUG4, "Down in the weeds")
+	Log("TEST", INFO, "Hi there")
+	Log("TEST", DEBUG, "Invisible")
+	Log("HIGH", DEBUG4, "Down in the weeds")
 }
 
 func Test_Alog_Parallel_Channel(t *testing.T) {
 	t.Parallel()
 	configParallelTests()
-	ch := alog.UseChannel("MID")
-	ch.Log(alog.INFO, "See me on INFO")
-	ch.Log(alog.DEBUG, "See me on DEBUG")
-	ch.Log(alog.DEBUG2, "Don't see me on DEBUG2")
+	ch := UseChannel("MID")
+	ch.Log(INFO, "See me on INFO")
+	ch.Log(DEBUG, "See me on DEBUG")
+	ch.Log(DEBUG2, "Don't see me on DEBUG2")
 }
 
 func Test_Alog_Parallel_FnLog(t *testing.T) {
 	t.Parallel()
 	configParallelTests()
-	ch := alog.UseChannel("MID")
+	ch := UseChannel("MID")
 	f1 := func() {
 		defer ch.FnLog("").Close()
-		ch.Log(alog.INFO, "Something in f1")
+		ch.Log(INFO, "Something in f1")
 	}
 	f2 := func() {
-		defer ch.DetailFnLog(alog.DEBUG, "").Close()
-		ch.Log(alog.INFO, "Something in f2")
-		ch.Log(alog.DEBUG, "Something else in f2")
+		defer ch.DetailFnLog(DEBUG, "").Close()
+		ch.Log(INFO, "Something in f2")
+		ch.Log(DEBUG, "Something else in f2")
 	}
 	f1()
 	f2()

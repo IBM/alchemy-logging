@@ -1,12 +1,28 @@
-// *************************************************
-// 5737-C06
-// (C) Copyright IBM Corp. 2017 All Rights Reserved.
-// The source code for this program is not published or otherwise
-// divested of its trade secrets, irrespective of what has been
-// deposited with the U.S. Copyright Office.
-// *************************************************
+/*------------------------------------------------------------------------------
+ * MIT License
+ *
+ * Copyright (c) 2021 IBM
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *----------------------------------------------------------------------------*/
 
-package alogtest
+package alog
 
 import (
 	// Standard
@@ -18,9 +34,6 @@ import (
 
 	// Third Party
 	"github.com/stretchr/testify/assert"
-
-	// Local
-	"github.ibm.com/watson-discovery/alog"
 )
 
 // Tests - General Helpers /////////////////////////////////////////////////////
@@ -39,82 +52,82 @@ import (
 func Test_AlogExtras_LevelFromString(t *testing.T) {
 
 	// Set up logging
-	alog.Config(alog.TRACE, alog.ChannelMap{})
-	defer alog.ResetDefaults()
-	defer alog.FnLog("TEST", "").Close()
+	Config(TRACE, ChannelMap{})
+	defer ResetDefaults()
+	defer FnLog("TEST", "").Close()
 
 	// Valid levels
 	{
-		lvl, err := alog.LevelFromString("off")
+		lvl, err := LevelFromString("off")
 		assert.Equal(t, err, nil)
-		assert.Equal(t, lvl, alog.OFF)
+		assert.Equal(t, lvl, OFF)
 	}
 	{
-		lvl, err := alog.LevelFromString("fatal")
+		lvl, err := LevelFromString("fatal")
 		assert.Equal(t, err, nil)
-		assert.Equal(t, lvl, alog.FATAL)
+		assert.Equal(t, lvl, FATAL)
 	}
 	{
-		lvl, err := alog.LevelFromString("error")
+		lvl, err := LevelFromString("error")
 		assert.Equal(t, err, nil)
-		assert.Equal(t, lvl, alog.ERROR)
+		assert.Equal(t, lvl, ERROR)
 	}
 	{
-		lvl, err := alog.LevelFromString("warning")
+		lvl, err := LevelFromString("warning")
 		assert.Equal(t, err, nil)
-		assert.Equal(t, lvl, alog.WARNING)
+		assert.Equal(t, lvl, WARNING)
 	}
 	{
-		lvl, err := alog.LevelFromString("info")
+		lvl, err := LevelFromString("info")
 		assert.Equal(t, err, nil)
-		assert.Equal(t, lvl, alog.INFO)
+		assert.Equal(t, lvl, INFO)
 	}
 	{
-		lvl, err := alog.LevelFromString("trace")
+		lvl, err := LevelFromString("trace")
 		assert.Equal(t, err, nil)
-		assert.Equal(t, lvl, alog.TRACE)
+		assert.Equal(t, lvl, TRACE)
 	}
 	{
-		lvl, err := alog.LevelFromString("debug")
+		lvl, err := LevelFromString("debug")
 		assert.Equal(t, err, nil)
-		assert.Equal(t, lvl, alog.DEBUG)
+		assert.Equal(t, lvl, DEBUG)
 	}
 	{
-		lvl, err := alog.LevelFromString("debug1")
+		lvl, err := LevelFromString("debug1")
 		assert.Equal(t, err, nil)
-		assert.Equal(t, lvl, alog.DEBUG1)
+		assert.Equal(t, lvl, DEBUG1)
 	}
 	{
-		lvl, err := alog.LevelFromString("debug2")
+		lvl, err := LevelFromString("debug2")
 		assert.Equal(t, err, nil)
-		assert.Equal(t, lvl, alog.DEBUG2)
+		assert.Equal(t, lvl, DEBUG2)
 	}
 	{
-		lvl, err := alog.LevelFromString("debug3")
+		lvl, err := LevelFromString("debug3")
 		assert.Equal(t, err, nil)
-		assert.Equal(t, lvl, alog.DEBUG3)
+		assert.Equal(t, lvl, DEBUG3)
 	}
 	{
-		lvl, err := alog.LevelFromString("debug4")
+		lvl, err := LevelFromString("debug4")
 		assert.Equal(t, err, nil)
-		assert.Equal(t, lvl, alog.DEBUG4)
+		assert.Equal(t, lvl, DEBUG4)
 	}
 
 	// Invalid levels
 	{
-		lvl, err := alog.LevelFromString("OFF")
+		lvl, err := LevelFromString("OFF")
 		assert.NotEqual(t, err, nil)
-		assert.Equal(t, lvl, alog.ERROR)
+		assert.Equal(t, lvl, ERROR)
 	}
 	{
-		lvl, err := alog.LevelFromString("foobar")
+		lvl, err := LevelFromString("foobar")
 		assert.NotEqual(t, err, nil)
-		assert.Equal(t, lvl, alog.ERROR)
+		assert.Equal(t, lvl, ERROR)
 	}
 	{
-		lvl, err := alog.LevelFromString("DBG4")
+		lvl, err := LevelFromString("DBG4")
 		assert.NotEqual(t, err, nil)
-		assert.Equal(t, lvl, alog.ERROR)
+		assert.Equal(t, lvl, ERROR)
 	}
 }
 
@@ -132,18 +145,18 @@ func Test_AlogExtras_LevelFromString(t *testing.T) {
 func Test_AlogExtras_ParseChannelFilter(t *testing.T) {
 
 	// Set up logging
-	alog.Config(alog.TRACE, alog.ChannelMap{})
-	defer alog.ResetDefaults()
-	defer alog.FnLog("TEST", "").Close()
+	Config(TRACE, ChannelMap{})
+	defer ResetDefaults()
+	defer FnLog("TEST", "").Close()
 
 	// Valid filter spec
 	{
 		spec := "MAIN:debug,TEST:debug3"
-		m, e := alog.ParseChannelFilter(spec)
+		m, e := ParseChannelFilter(spec)
 		assert.Equal(t, e, nil)
-		assert.True(t, ValidateChannelMap(m, alog.ChannelMap{
-			"MAIN": alog.DEBUG,
-			"TEST": alog.DEBUG3,
+		assert.True(t, ValidateChannelMap(m, ChannelMap{
+			"MAIN": DEBUG,
+			"TEST": DEBUG3,
 		}))
 	}
 
@@ -151,7 +164,7 @@ func Test_AlogExtras_ParseChannelFilter(t *testing.T) {
 	// -> Fail to parse map at all
 	{
 		spec := "MAIN:debugTEST:debug3"
-		m, e := alog.ParseChannelFilter(spec)
+		m, e := ParseChannelFilter(spec)
 		assert.NotEqual(t, e, nil)
 		assert.Equal(t, len(m), 0)
 	}
@@ -160,7 +173,7 @@ func Test_AlogExtras_ParseChannelFilter(t *testing.T) {
 	// -> Correctly parse the two valid entries
 	{
 		spec := "MAIN:debug,TEST;debug3,FOO:info"
-		m, e := alog.ParseChannelFilter(spec)
+		m, e := ParseChannelFilter(spec)
 		assert.NotEqual(t, e, nil)
 		assert.Equal(t, len(m), 0)
 	}
@@ -169,7 +182,7 @@ func Test_AlogExtras_ParseChannelFilter(t *testing.T) {
 	// -> Correctly parse the two valid entries
 	{
 		spec := "MAIN:dummy,TEST:debug3"
-		m, e := alog.ParseChannelFilter(spec)
+		m, e := ParseChannelFilter(spec)
 		assert.NotEqual(t, e, nil)
 		assert.Equal(t, len(m), 0)
 	}
@@ -186,42 +199,42 @@ func Test_AlogExtras_ParseChannelFilter(t *testing.T) {
 func Test_AlogExtras_ConfigureFromFlags(t *testing.T) {
 
 	// Set up flags manually
-	fs := alog.FlagSet{
-		DefaultLevel:     new(string),
-		ChannelConfig:    new(string),
-		ChannelHeaderLen: new(int),
-		EnableGID:        new(bool),
-		EnableFuncSig:    new(bool),
-		DisableIndent:    new(bool),
-		ServiceName:      new(string),
-		OutputJSON:       new(bool),
+	defaultLevel := "info"
+	channelConfig := "TEST:debug,DEEP:debug4"
+	channelHeaderLen := 5
+	enableGID := true
+	enableFuncSig := false
+	disableIndent := false
+	serviceName := "test_service"
+	outputJSON := false
+	fs := FlagSet{
+		DefaultLevel:     &defaultLevel,
+		ChannelConfig:    &channelConfig,
+		ChannelHeaderLen: &channelHeaderLen,
+		EnableGID:        &enableGID,
+		EnableFuncSig:    &enableFuncSig,
+		DisableIndent:    &disableIndent,
+		ServiceName:      &serviceName,
+		OutputJSON:       &outputJSON,
 	}
-	*(fs.DefaultLevel) = "info"
-	*(fs.ChannelConfig) = "TEST:debug,DEEP:debug4"
-	*(fs.ChannelHeaderLen) = 5
-	*(fs.EnableGID) = true
-	*(fs.EnableFuncSig) = false
-	*(fs.DisableIndent) = false
-	*(fs.ServiceName) = "test_service"
-	*(fs.OutputJSON) = false
 
 	// Configure
-	err := alog.ConfigureFromFlags(fs)
+	err := ConfigureFromFlags(fs)
 	assert.Equal(t, nil, err)
-	defer alog.ResetDefaults()
+	defer ResetDefaults()
 
 	// Validate
-	assert.Equal(t, alog.GetDefaultLevel(), alog.INFO)
-	cm := alog.GetChannelMap()
-	assert.True(t, ValidateChannelMap(cm, alog.ChannelMap{
-		"TEST": alog.DEBUG,
-		"DEEP": alog.DEBUG4,
+	assert.Equal(t, GetDefaultLevel(), INFO)
+	cm := GetChannelMap()
+	assert.True(t, ValidateChannelMap(cm, ChannelMap{
+		"TEST": DEBUG,
+		"DEEP": DEBUG4,
 	}))
-	assert.Equal(t, alog.GetServiceName(), "test_service")
-	assert.Equal(t, alog.GetChannelHeaderLen(), 5)
-	assert.True(t, alog.GIDEnabled())
-	assert.True(t, alog.IndentEnabled())
-	assert.False(t, alog.FuncSigEnabled())
+	assert.Equal(t, GetServiceName(), "test_service")
+	assert.Equal(t, GetChannelHeaderLen(), 5)
+	assert.True(t, GIDEnabled())
+	assert.True(t, IndentEnabled())
+	assert.False(t, FuncSigEnabled())
 }
 
 // Tests - Dynamic Config //////////////////////////////////////////////////////
@@ -235,22 +248,22 @@ func Test_AlogExtras_ConfigureFromFlags(t *testing.T) {
 func Test_AlogExtras_ConfigureDynamicLogging_Permanent(t *testing.T) {
 
 	// Set up config object
-	cfg := alog.DynamicLogConfig{
+	cfg := DynamicLogConfig{
 		DefaultLevel: "info",
 		Filters:      "TEST:debug,DEEP:debug4",
 	}
 
 	// Configure
-	err := alog.ConfigureDynamicLogging(cfg)
-	defer alog.ResetDefaults()
+	err := ConfigureDynamicLogging(cfg)
+	defer ResetDefaults()
 	assert.Equal(t, err, nil)
 
 	// Validate
-	assert.Equal(t, alog.GetDefaultLevel(), alog.INFO)
-	cm := alog.GetChannelMap()
-	assert.True(t, ValidateChannelMap(cm, alog.ChannelMap{
-		"TEST": alog.DEBUG,
-		"DEEP": alog.DEBUG4,
+	assert.Equal(t, GetDefaultLevel(), INFO)
+	cm := GetChannelMap()
+	assert.True(t, ValidateChannelMap(cm, ChannelMap{
+		"TEST": DEBUG,
+		"DEEP": DEBUG4,
 	}))
 }
 
@@ -270,44 +283,44 @@ func Test_AlogExtras_ConfigureDynamicLogging_Permanent(t *testing.T) {
 func Test_AlogExtras_ConfigureDynamicLogging_Temporary(t *testing.T) {
 
 	// Configure directly
-	alog.Config(alog.TRACE, alog.ChannelMap{"TEST": alog.INFO})
-	defer alog.ResetDefaults()
+	Config(TRACE, ChannelMap{"TEST": INFO})
+	defer ResetDefaults()
 
 	// Validate direct config
-	assert.Equal(t, alog.GetDefaultLevel(), alog.TRACE)
-	assert.True(t, ValidateChannelMap(alog.GetChannelMap(), alog.ChannelMap{"TEST": alog.INFO}))
+	assert.Equal(t, GetDefaultLevel(), TRACE)
+	assert.True(t, ValidateChannelMap(GetChannelMap(), ChannelMap{"TEST": INFO}))
 
 	// Set up config object with timeout
 	timeout := uint32(1)
-	cfg := alog.DynamicLogConfig{
+	cfg := DynamicLogConfig{
 		DefaultLevel: "info",
 		Filters:      "TEST:debug,DEEP:debug4",
 		Timeout:      timeout,
 	}
 
 	// Configure
-	assert.Equal(t, alog.ConfigureDynamicLogging(cfg), nil)
+	assert.Equal(t, ConfigureDynamicLogging(cfg), nil)
 
 	// Validate temporary config
-	assert.Equal(t, alog.GetDefaultLevel(), alog.INFO)
-	assert.True(t, ValidateChannelMap(alog.GetChannelMap(), alog.ChannelMap{
-		"TEST": alog.DEBUG,
-		"DEEP": alog.DEBUG4,
+	assert.Equal(t, GetDefaultLevel(), INFO)
+	assert.True(t, ValidateChannelMap(GetChannelMap(), ChannelMap{
+		"TEST": DEBUG,
+		"DEEP": DEBUG4,
 	}))
 
 	// Try second dynamic config and make sure error
-	assert.NotEqual(t, alog.ConfigureDynamicLogging(cfg), nil)
+	assert.NotEqual(t, ConfigureDynamicLogging(cfg), nil)
 
 	// Wait for timeout
 	time.Sleep((time.Duration(timeout) + 1) * time.Second)
 
 	// Validate original config reset
-	assert.Equal(t, alog.GetDefaultLevel(), alog.TRACE)
-	assert.True(t, ValidateChannelMap(alog.GetChannelMap(), alog.ChannelMap{"TEST": alog.INFO}))
+	assert.Equal(t, GetDefaultLevel(), TRACE)
+	assert.True(t, ValidateChannelMap(GetChannelMap(), ChannelMap{"TEST": INFO}))
 
 	// Rerun dynamic config without a timeout and make sure no error returned
 	cfg.Timeout = 0
-	assert.Equal(t, alog.ConfigureDynamicLogging(cfg), nil)
+	assert.Equal(t, ConfigureDynamicLogging(cfg), nil)
 }
 
 ////
@@ -319,9 +332,9 @@ func Test_AlogExtras_ConfigureDynamicLogging_Temporary(t *testing.T) {
 func Test_AlogExtras_DynamicHandler(t *testing.T) {
 
 	// Set up logging
-	alog.Config(alog.DEBUG, alog.ChannelMap{})
-	defer alog.ResetDefaults()
-	defer alog.FnLog("TEST", "").Close()
+	Config(DEBUG, ChannelMap{})
+	defer ResetDefaults()
+	defer FnLog("TEST", "").Close()
 
 	// Fake up http objects
 	timeout := uint32(1)
@@ -333,21 +346,21 @@ func Test_AlogExtras_DynamicHandler(t *testing.T) {
 	)
 
 	// Invoke DynamicHandler
-	alog.DynamicHandler(writer, request)
+	DynamicHandler(writer, request)
 
 	// Validate temporary config
-	assert.Equal(t, alog.GetDefaultLevel(), alog.INFO)
-	assert.True(t, ValidateChannelMap(alog.GetChannelMap(), alog.ChannelMap{
-		"TEST": alog.DEBUG,
-		"DEEP": alog.DEBUG4,
+	assert.Equal(t, GetDefaultLevel(), INFO)
+	assert.True(t, ValidateChannelMap(GetChannelMap(), ChannelMap{
+		"TEST": DEBUG,
+		"DEEP": DEBUG4,
 	}))
 
 	// Wait for timeout
 	time.Sleep((time.Duration(timeout) + 1) * time.Second)
 
 	// Validate original config reset
-	assert.Equal(t, alog.GetDefaultLevel(), alog.DEBUG)
-	assert.True(t, ValidateChannelMap(alog.GetChannelMap(), alog.ChannelMap{}))
+	assert.Equal(t, GetDefaultLevel(), DEBUG)
+	assert.True(t, ValidateChannelMap(GetChannelMap(), ChannelMap{}))
 }
 
 ////
@@ -360,24 +373,24 @@ func Test_AlogExtras_DynamicHandler(t *testing.T) {
 func Test_AlogExtras_ConfigureDynamicLogging_BadDefaultLevel(t *testing.T) {
 
 	// Set up base logging
-	alog.Config(alog.DEBUG, alog.ChannelMap{})
-	defer alog.ResetDefaults()
-	defer alog.FnLog("TEST", "").Close()
+	Config(DEBUG, ChannelMap{})
+	defer ResetDefaults()
+	defer FnLog("TEST", "").Close()
 
 	// Set up config object
-	cfg := alog.DynamicLogConfig{
+	cfg := DynamicLogConfig{
 		DefaultLevel: "foobar",
 		Filters:      "TEST:debug,DEEP:debug4",
 	}
 
 	// Configure
-	err := alog.ConfigureDynamicLogging(cfg)
-	defer alog.ResetDefaults()
+	err := ConfigureDynamicLogging(cfg)
+	defer ResetDefaults()
 	assert.NotEqual(t, err, nil)
 
 	// Validate unchanged
-	assert.Equal(t, alog.GetDefaultLevel(), alog.DEBUG)
-	assert.True(t, ValidateChannelMap(alog.GetChannelMap(), alog.ChannelMap{}))
+	assert.Equal(t, GetDefaultLevel(), DEBUG)
+	assert.True(t, ValidateChannelMap(GetChannelMap(), ChannelMap{}))
 }
 
 ////
@@ -390,22 +403,22 @@ func Test_AlogExtras_ConfigureDynamicLogging_BadDefaultLevel(t *testing.T) {
 func Test_AlogExtras_ConfigureDynamicLogging_BadChannelMap(t *testing.T) {
 
 	// Set up base logging
-	alog.Config(alog.DEBUG, alog.ChannelMap{})
-	defer alog.ResetDefaults()
-	defer alog.FnLog("TEST", "").Close()
+	Config(DEBUG, ChannelMap{})
+	defer ResetDefaults()
+	defer FnLog("TEST", "").Close()
 
 	// Set up config object
-	cfg := alog.DynamicLogConfig{
+	cfg := DynamicLogConfig{
 		DefaultLevel: "info",
 		Filters:      "TEST:debugDEEP:debug4",
 	}
 
 	// Configure
-	err := alog.ConfigureDynamicLogging(cfg)
-	defer alog.ResetDefaults()
+	err := ConfigureDynamicLogging(cfg)
+	defer ResetDefaults()
 	assert.NotEqual(t, err, nil)
 
 	// Validate unchanged
-	assert.Equal(t, alog.GetDefaultLevel(), alog.DEBUG)
-	assert.True(t, ValidateChannelMap(alog.GetChannelMap(), alog.ChannelMap{}))
+	assert.Equal(t, GetDefaultLevel(), DEBUG)
+	assert.True(t, ValidateChannelMap(GetChannelMap(), ChannelMap{}))
 }

@@ -1,12 +1,28 @@
-// *************************************************
-// 5737-C06
-// (C) Copyright IBM Corp. 2017 All Rights Reserved.
-// The source code for this program is not published or otherwise
-// divested of its trade secrets, irrespective of what has been
-// deposited with the U.S. Copyright Office.
-// *************************************************
+/*------------------------------------------------------------------------------
+ * MIT License
+ *
+ * Copyright (c) 2021 IBM
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *----------------------------------------------------------------------------*/
 
-package alogtest
+package alog
 
 import (
 	// Standard
@@ -17,9 +33,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-
-	// Local
-	"github.ibm.com/watson-discovery/alog"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -42,15 +55,15 @@ func (w TestWriter) Write(p []byte) (int, error) {
 
 // ConfigStdLogWriter - Helper to configure test writer to capture Std log lines
 func ConfigStdLogWriter(entries *[]string) {
-	alog.SetWriter(TestWriter{entries: entries})
-	alog.UseStdLogFormatter()
+	SetWriter(TestWriter{entries: entries})
+	UseStdLogFormatter()
 }
 
 // ConfigJSONLogWriter - Helper to configure test writer to capture json log
 // lines
 func ConfigJSONLogWriter(entries *[]string) {
-	alog.SetWriter(TestWriter{entries: entries})
-	alog.UseJSONLogFormatter()
+	SetWriter(TestWriter{entries: entries})
+	UseJSONLogFormatter()
 }
 
 // ExpEntry - Helper struct to represent an expected log line
@@ -121,13 +134,13 @@ func matchExp(entry string, exp ExpEntry, verbose bool) bool {
 		}
 		if m[2] != exp.channel {
 			if verbose {
-				fmt.Printf("Channel string mismatch. Expected [], Got []\n", exp.channel, m[1])
+				fmt.Printf("Channel string mismatch. Expected [%s], Got [%s]\n", exp.channel, m[1])
 			}
 			match = false
 		}
 		if m[3] != exp.level {
 			if verbose {
-				fmt.Printf("Level string mismatch. Expected [], Got []\n", exp.level, m[2])
+				fmt.Printf("Level string mismatch. Expected [%s], Got [%s]\n", exp.level, m[2])
 			}
 			match = false
 		}
@@ -143,9 +156,9 @@ func matchExp(entry string, exp ExpEntry, verbose bool) bool {
 			}
 			match = false
 		}
-		if m[5] != strings.Repeat(alog.GetIndentString(), exp.nIndent) {
+		if m[5] != strings.Repeat(GetIndentString(), exp.nIndent) {
 			if verbose {
-				fmt.Printf("Indent mismatch. Expected [%s], Got [%s]\n", m[4], strings.Repeat(alog.GetIndentString(), exp.nIndent))
+				fmt.Printf("Indent mismatch. Expected [%s], Got [%s]\n", m[4], strings.Repeat(GetIndentString(), exp.nIndent))
 				match = false
 			}
 		}
@@ -192,7 +205,7 @@ func VerifyLogsUnordered(entries []string, expected []ExpEntry) bool {
 			}
 		}
 		if !foundMatch {
-			fmt.Printf("No match found for expected entry [%s]\n", exp)
+			fmt.Printf("No match found for expected entry [%v]\n", exp)
 			match = false
 		}
 	}
@@ -218,8 +231,8 @@ func VerifyJSONLogs(entries []string, expected []ExpEntry) bool {
 func matchExpJSON(entry string, expected ExpEntry) bool {
 
 	// Parse to a LogEntry
-	var logEntry alog.LogEntry
-	if le, err := alog.JSONToLogEntry(entry); nil != err {
+	var logEntry LogEntry
+	if le, err := JSONToLogEntry(entry); nil != err {
 		fmt.Printf("Failed to unmarshal entry [%s]: %v\n", entry, err.Error())
 		return false
 	} else if nil == le {
@@ -235,8 +248,8 @@ func matchExpJSON(entry string, expected ExpEntry) bool {
 		fmt.Printf("Channel string mismatch. Got [%s], expected [%s]\n", string(logEntry.Channel), expected.channel)
 		match = false
 	}
-	if alog.LevelToHumanString(logEntry.Level) != expected.level {
-		fmt.Printf("Level string mismatch. Got [%s], expected [%s]\n", alog.LevelToHumanString(logEntry.Level), expected.level)
+	if LevelToHumanString(logEntry.Level) != expected.level {
+		fmt.Printf("Level string mismatch. Got [%s], expected [%s]\n", LevelToHumanString(logEntry.Level), expected.level)
 		match = false
 	}
 	if logEntry.Format != expected.body {
@@ -262,7 +275,7 @@ func matchExpJSON(entry string, expected ExpEntry) bool {
 		fmt.Printf("Got unexpected service name [%s]", logEntry.Servicename)
 		match = false
 	} else if nil != expected.servicename && *expected.servicename != logEntry.Servicename {
-		fmt.Printf("Service name mismatch. Got [%s], expected [%s]\n", logEntry.Servicename, expected.servicename)
+		fmt.Printf("Service name mismatch. Got [%s], expected [%s]\n", logEntry.Servicename, *expected.servicename)
 		match = false
 	}
 
@@ -290,20 +303,20 @@ func matchExpJSON(entry string, expected ExpEntry) bool {
 }
 
 // ValidateChannelMap - Compare an expected channel map to a configured map
-func ValidateChannelMap(got, expected alog.ChannelMap) bool {
-	ch := alog.UseChannel("TEST")
+func ValidateChannelMap(got, expected ChannelMap) bool {
+	ch := UseChannel("TEST")
 	res := true
 	if len(got) != len(expected) {
-		ch.Log(alog.ERROR, "Channel map length mismatch. Got %d, Expected %d", len(got), len(expected))
+		ch.Log(ERROR, "Channel map length mismatch. Got %d, Expected %d", len(got), len(expected))
 		res = false
 	}
 	for k, expVal := range expected {
 		if gotVal, ok := got[k]; !ok {
-			ch.Log(alog.ERROR, "Missing expected key [%s]", k)
+			ch.Log(ERROR, "Missing expected key [%s]", k)
 			res = false
 		} else if gotVal != expVal {
-			ch.Log(alog.ERROR, "Incorrect level for [%s]. Got [%s], Expected [%s]", k,
-				alog.LevelToHumanString(gotVal), alog.LevelToHumanString(expVal))
+			ch.Log(ERROR, "Incorrect level for [%s]. Got [%s], Expected [%s]", k,
+				LevelToHumanString(gotVal), LevelToHumanString(expVal))
 			res = false
 		}
 	}
