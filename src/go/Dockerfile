@@ -4,7 +4,7 @@
 ##
 FROM golang:1.16-alpine as base
 WORKDIR /src
-RUN apk add gcc musl-dev
+RUN apk add gcc musl-dev curl bash
 
 ## Test ########################################################################
 #
@@ -20,7 +20,18 @@ RUN true && \
     go build && \
     true
 
-## Release #####################################################################
+## Release Test ################################################################
 #
-# This phase builds
+# This phase builds the example server with redirects removed, forcing it to use
+# the tagged version of alog
 ##
+FROM base as release_test
+ARG GO_RELEASE_VERSION
+COPY ./example/alog_example_server/ /src/
+RUN true && \
+    echo "module alog_example_server" > go.mod && \
+    go get github.com/IBM/alchemy-logging/src/go/alog@${GO_RELEASE_VERSION} && \
+    go mod tidy && \
+    go build && \
+    ./test_example_server.sh && \
+    true
