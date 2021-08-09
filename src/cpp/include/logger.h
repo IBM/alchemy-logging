@@ -22,6 +22,7 @@
  */
 #pragma once
 
+// Standard
 #include <string>
 #include <sstream>
 #include <unordered_map>
@@ -35,7 +36,8 @@
 #include <map>
 #include <iostream>
 
-#include <jsonparser/typedefs.h>
+// Third Party
+#include <nlohmann/json.hpp>
 
 /* \brief This tool provides a thread-safe logging environment
  *
@@ -89,15 +91,15 @@ struct CLogEntry
   CLogEntry(const std::string& a_channel,
             const ELogLevels   a_level,
             const std::string& a_message,
-            jsonparser::TObject a_mapData = jsonparser::TObject{});
-  std::string         channel;
-  ELogLevels          level;
-  std::string         message;
-  std::string         timestamp;
-  std::string         serviceName;
-  unsigned            nIndent;
-  std::thread::id     threadId;
-  jsonparser::TObject mapData;
+            nlohmann::json a_mapData = nlohmann::json{});
+  std::string     channel;
+  ELogLevels      level;
+  std::string     message;
+  std::string     timestamp;
+  std::string     serviceName;
+  unsigned        nIndent;
+  std::thread::id threadId;
+  nlohmann::json  mapData;
 };  // end CLogEntry
 
 /*-- Formatters --------------------------------------------------------------*/
@@ -179,14 +181,14 @@ public:
   void log(const std::string& a_channel,
            ELogLevels a_level,
            const std::string& a_msg,
-           jsonparser::TObject a_mapData);
+           nlohmann::json a_mapData);
 
   /** Send the given string to all sinks with proper formatting. Filtering is
    * done before this is called in ALOG, so this function does no filtering. */
   void log(const std::string& a_channel,
            ELogLevels a_level,
            const std::wstring& a_msg,
-           jsonparser::TObject a_mapData);
+           nlohmann::json a_mapData);
 
   /** Add a level of indentation for the current thread */
   void addIndent();
@@ -198,7 +200,7 @@ public:
   unsigned getIndent() const;
 
   /** Add a key to the metadata for the current thread */
-  void addMetadata(const std::string& a_key, const jsonparser::TJsonValue& a_value);
+  void addMetadata(const std::string& a_key, const nlohmann::json::value_type& a_value);
 
   /** Remove a key from the metadata for the current thread */
   void removeMetadata(const std::string& a_key);
@@ -207,7 +209,7 @@ public:
   void clearMetadata();
 
   /** Get a view into the current metadata dict for the current thread */
-  const jsonparser::TObject& getMetadata() const;
+  const nlohmann::json& getMetadata() const;
 
   /** Clear the current filters and sinks and set the default level to off */
   void reset();
@@ -246,9 +248,9 @@ private:
   std::vector<CSink> m_sinks;
   CLogFormatterBase::Ptr m_formatter;
 
-  typedef std::thread::id                          TThreadID;
-  typedef std::map<TThreadID, unsigned>            ThreadIndentMap;
-  typedef std::map<TThreadID, jsonparser::TObject> ThreadMetadataMap;
+  typedef std::thread::id                     TThreadID;
+  typedef std::map<TThreadID, unsigned>       ThreadIndentMap;
+  typedef std::map<TThreadID, nlohmann::json> ThreadMetadataMap;
   ThreadIndentMap   m_indents;
   ThreadMetadataMap m_metadata;
 
@@ -256,7 +258,7 @@ private:
 
 /*-- Scope Classes -----------------------------------------------------------*/
 
-typedef std::shared_ptr<const jsonparser::TObject> TScopeLogMapPtr;
+typedef std::shared_ptr<const nlohmann::json> TScopeLogMapPtr;
 
 /** \brief This class is used to add a Start/End block to a log */
 class CLogScope
@@ -311,8 +313,8 @@ private:
 /** \brief Struct to scope metadata entries */
 struct CLogScopedMetadata
 {
-  CLogScopedMetadata(const std::string&, const jsonparser::TJsonValue&);
-  CLogScopedMetadata(const jsonparser::TObject&);
+  CLogScopedMetadata(const std::string&, const nlohmann::json::value_type&);
+  CLogScopedMetadata(const nlohmann::json&);
   ~CLogScopedMetadata();
 private:
   const std::vector<std::string> m_keys;
@@ -340,28 +342,28 @@ detail::ELogLevels ParseLevel(const std::string&);
 
 /** Helper for converting raw values to metadata */
 template<typename T>
-inline jsonparser::TJsonValue toMetadata(T v)
-{ return jsonparser::TJsonValue(v); }
+inline nlohmann::json::value_type toMetadata(T v)
+{ return nlohmann::json::value_type(v); }
 
 template<>
-inline jsonparser::TJsonValue toMetadata(int v)
-{ return jsonparser::TJsonValue(int64_t(v)); }
+inline nlohmann::json::value_type toMetadata(int v)
+{ return nlohmann::json::value_type(int64_t(v)); }
 
 template<>
-inline jsonparser::TJsonValue toMetadata(long v)
-{ return jsonparser::TJsonValue(int64_t(v)); }
+inline nlohmann::json::value_type toMetadata(long v)
+{ return nlohmann::json::value_type(int64_t(v)); }
 
 template<>
-inline jsonparser::TJsonValue toMetadata(unsigned v)
-{ return jsonparser::TJsonValue(int64_t(v)); }
+inline nlohmann::json::value_type toMetadata(unsigned v)
+{ return nlohmann::json::value_type(int64_t(v)); }
 
 template<>
-inline jsonparser::TJsonValue toMetadata(unsigned long v)
-{ return jsonparser::TJsonValue(int64_t(v)); }
+inline nlohmann::json::value_type toMetadata(unsigned long v)
+{ return nlohmann::json::value_type(int64_t(v)); }
 
 template<>
-inline jsonparser::TJsonValue toMetadata(const char* v)
-{ return jsonparser::TJsonValue(std::string(v)); }
+inline nlohmann::json::value_type toMetadata(const char* v)
+{ return nlohmann::json::value_type(std::string(v)); }
 
 } // end namespace detail
 
@@ -407,12 +409,12 @@ inline jsonparser::TJsonValue toMetadata(const char* v)
 #define _ALOG_CHANNEL_IMPL_WITH_MAP(channel, level, msg, map) \
   ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, map)
 #define _ALOG_CHANNEL_IMPL_WITH_NO_MAP(channel, level, msg) \
-  ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, jsonparser::TObject{})
+  ALOG_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, nlohmann::json{})
 
 #define _ALOGW_CHANNEL_IMPL_WITH_MAP(channel, level, msg, map) \
   ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, map)
 #define _ALOGW_CHANNEL_IMPL_WITH_NO_MAP(channel, level, msg) \
-  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, jsonparser::TObject{})
+  ALOGW_LEVEL_IMPL(channel, logging::detail::ELogLevels:: level, msg, nlohmann::json{})
 
 #define ALOG_CHANNEL_IMPL(channel, level, ...)\
   CONC(_ALOG_CHANNEL_IMPL_WITH, NARGS_MAP(__VA_ARGS__)) (channel, level, __VA_ARGS__)
