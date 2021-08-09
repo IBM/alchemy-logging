@@ -4,7 +4,7 @@
 cd $(dirname ${BASH_SOURCE[0]})/..
 
 # Get the tag for this release
-tag=$(echo $REF | rev | cut -d'/' -f1 | rev)
+tag=$(echo $REF | cut -d'/' -f3-)
 echo "The tag is ${tag}!!"
 
 # Parse the tag for prefix and suffix
