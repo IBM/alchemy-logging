@@ -26,7 +26,7 @@
 
 #include <boost/regex.hpp>
 
-namespace jp = jsonparser;
+using json = nlohmann::json;
 
 namespace test
 {
@@ -78,7 +78,7 @@ struct CParsedLogEntry
   std::string                 channel;
   logging::detail::ELogLevels level;
   std::string                 message;
-  jp::TObject                 mapData;
+  json                        mapData;
   std::string                 timestamp;
   std::string                 serviceName;
   unsigned                    nIndent;
@@ -91,7 +91,7 @@ struct CParsedLogEntry
   CParsedLogEntry(const std::string& ch,
                   logging::detail::ELogLevels lvl,
                   const std::string& msg,
-                  jp::TObject md = {},
+                  json md = {},
                   unsigned indt = 0,
                   const std::string& svcNm = "",
                   bool hasTID = false)
@@ -177,8 +177,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
   std::shared_ptr<CParsedLogEntry> out(new CParsedLogEntry());
 
   // Parse into json
-  auto jRaw = jp::Deserialize(a_line);
-  auto j = boost::get<jp::TObject>(jRaw);
+  auto j = json::parse(a_line);
 
   // timestamp
   {
@@ -190,7 +189,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     }
     else
     {
-      out->timestamp = boost::get<std::string>(iter->second);
+      out->timestamp = iter->template get<std::string>();
     }
   }
 
@@ -199,7 +198,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     auto iter = j.find("service_name");
     if (iter != j.end())
     {
-      out->serviceName = boost::get<std::string>(iter->second);
+      out->serviceName = iter->template get<std::string>();
     }
   }
 
@@ -213,7 +212,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     }
     else
     {
-      out->channel = boost::get<std::string>(iter->second);
+      out->channel = iter->template get<std::string>();
     }
   }
 
@@ -227,7 +226,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     }
     else
     {
-      out->level = logging::detail::ParseLevel(boost::get<std::string>(iter->second));
+      out->level = logging::detail::ParseLevel(iter->template get<std::string>());
     }
   }
 
@@ -236,7 +235,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     auto iter = j.find("thread_id");
     if (iter != j.end())
     {
-      out->threadId = boost::get<std::string>(iter->second);
+      out->threadId = iter->template get<std::string>();
     }
   }
 
@@ -250,7 +249,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     }
     else
     {
-      out->nIndent = static_cast<unsigned>(boost::get<int64_t>(iter->second));
+      out->nIndent = static_cast<unsigned>(iter->template get<int64_t>());
     }
   }
 
@@ -259,7 +258,7 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
     auto iter = j.find("message");
     if (iter != j.end())
     {
-      out->message = boost::get<std::string>(iter->second);
+      out->message = iter->template get<std::string>();
     }
   }
 
@@ -278,75 +277,17 @@ std::shared_ptr<CParsedLogEntry> parseJSONLine(const std::string& a_line)
 }
 
 template<typename T>
-bool compareVariantType(const jp::TJsonValue& a, const jp::TJsonValue& b)
+bool compareVariantType(const json& a, const json& b)
 {
   try
   {
-    return boost::get<T>(a) == boost::get<T>(b);
+    return a.get<T>() == b.get<T>();
   }
-  catch (const boost::bad_get&)
+  catch (const json::type_error&)
   {
     return false;
   }
 }
-
-// Compare two TJsonValue objects
-bool jsValEqual(const jp::TJsonValue& a, const jp::TJsonValue& b)
-{
-  // Equality operator types
-  if (compareVariantType<double> (a, b)) return true;
-  if (compareVariantType<int64_t>(a, b)) return true;
-  if (compareVariantType<bool>   (a, b)) return true;
-
-  // std::string
-  try
-  {
-    return boost::get<std::string>(a).compare(boost::get<std::string>(b)) == 0;
-  }
-  catch (const boost::bad_get&) {}
-
-  // TNull
-  try
-  {
-    boost::get<jp::TNull>(a);
-    boost::get<jp::TNull>(b);
-    return true;
-  }
-  catch (const boost::bad_get&) {}
-
-  // array
-  try
-  {
-    const auto& a1 = boost::get<jp::TArray>(a);
-    const auto& a2 = boost::get<jp::TArray>(b);
-    if (a1.size() != a2.size()) return false;
-    for (unsigned i = 0; i < a1.size(); ++i)
-    {
-      if (not jsValEqual(a1[i], a2[i])) return false;
-    }
-    return true;
-  }
-  catch (const boost::bad_get&) {}
-
-  // map
-  try
-  {
-    const auto& m1 = boost::get<jp::TObject>(a);
-    const auto& m2 = boost::get<jp::TObject>(b);
-    if (m1.size() != m2.size()) return false;
-    for (const auto& entry : m1)
-    {
-      const auto& m2Iter = m2.find(entry.first);
-      if (m2Iter == m2.end()) return false;
-      else if (not jsValEqual(entry.second, m2Iter->second)) return false;
-    }
-    return true;
-  }
-  catch (const boost::bad_get&) {}
-
-  return false;
-}
-
 // Compare two parsed entries
 bool entriesMatch(const CParsedLogEntry& exp,
                   const CParsedLogEntry& got,
@@ -419,29 +360,29 @@ bool entriesMatch(const CParsedLogEntry& exp,
     }
     result = false;
   }
-  for (auto eIter = exp.mapData.begin(); eIter != exp.mapData.end(); ++eIter)
+  for (const auto eEntry : exp.mapData.items())
   {
-    const auto gIter = got.mapData.find(eIter->first);
+    const auto gIter = got.mapData.find(eEntry.key());
     if (gIter == got.mapData.end())
     {
-      if (verbose) std::cerr << "Missing expected mapData key [" << eIter->first << "]" << std::endl;
+      if (verbose) std::cerr << "Missing expected mapData key [" << eEntry.key() << "]" << std::endl;
       result = false;
     }
-    else if (checkMessage and not jsValEqual(gIter->second, eIter->second))
+    else if (checkMessage and *gIter != eEntry.value())
     {
       if (verbose)
       {
-        std::cerr << "Value mismatch for mapData key [" << eIter->first << "].[" << std::endl;
+        std::cerr << "Value mismatch for mapData key [" << eEntry.key() << "].[" << std::endl;
       }
       result = false;
     }
   }
-  for (auto gIter = got.mapData.begin(); gIter != got.mapData.end(); ++gIter)
+  for (const auto gEntry : got.mapData.items())
   {
-    const auto eIter = exp.mapData.find(gIter->first);
+    const auto eIter = exp.mapData.find(gEntry.key());
     if (eIter == exp.mapData.end())
     {
-      if (verbose) std::cerr << "Got unexpected mapData key [" << gIter->first << "]" << std::endl;
+      if (verbose) std::cerr << "Got unexpected mapData key [" << gEntry.key() << "]" << std::endl;
       result = false;
     }
   }
@@ -561,37 +502,31 @@ void loggedFn()
 
 void loggedMapFn()
 {
-  std::shared_ptr<jp::TObject> mapPtr(new jp::TObject());
+  std::shared_ptr<json> mapPtr(new json());
   ALOG_FUNCTION(TEST, 1 << " testing...", mapPtr);
-  mapPtr->insert(std::make_pair("foo", ALOG_MAP_VALUE("bar")));
+  (*mapPtr)["foo"] = "bar";
   ALOG(TEST, info, "Some logging...");
 }
 
-jp::TObject jsonExample1()
+json jsonExample1()
 {
-  jp::TObject j;
+  json j;
   j["string_key"] = std::string("foo");
   j["int_key"] = 1l;
   j["bool_key"] = true;
   j["double_key"] = -3.1415;
-  j["null_key"] = jp::TNull();
+  j["null_key"] = nullptr;
   return j;
 }
 
-jp::TObject jsonExample2()
+json jsonExample2()
 {
-  jp::TObject j;
+  json j;
   j["foo"] = std::string("bar");
-  j["baz"] = jp::TArray{1l, 2l, 3l};
-  j["bat"] = jp::TObject{
-    std::make_pair(
-      std::string("buz"),
-      jp::TJsonValue(std::string("biz"))
-    ),
-    std::make_pair(
-      std::string("first"),
-      jp::TJsonValue(int64_t(2))
-    ),
+  j["baz"] = {1l, 2l, 3l};
+  j["bat"] = json{
+    {"buz", "biz"},
+    {"first", int64_t(2)}
   };
   return j;
 }
@@ -711,9 +646,7 @@ TEST_F(CAlogTest, LoggingMsgAndMap)
 
   // Log a line on BAR with both a message and key/val map
   std::string line1 = "Line on BAR at info";
-  ALOG(BAR, info, line1, jp::TObject{
-    std::make_pair("foo", ALOG_MAP_VALUE(123))
-  });
+  ALOG(BAR, info, line1, (json{{"foo", 123}}));
 
   // Verify the number of lines
   EXPECT_TRUE(verifyStdLines(ss.str(), std::vector<CParsedLogEntry>{
@@ -783,13 +716,13 @@ TEST_F(CAlogTest, LogScopeWithMap)
   // Start/end lines with map data that changes between start and end
   {
     // Set up a scope log with a mutable key/val map
-    std::shared_ptr<jp::TObject> map(new jp::TObject());
-    map->insert(std::make_pair("foo", ALOG_MAP_VALUE("bar")));
+    std::shared_ptr<json> map(new json());
+    (*map)["foo"] = "bar";
     ALOG_SCOPED_BLOCK(TEST, debug, "Test with map", map);
 
     // Update the content of the map before the scope closes
-    (*map)["foo"] = ALOG_MAP_VALUE("baz");
-    map->insert(std::make_pair("buz", ALOG_MAP_VALUE(123)));
+    (*map)["foo"] = "baz";
+    (*map)["buz"] = 123;
   }
 
   // Verify the number of lines
@@ -1022,9 +955,9 @@ TEST_F(CAlogTest, ScopedMetadataMap)
 
   // Outer scope
   {
-    ALOG_SCOPED_METADATA(jsonparser::TObject({
-      std::make_pair("foo", ALOG_MAP_VALUE("string_val")),
-      std::make_pair("bar", ALOG_MAP_VALUE(456)),
+    ALOG_SCOPED_METADATA((json{
+      {"foo", "string_val"},
+      {"bar", 456}
     }));
     ALOG(TEST, debug, "Line with metadata map");
   }
@@ -1270,9 +1203,9 @@ TEST_F(CAlogTest, JSONLoggingMsgAndMap)
 
   // Log a line on BAR with both a message and key/val map
   std::string line1 = "Line on BAR at info";
-  jp::TObject map {
-    std::make_pair("foo", ALOG_MAP_VALUE(123)),
-    std::make_pair("bar", ALOG_MAP_VALUE("baz"))
+  json map {
+    {"foo", 123},
+    {"bar", "baz"}
   };
   ALOG(BAR, info, line1, map);
 
@@ -1314,24 +1247,17 @@ TEST_F(CAlogTest, JSONScopedMetadata)
 
     // Outer scope BEFORE
     CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata BEFORE", {
-      std::make_pair("metadata", jp::TObject{
-        std::make_pair("foo", ALOG_MAP_VALUE("string_val"))
-      })
+      {"metadata", {"foo", "string_val"}}
     }),
 
     // Inner scope
     CParsedLogEntry("FOO", ELogLevels::info, "Line with inner metadata", {
-      std::make_pair("metadata", jp::TObject{
-        std::make_pair("foo", ALOG_MAP_VALUE("string_val")),
-        std::make_pair("bar", ALOG_MAP_VALUE(123))
-      })
+      {"metadata", {"foo", "string_val"}, {"bar", 123}}
     }),
 
     // Outer scope AFTER
     CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata AFTER", {
-      std::make_pair("metadata", jp::TObject{
-        std::make_pair("foo", ALOG_MAP_VALUE("string_val"))
-      })
+      {"metadata", {"foo", "string_val"}}
     }),
 
     // Final line
@@ -1354,13 +1280,13 @@ TEST_F(CAlogTest, JSONScopedTimer)
     ALOG_SCOPED_TIMER(TEST, info, "Outer Block Completed in: ");
     // Inner Scope with map data
     {
-      std::shared_ptr<jp::TObject> mapDataPtr(new jp::TObject());
-      mapDataPtr->insert(std::make_pair("mutable", ALOG_MAP_VALUE("A")));
+      std::shared_ptr<json> mapDataPtr(new json());
+      (*mapDataPtr)["mutable"] = "A";
       ALOG_SCOPED_TIMER(TEST, debug, "Inner block with map data and a stream " << 123, mapDataPtr);
 
       ALOG(FOO, info, "Hi from FOO");
-      mapDataPtr->insert(std::make_pair("added_later", ALOG_MAP_VALUE(456)));
-      (*mapDataPtr)["mutable"] = ALOG_MAP_VALUE("B");
+      (*mapDataPtr)["added_later"] = 456;
+      (*mapDataPtr)["mutable"] = "B";
     }
   }
 
@@ -1372,16 +1298,14 @@ TEST_F(CAlogTest, JSONScopedTimer)
     CParsedLogEntry("FOO", ELogLevels::info, ""),
 
     // Inner scope timer completion
-    CParsedLogEntry("TEST", ELogLevels::debug, "", {
-      std::make_pair("mutable", ALOG_MAP_VALUE("B")),
-      std::make_pair("added_later", ALOG_MAP_VALUE(456)),
-      std::make_pair("duration_ms", ALOG_MAP_VALUE(0))
-    }),
+    CParsedLogEntry("TEST", ELogLevels::debug, "", (json{
+      {"mutable", "B"},
+      {"added_later", 456},
+      {"duration_ms", 0}
+    })),
 
     // Outer scope timer completion
-    CParsedLogEntry("TEST", ELogLevels::info, "", {
-      std::make_pair("duration_ms", ALOG_MAP_VALUE(0))
-    }),
+    CParsedLogEntry("TEST", ELogLevels::info, "", (json{{"duration_ms", 0}})),
   }, false, true));
 }
 
