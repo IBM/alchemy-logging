@@ -32,8 +32,9 @@ then
     echo "NOT IMPLEMENTED YET!"
     exit 1
 
-# Go is special and requires valid semantic versioning for its version tags
-elif [[ "$tag" =~ v[0-9]+\.[0-9]+\.[0-9]+.* ]]
+# Go is special and requires valid semantic versioning for its version tags and
+# those tags must be scoped by the subdirectory where the go.mod file lives
+elif [[ "$tag" =~ src/go/v[0-9]+\.[0-9]+\.[0-9]+.* ]]
 then
     cd src/go
     docker build . \
