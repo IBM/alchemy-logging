@@ -37,9 +37,10 @@ then
 elif [[ "$tag" =~ src/go/v[0-9]+\.[0-9]+\.[0-9]+.* ]]
 then
     cd src/go
+    version=$(echo $tag | rev | cut -d'/' -f 1 | rev)
     docker build . \
         --target=release_test \
-        --build-arg GO_RELEASE_VERSION=$tag
+        --build-arg GO_RELEASE_VERSION=$version
 
 else
     echo "Unknown release type: [$release_type]"
