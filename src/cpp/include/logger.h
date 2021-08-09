@@ -338,33 +338,6 @@ std::string LevelToHumanString(const detail::ELogLevels&);
 /** \brief Parse a log level from a string */
 detail::ELogLevels ParseLevel(const std::string&);
 
-/*-- Detail Helpers ----------------------------------------------------------*/
-
-/** Helper for converting raw values to metadata */
-template<typename T>
-inline nlohmann::json::value_type toMetadata(T v)
-{ return nlohmann::json::value_type(v); }
-
-template<>
-inline nlohmann::json::value_type toMetadata(int v)
-{ return nlohmann::json::value_type(int64_t(v)); }
-
-template<>
-inline nlohmann::json::value_type toMetadata(long v)
-{ return nlohmann::json::value_type(int64_t(v)); }
-
-template<>
-inline nlohmann::json::value_type toMetadata(unsigned v)
-{ return nlohmann::json::value_type(int64_t(v)); }
-
-template<>
-inline nlohmann::json::value_type toMetadata(unsigned long v)
-{ return nlohmann::json::value_type(int64_t(v)); }
-
-template<>
-inline nlohmann::json::value_type toMetadata(const char* v)
-{ return nlohmann::json::value_type(std::string(v)); }
-
 } // end namespace detail
 
 } // end namespace logging
@@ -467,8 +440,7 @@ inline nlohmann::json::value_type toMetadata(const char* v)
 
 // Non-logging scope objects
 #define _ALOG_SCOPED_METADATA_IMPL_2(key, value)\
-  logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (key,\
-    logging::detail::toMetadata(value));
+  logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (key, value);
 #define _ALOG_SCOPED_METADATA_IMPL_1(map)\
   logging::detail::CLogScopedMetadata ALOG_UNIQUE_VAR_NAME_IMPL(_logMDScope) (map);
 #define ALOG_SCOPED_METADATA_IMPL(...)\
@@ -777,7 +749,3 @@ void ALOG_RESET();
 #else
 #define ALOG_IS_ENABLEDthis(level) false
 #endif
-
-/** Convert a value for use in map data. Note that this will be called inside
- * regular code, so it cannot be compiled out. **/
-#define ALOG_MAP_VALUE(val) logging::detail::toMetadata(val)

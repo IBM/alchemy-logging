@@ -664,8 +664,7 @@ CLogScopedTimer::~CLogScopedTimer()
     }
 
     // Add the duration in milliseconds
-    mapOut["duration_ms"] = logging::detail::toMetadata(
-      std::chrono::duration_cast<std::chrono::milliseconds>(t1-m_t0).count());
+    mapOut["duration_ms"] = std::chrono::duration_cast<std::chrono::milliseconds>(t1-m_t0).count();
     ALOG_LEVEL_IMPL(m_channelName, m_level, ss.str(), mapOut);
   }
 }
