@@ -124,6 +124,47 @@ std::vector<std::string> getMapKeys(const nlohmann::json& a_mdMap)
   return out;
 }
 
+// Pretty-printing for maps
+void addPrettyPrintMap(
+  const nlohmann::json& a_map,
+  const std::string& a_format,
+  const unsigned a_indent,
+  const bool a_addNewlines,
+  std::vector<std::string>& a_out)
+{
+  for (const auto& entry : a_map.items())
+  {
+    std::stringstream ss;
+    ss << a_format;
+    for (unsigned i = 0; i < a_indent; ++i)
+    {
+      ss << logging::detail::INDENT_VALUE;
+    }
+    ss << entry.key() << ": ";
+
+    // If the value is a map, recurse with an extra level of indentation
+    const auto val = entry.value();
+    if (val.is_object())
+    {
+      std::vector<std::string> lines;
+      addPrettyPrintMap(val, a_format, a_indent+1, false, lines);
+      ss << "\n" + boost::algorithm::join(lines, "\n");
+    }
+    else
+    {
+      ss << val;
+    }
+
+    if (a_addNewlines)
+    {
+      ss << "\n";
+    }
+
+    a_out.push_back(ss.str());
+  }
+}
+
+
 } // end anon namespace
 
 
@@ -245,9 +286,7 @@ std::vector<std::string> CStdLogFormatter::formatEntry(const CLogEntry& a_entry)
   // Add map data lines
   if (not a_entry.mapData.empty())
   {
-    std::stringstream ss;
-    ss << a_entry.mapData.dump();
-    out.push_back(ss.str());
+    addPrettyPrintMap(a_entry.mapData, format, 0, true, out);
   }
 
   return out;

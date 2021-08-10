@@ -372,7 +372,7 @@ bool entriesMatch(const CParsedLogEntry& exp,
     {
       if (verbose)
       {
-        std::cerr << "Value mismatch for mapData key [" << eEntry.key() << "].[" << std::endl;
+        std::cerr << "Value mismatch for mapData key [" << *gIter << "] != [" << eEntry.value() << "]" << std::endl;
       }
       result = false;
     }
@@ -387,6 +387,10 @@ bool entriesMatch(const CParsedLogEntry& exp,
     }
   }
 
+  if (verbose and not result)
+  {
+    std::cerr << "----" << std::endl;
+  }
   return result;
 }
 
@@ -439,7 +443,7 @@ bool verifyLinesImpl(TLogParseFn parse,
       bool foundMatch = false;
       for (const auto& expEntry : expEntries)
       {
-        if (entriesMatch(expEntry, *got, checkMessage, false))
+        if (entriesMatch(expEntry, *got, checkMessage, true))
         {
           foundMatch = true;
           break;
@@ -469,7 +473,7 @@ bool verifyStdLines(const std::string& logString,
 bool verifyJSONLines(const std::string& logString,
                      const std::vector<CParsedLogEntry>& expEntries,
                      bool checkMessage = true,
-                    bool unordered = false)
+                     bool unordered = false)
 {
   return verifyLinesImpl(parseJSONLine, logString, expEntries, checkMessage, unordered);
 }
@@ -649,11 +653,10 @@ TEST_F(CAlogTest, LoggingMsgAndMap)
   ALOG(BAR, info, line1, (json{{"foo", 123}}));
 
   // Verify the number of lines
-  EXPECT_TRUE(verifyStdLines(ss.str(), std::vector<CParsedLogEntry>{
-    CParsedLogEntry("BAR  ", ELogLevels::info, line1),
-    CParsedLogEntry("BAR  ", ELogLevels::info, "foo: 123"),
-  }));
+  CParsedLogEntry entry1("BAR  ", ELogLevels::info, line1);
+  CParsedLogEntry entry2("BAR  ", ELogLevels::info, "foo: 123");
   std::cout << ss.str() << std::endl;
+  EXPECT_TRUE(verifyStdLines(ss.str(), std::vector<CParsedLogEntry>{entry1, entry2}));
 }
 
 ////////
@@ -1246,23 +1249,20 @@ TEST_F(CAlogTest, JSONScopedMetadata)
   EXPECT_TRUE(verifyJSONLines(ss.str(), std::vector<CParsedLogEntry>{
 
     // Outer scope BEFORE
-    CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata BEFORE", {
-      {"metadata", {"foo", "string_val"}}
-    }),
+    CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata BEFORE",
+      {{"metadata", {{"foo", "string_val"}}}}),
 
     // Inner scope
-    CParsedLogEntry("FOO", ELogLevels::info, "Line with inner metadata", {
-      {"metadata", {"foo", "string_val"}, {"bar", 123}}
-    }),
+    CParsedLogEntry("FOO", ELogLevels::info, "Line with inner metadata",
+      {{"metadata", {{"foo", "string_val"}, {"bar", 123}}}}),
 
     // Outer scope AFTER
-    CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata AFTER", {
-      {"metadata", {"foo", "string_val"}}
-    }),
+    CParsedLogEntry("TEST", ELogLevels::debug, "Line with outer metadata AFTER",
+      {{"metadata", {{"foo", "string_val"}}}}),
 
     // Final line
     CParsedLogEntry("TEST", ELogLevels::info, "Line with no metadata")
-  }, true, true));
+  }, true, false));
 }
 
 ////////
