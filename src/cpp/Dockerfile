@@ -21,3 +21,17 @@ RUN true && \
     apt-get clean autoclean && \
     apt-get autoremove --yes && \
     true
+
+## Test ########################################################################
+#
+# This phase runs the unit tests for the library
+##
+FROM base as test
+COPY . /src
+RUN true && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && \
+    ctest && \
+    true
