@@ -35,3 +35,18 @@ RUN true && \
     make && \
     ctest && \
     true
+
+## Release Test ################################################################
+#
+# This phase builds the fibonacci example using the tagged release version
+##
+FROM base as release_test
+ARG CPP_RELEASE_VERSION
+COPY ./tools/alog_fib_example /src
+RUN true && \
+    mkdir build && \
+    cd build && \
+    cmake .. -DALOG_VERSION=${CPP_RELEASE_VERSION} && \
+    make && \
+    ./alog_fib_example 5 && \
+    true
