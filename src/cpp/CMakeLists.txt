@@ -1,9 +1,9 @@
 # Set up the basic project skeleton
-cmake_minimum_required(VERSION 3.3.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
 set(PROJECT_NAME alog)
 project(${PROJECT_NAME} CXX)
 
-# specify the C++ standard
+# Specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -13,12 +13,12 @@ option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 # Set up CPM to fetch the json dependency and fetch it
 include(cmake/CPM.cmake)
 CPMAddPackage(
-    NAME nlohmann_json
-    GITHUB_REPOSITORY nlohmann/json
-    VERSION 3.9.1
-    GIT_SHALLOW true
-    OPTIONS
-      "JSON_BuildTests OFF"
+  NAME nlohmann_json
+  GITHUB_REPOSITORY nlohmann/json
+  VERSION 3.9.1
+  GIT_SHALLOW true
+  OPTIONS
+    "JSON_BuildTests OFF"
 )
 
 # Find boost and gtest with local package install
