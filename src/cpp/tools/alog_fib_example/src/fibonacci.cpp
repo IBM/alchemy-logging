@@ -18,8 +18,13 @@
 // Standard
 #include <chrono>
 
+// Third Party
+#include <nlohmann/json.hpp>
+
 // Local
 #include "fibonacci.h"
+
+using json = nlohmann::json;
 
 namespace fib
 {
@@ -54,7 +59,7 @@ TFibSequence fib(const unsigned n)
   // create a map pointer that we give to the timer that we can populate at   //
   // any point before the scope closes.                                       //
   //////////////////////////////////////////////////////////////////////////////
-  std::shared_ptr<jsonparser::TObject> timerMap(new jsonparser::TObject());
+  std::shared_ptr<json> timerMap(new json());
   ALOG_SCOPED_TIMERthis(debug, "Computed sequence of length " << n << " in ", timerMap);
 
   unsigned first = 0;
@@ -71,11 +76,11 @@ TFibSequence fib(const unsigned n)
     // pair. In this case, we use debug3 since this is a tight-loop log       //
     // statement.                                                             //
     ////////////////////////////////////////////////////////////////////////////
-    ALOG_MAPthis(debug3, (jsonparser::TObject{
-      std::make_pair("c", ALOG_MAP_VALUE(c)),
-      std::make_pair("first", ALOG_MAP_VALUE(first)),
-      std::make_pair("second", ALOG_MAP_VALUE(second)),
-      std::make_pair("next", ALOG_MAP_VALUE(next)),
+    ALOG_MAPthis(debug3, (json{
+      {"c", c},
+      {"first", first},
+      {"second", second},
+      {"next", next},
     }));
 
     if ( c <= 1 )
@@ -97,10 +102,10 @@ TFibSequence fib(const unsigned n)
   // The ALOGthis macro takes an optional final argument to add a key/value   //
   // map to the log entry.                                                    //
   ////////////////////////////////////////////////////////////////////////////
-  ALOGthis(debug3, "Final variable state", (jsonparser::TObject{
-    std::make_pair("first", ALOG_MAP_VALUE(first)),
-    std::make_pair("second", ALOG_MAP_VALUE(second)),
-    std::make_pair("next", ALOG_MAP_VALUE(next)),
+  ALOGthis(debug3, "Final variable state", (json{
+    {"first", first},
+    {"second", second},
+    {"next", next},
   }));
 
   //////////////////////////////////////////////////////////////////////////////
@@ -110,7 +115,7 @@ TFibSequence fib(const unsigned n)
   // add the value, we use ALOG_MAP_VALUE to convert to the necessary map     //
   // value type.                                                              //
   //////////////////////////////////////////////////////////////////////////////
-  timerMap->insert(std::make_pair("sequence_length", ALOG_MAP_VALUE(out.size())));
+  (*timerMap)["sequence_length"] = out.size();
 
   return out;
 }

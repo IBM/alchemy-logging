@@ -29,8 +29,10 @@ then
 
 elif [ "$release_type" == "cpp" ]
 then
-    echo "NOT IMPLEMENTED YET!"
-    exit 1
+    cd src/cpp
+    docker build . \
+        --target=release_test \
+        --build-arg CPP_RELEASE_VERSION=$tag
 
 # Go is special and requires valid semantic versioning for its version tags and
 # those tags must be scoped by the subdirectory where the go.mod file lives
