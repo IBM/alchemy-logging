@@ -9,10 +9,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Use CPM to fetch alog
 include(cmake/CPM.cmake)
+set(ALOG_VERSION main CACHE STRING "The version (point in git history) of alog to use")
 CPMAddPackage(
   NAME alog
   GITHUB_REPOSITORY IBM/alchemy-logging
-  GIT_TAG CppBuild-19
+  GIT_TAG ${ALOG_VERSION}
   GIT_SHALLOW true
   OPTIONS
     "BUILD_UNIT_TESTS OFF"
