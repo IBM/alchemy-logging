@@ -1,0 +1,17 @@
+# This workflow runs the c++ implementation unit tests
+name: cpp-tests
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run unit tests
+        run: |
+          cd src/cpp
+          docker build . --target=test
