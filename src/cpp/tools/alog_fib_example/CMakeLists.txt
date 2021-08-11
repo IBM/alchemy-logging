@@ -12,7 +12,6 @@ include(cmake/CPM.cmake)
 CPMAddPackage(
   NAME alog
   GITHUB_REPOSITORY IBM/alchemy-logging
-  SOURCE_SUBDIR src/cpp
   GIT_TAG CppBuild-19
   GIT_SHALLOW true
   OPTIONS
