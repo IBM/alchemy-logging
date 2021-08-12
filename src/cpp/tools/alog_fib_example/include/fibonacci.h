@@ -21,7 +21,7 @@
 #include <future>
 
 // First Party
-#include <logger.h>
+#include <alog/logger.hpp>
 
 namespace fib
 {
