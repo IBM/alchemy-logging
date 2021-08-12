@@ -31,6 +31,8 @@ target_include_directories(${library_name} PUBLIC include)
 target_include_directories(${library_name} PUBLIC ${Boost_INCLUDE_DIRECTORIES})
 target_include_directories(${library_name} PUBLIC ${nlohmann_json_SOURCE_DIR}/single_include)
 target_link_libraries(${library_name} ${Boost_locale_LIBRARIES})
+set_target_properties(alog PROPERTIES PUBLIC_HEADER include/logger.h)
+install(TARGETS alog)
 
 # Add the unit tests if enabled
 option(BUILD_UNIT_TESTS "Build the unit tests" ON)
