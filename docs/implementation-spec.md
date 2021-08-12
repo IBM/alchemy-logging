@@ -1,5 +1,10 @@
 # Implementation Specification
 
+<details>
+<summary>
+TABLE OF CONTENTS
+</summary>
+
 - [Backgrond](#background)
 - [Design Summary](#design-summary)
     - [Channels And Levels](#channels-and-levels)
@@ -36,7 +41,7 @@
         - [2.5 Minimal Dependencies](#25-minimal-dependencies)
         - [2.6 Language Native Semantics](#26-language-native-semantics)
 
-
+</details>
 
 # Background
 
