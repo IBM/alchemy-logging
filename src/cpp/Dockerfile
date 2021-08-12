@@ -34,6 +34,10 @@ RUN true && \
     cmake .. && \
     make && \
     ctest && \
+    make install && \
+    test -e /usr/local/include/alog/logger.hpp && \
+    test -e /usr/local/lib/libalog.so && \
+    test -e /usr/local/include/nlohmann/json.hpp && \
     true
 
 ## Release Test ################################################################
