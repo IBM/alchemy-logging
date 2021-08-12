@@ -21,7 +21,7 @@
 #include <sstream>
 
 // First Party
-#include <logger.h>
+#include <alog/logger.hpp>
 
 // Local
 #include "util.h"

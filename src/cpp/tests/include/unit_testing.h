@@ -21,7 +21,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "logger.h"
+#include "alog/logger.hpp"
 
 namespace test
 {

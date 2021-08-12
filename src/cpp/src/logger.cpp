@@ -20,7 +20,7 @@
  */
 
 // Local
-#include "logger.h"
+#include "alog/logger.hpp"
 
 // Standard
 #include <utility>
