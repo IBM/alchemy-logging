@@ -801,14 +801,6 @@ void ALOG_SETUP(
     ::instance()->setupFilters(filterSpec, defaultLevel);
   logging::detail::InitLogStream(std::cout);
 }
-void ALOG_SETUP(
-  const std::string& /*filename*/,
-  const bool /*toScreen*/,
-  const std::string& defaultLevel,
-  const std::string& filterSpec)
-{
-  ALOG_SETUP(defaultLevel, filterSpec);
-}
 
 void ALOG_ADJUST_LEVELS(
   const std::string& defaultLevel,

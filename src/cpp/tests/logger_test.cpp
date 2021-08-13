@@ -1089,7 +1089,7 @@ TEST_F(CAlogTest, WideChar)
 ////////
 TEST_F(CAlogTest, NewScopedTimer)
 {
-  ALOG_SETUP("", true, "debug", "");
+  ALOG_SETUP("debug", "");
 
   // Scope with a timer that can be queried
   {

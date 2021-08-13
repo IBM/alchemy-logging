@@ -483,11 +483,6 @@ detail::ELogLevels ParseLevel(const std::string&);
 void ALOG_SETUP(
   const std::string& defaultLevel,
   const std::string& filterSpec);
-void ALOG_SETUP(
-  const std::string& /*filename*/,
-  const bool /*toScreen*/,
-  const std::string& defaultLevel,
-  const std::string& filterSpec);
 
 /** \brief Adjust the global log levels
  *
