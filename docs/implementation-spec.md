@@ -207,7 +207,7 @@ The components of the header are as follows:
 
 * `thread_id`: When enabled, all headers must contain the unique string identifier for the thread where the record was created. When possible, the thread id must be padded or truncated to a fixed with to maintain the fixed width of the header.
 
-* `log_code`: If log codes are supported by the implementation and present for the given log record, they should be added immediately after the square bracket and before the indentation. All log codes must be fixed-length.
+* `log_code`: If log codes are supported by the implementation and present for the given log record, they should be added immediately after the square bracket and before the indentation. All log codes must start with `<` and end with `>` and should be fixed length.
 
 * `indentation`: The indentation section is a fixed number of space characters (typically 2) multiplied by the `num_indent` for the individual record.
 
