@@ -30,10 +30,8 @@
 int main(int argc, char *argv[])
 {
   // Read configuration from environment
-  const std::string log_file      = util::load_env_string("ALOG_FILE",             ""    );
   const std::string default_level = util::load_env_string("ALOG_DEFAULT_LEVEL",    "info");
   const std::string filters       = util::load_env_string("ALOG_FILTERS",          ""    );
-  const bool log_to_screen        = util::load_env_bool(  "ALOG_LOG_TO_SCREEN",    true  );
   const bool use_json             = util::load_env_bool(  "ALOG_USE_JSON",         false );
   const bool enable_thread_id     = util::load_env_bool(  "ALOG_ENABLE_THREAD_ID", false );
   const bool enable_metadata      = util::load_env_bool(  "ALOG_ENABLE_METADATA",  false );
@@ -44,8 +42,6 @@ int main(int argc, char *argv[])
   // This demonstrates all of the standard configuration features of ALOG.    //
   // The configuration options are:                                           //
   //                                                                          //
-  //   * Log file: If not empty, logs will be saved to the provided file      //
-  //   * Log to screen: Print logs to stdout if true                          //
   //   * Default level: The level to enable for all channels not present in   //
   //       the filters                                                        //
   //   * Filters: Specific channel:level strings to change the enabled level  //
@@ -54,7 +50,7 @@ int main(int argc, char *argv[])
   //   * Thread ID: If true, all logs will contain the thread ID              //
   //   * Metadata: If true, metadata values will be added to each log entry   //
   //////////////////////////////////////////////////////////////////////////////
-  ALOG_SETUP(log_file, log_to_screen, default_level, filters);
+  ALOG_SETUP(default_level, filters);
   if (use_json)
   {
     ALOG_USE_JSON_FORMATTER();
