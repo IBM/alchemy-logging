@@ -97,9 +97,8 @@ var ch = alog.UseChannel("DEMO")
 func foo(age int) {
   ch.Log(alog.INFO, "Hello Logging World! I am %d years old", age)
   {
-    scope := ch.LogScope(alog.DEBUG, "This is my own personal scope bubble")
+    defer ch.LogScope(alog.DEBUG, "This is my own personal scope bubble").Close()
     ch.Log(alog.DEBUG, "Hey! I'm walking here!")
-    scope.Close()
   }
 }
 ```
@@ -124,7 +123,7 @@ func do_foo() {
 }
 ```
 
-**WARNING** If you do not invoke `Close()` on your scope, your application will have a memory leak. The `alog` config object holds a map from goroutine ID to indentation level which is incremented at construct time and decremented at close time. Once back to 0, the map entry is removed. If `Close()` is not invoked, this map will grow indefinitely.
+**WARNING** If you do not invoke `Close()` on your scope, your application will have a memory leak. The `alog` config object holds a map from goroutine ID to indentation level which is incremented at construct time and decremented at close time. Once back to 0, the map entry is removed. If `Close()` is not invoked, this map will grow indefinitely. The safest way to ensure that `Close()` is always invoked is to use `defer` as in the examples above.
 
 ## Convenience Functions
 There are several other convenience functions available with the `alog` package:
