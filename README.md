@@ -118,7 +118,7 @@ For full details see [src/cpp](src/cpp/README.md)
 
 #### Installation
 
-In your `CMakeLists.txt`:
+In your `CMakeLists.txt` using [CPM](https://github.com/cpm-cmake/CPM.cmake):
 
 ```cmake
 include(cmake/CPM.cmake)
