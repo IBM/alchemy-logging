@@ -4,7 +4,12 @@ The `alog` framework provides tunable logging with easy-to-use defaults and powe
 ## Channels and Levels
 The primary components of the framework are **channels** and **levels** which allow for each log statement to be enabled or disabled when appropriate.
 
-1. **Levels**: Each logging statement is made at a specific level. Levels provide sequential granularity, allowing detailed debugging statements to be placed in the code without clogging up the logs at runtime. The sequence of levels and their general usage is as follows:
+1. **Levels**: Each logging statement is made at a specific level. Levels provide sequential granularity, allowing detailed debugging statements to be placed in the code without clogging up the logs at runtime.
+
+    <details>
+    <summary>
+    The sequence of levels and their general usage is as follows:
+    </summary>
 
     1. `off`: Disable the given channel completely
     1. `fatal`: A fatal error has occurred. Any behavior after this statement should be regarded as undefined.
@@ -17,6 +22,8 @@ The primary components of the framework are **channels** and **levels** which al
     1. `debug2`: Mid-level debugging statements such as computed values.
     1. `debug3`: Low-level debugging statements such as computed values inside loops.
     1. `debug4`: Ultra-low-level debugging statements such as data dumps and/or statements inside multiple nested loops.
+
+    </details>
 
 1. **Channels**: Each logging statement is made to a specific channel. Channels are independent of one another and allow for logical grouping of log messages by functionality. A channel can be any string. A channel may have a specific **level** assigned to it, or it may use the configured default level if it is not given a specific level filter.
 
