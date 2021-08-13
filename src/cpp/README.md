@@ -2,9 +2,7 @@
 The `alog` framework provides tunable logging with easy-to-use defaults and power-user capabilities. The mantra of `alog` is **"Log Early And Often"**. To accomplish this goal, `alog` makes it easy to enable verbose logging at develop/debug time and trim the verbosity at production run time.
 
 ## Dependencies
-The `alog` library is intentionally light on dependencies. The only dependency necessary is the [JsonParser](https://github.ibm.com/alchemyapi-common/JsonParser/tree/master) library which itself depends on [rapidjson](https://github.com/Tencent/rapidjson).
-
-**NOTE**: An earlier version of the library used the [nlohmann/json](https://github.com/nlohmann/json) library which is a much nicer `json` interface, but due to the need to compile on `gcc 4.7.2` we moved to `JsonParser`.
+The `alog` library is intentionally light on dependencies. The only dependencies necessary are [nlohmann/json](hhttps://github.com/nlohmann/json) and [boost/algorithm](https://github.com/boostorg/algorithm/tree/boost-1.69.0) and [boost/locale](https://github.com/boostorg/locale/tree/boost-1.69.0).
 
 ## Channels and Levels
 The primary components of the system are **channels** and **levels** which allow for each log statement to be enabled or disabled when appropriate.
@@ -34,14 +32,14 @@ There are two primary pieces of configuration when setting up the `alog` environ
 
 1. **filters**: This is a mapping from channel name to level that allows levels to be set on a per-channel basis.
 
-The `ALOG_SETUP(...)` macro allows both the default level and filters to be set at once. For example:
+The `ALOG_SETUP(...)` function allows both the default level and filters to be set at once. For example:
 
 ```c++
-#include <logger.h>
+#include <alog/logger.hpp>
 
-int main(int, char**)
+int main()
 {
-  ALOG_SETUP("server.log", true, "info", "ALGO:debug2,NET:debug");
+  ALOG_SETUP("info", "FOO:debug2,BAR:off");
 }
 ```
 
@@ -49,32 +47,35 @@ int main(int, char**)
 As `alog` has grown, its use has tended towards usage as part of a multi-replica cluster of servers. In such an environment, it can be very beneficial to provide structure in your log messages so that they can be aggregated between replicas and used for operational visibility. The simplest way to do this is to log lines as `json` rather than the traditional pretty-print formatting. By default `alog` uses the pretty-printer output formatter. To enable JSON output, simply use the `ALOG_USE_JSON_FORMATTER()` macro.
 
 ```c++
-#include <logger.h>
+#include <alog/logger.hpp>
 
-int main(int, char**)
+int main()
 {
-  ALOG_SETUP("server.log", true, "info", "ALGO:debug2,NET:debug");
+  ALOG_SETUP("info", "FOO:debug2,BAR:off");
   ALOG_USE_JSON_FORMATTER();
 }
 ```
 
-While printing logs as `json` allows them to be filtered by `channel`, `level`, and `message` quite easily, some times more structure is needed. In these cases, `alog` also supports logging arbitrary key/value pairs. This is supported using the `jsonparser::TObject` map type. For example:
+While printing logs as `json` allows them to be filtered by `channel`, `level`, and `message` quite easily, some times more structure is needed. In these cases, `alog` also supports logging arbitrary key/value pairs. This is supported using the `nlohmann/json` map type. For example:
 
 ```c++
-#include <logger.h>
+#include <alog/logger.hpp>
+#include <nlohmann/json.hpp>
 
-int main(int, char**)
+using json = nlohmann::json;
+
+int main()
 {
-  ALOG_SETUP("server.log", true, "info", "ALGO:debug2,NET:debug");
+  ALOG_SETUP("info", "FOO:debug2,BAR:off");
   ALOG_USE_JSON_FORMATTER();
-  jsonparser::TObject mapData;
-  mapData["foo"] = ALOG_MAP_VALUE("bar");
-  mapData["baz"] = ALOG_MAP_VALUE(1234);
+  json mapData;
+  mapData["foo"] = "bar";
+  mapData["baz"] = 1234;
   ALOG_MAP(MAIN, info, mapData);
 }
 ```
 
-In addition to the `ALOG_MAP` macro which explicitly logs a json map, all of the standard `ALOG` macros take an optional final `map` argument, allowing key/value data to be added to any log line.
+Also, all of the standard `ALOG` macros take an optional final `map` argument, allowing key/value data to be added to any log line.
 
 ## Metadata
 In addition to the content of an individual log message, you may want to attach some metadata to all log lines that occur within a given thread of execution. For example, this can be used to attach a request ID to all log lines created in the course of processing a given server request. This can come in very handy when you have a multi-threaded and/or multi-replica environment.
@@ -86,7 +87,7 @@ The addition of metadata can be expensive and intrusive (especially in pretty-pr
 Here's a brief example of how you might use metadata:
 
 ```c++
-#include <logger.h>
+#include <alog/logger.hpp>
 
 int add(int a, int b)
 {
@@ -96,7 +97,7 @@ int add(int a, int b)
 
 void handler(const CMyRequest& a_request, CMyResponse& a_response)
 {
-  ALOG_SCOPED_METADATA(a_request.requestID());
+  ALOG_SCOPED_METADATA("request_id", a_request.requestID());
   a_response.setResult(add(a_request.getA(), a_request.getB()));
 }
 ```
@@ -118,7 +119,7 @@ The standard logging macros each take a channel, a level, and payload informatio
 
 * `ALOG_MAP(channel, level, map)`: Log an arbitrary key/value structure on the given channel/level
     ```c++
-    ALOG_MAP(MAIN, debug, {{"foo": "bar"}, {"baz", 1}});
+    ALOG_MAP(MAIN, debug, (json{{"foo": "bar"}, {"baz", 1}}));
     ```
 
 * `ALOG_WARNING(msg)`: Log a warning message on the `WARN` channel at the `warning` level.
@@ -148,10 +149,10 @@ Each of the scopes that creates log lines can take an optional `mapPtr` final ar
     {
       if (bar())
       {
-        std::shared_ptr<jsonparser::TObject> map_ptr(new jsonparser::TObject());
+        std::shared_ptr<json> map_ptr(new json());
         ALOG_SCOPED_TIMER(MAIN, debug, "heavy_lifting", map_ptr);
         int result = heavy_lifting();
-        map_ptr->insert("result_code", ALOG_MAP_VALUE(result));
+        (*map_ptr)["result_code"] = result;
       }
     }
     ```
@@ -211,7 +212,7 @@ Each of the scopes that creates log lines can take an optional `mapPtr` final ar
 
     void handler(const CMyRequest& a_request, CMyResponse& a_response)
     {
-      ALOG_SCOPED_METADATA(a_request.requestID());
+      ALOG_SCOPED_METADATA("request_id", a_request.requestID());
       a_response.setResult(add(a_request.getA(), a_request.getB()));
     }
     ```
@@ -229,7 +230,7 @@ Each of the scopes that creates log lines can take an optional `mapPtr` final ar
     }
     ```
 
-* [DEPRECATED] `ALOG_SCOPED_INDENT()`: Add a level of indentation to all logging lines within the current scope to improve readibility. Use `ALOG_SCOPED_INDENT_IF` instead.
+* `ALOG_SCOPED_INDENT()`: Add a level of indentation to all logging lines within the current scope to improve readibility.
     ```c++
     void foo()
     {
