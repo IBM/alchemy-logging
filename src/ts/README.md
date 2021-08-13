@@ -106,7 +106,7 @@ alog.info('CHANL', 'Hello from alog!');
 All log functions have several required and optional components:
 
 * `channel` (required): The first argument is always the channel.
-* `log_code` (optional): If desired, a `log_code` can be given as the second argument, following the [NLU Logging Guidelines](https://github.ibm.com/watson-nlu/nlu-documentation/blob/main/guidelines/logging_guidelines.md#log-codes). For example:
+* `logCode` (optional): If desired, a `logCode` can be given as the second argument. A log code is a unique string enclosed in `<>` which will identify a specific log record for easy retrieval later. For example:
 
     ```ts
     alog.info('CHANL', '<LOG12345678I>', 'This is a log that we want to be able to look up in prod');

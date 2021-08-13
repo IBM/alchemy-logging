@@ -452,30 +452,6 @@ and a third!`}));
       it("A log code that is missing its closing angle bracket should fail", () => {
         expect(isLogCode("<ORC12345678D")).to.be.false;
       });
-
-      it("A log code that has more than 8 digits should fail", () => {
-        expect(isLogCode("<ORC1234544242678D>")).to.be.false;
-      });
-
-      it("A log code that has less than 8 digits should fail", () => {
-        expect(isLogCode("<ORC178D>")).to.be.false;
-      });
-
-      it("A log code that has lowercase letters should fail", () => {
-        expect(isLogCode("<orc12345678D>")).to.be.false;
-      });
-
-      it("A log code that has a lowercase letter for its level key should fail", () => {
-        expect(isLogCode("<ORC12345678d>")).to.be.false;
-      });
-
-      it("A log code that is missing a level key should fail", () => {
-        expect(isLogCode("<ORC12345678>")).to.be.false;
-      });
-
-      it("A log code that has a level key that is not in {IWTDEF} should fail", () => {
-        expect(isLogCode("<ORC12345678Z>")).to.be.false;
-      });
     });
   });
 
