@@ -55,7 +55,7 @@ Numerous logging frameworks exist in the open-source community that can create l
 
 3. Log records are generated either as structured key/value objects or plain-text strings. Structured records lead to ease of aggregation and search, but are very hard for developers to visually scan and understand when diagnosing problems in the system. Plain-text logs have the opposite problem of being easy to read, but hard to aggregate and search across a distributed system.
 
-This invention aims to solve these shortcomings of the existing logging frameworks. The stated goals of this invention are:
+This framework aims to solve these shortcomings of the existing logging frameworks. The stated goals of this framework are:
 
 1. Provide consistent semantics for creating, formatting, and configuring log records across applications built in multiple programming languages with a specification for adding new languages.
 
@@ -65,7 +65,7 @@ This invention aims to solve these shortcomings of the existing logging framewor
 
 # Design Summary
 
-The proposed logging framework has the following key tenants:
+The Alchemy Logging framework has the following key tenants:
 
 1. The specification for the framework is agnostic to the programming language it is implemented in, but the language-specific implementations may adapt the interface to feel native in the specific language.
 
