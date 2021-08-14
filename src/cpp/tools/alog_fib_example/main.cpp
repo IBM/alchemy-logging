@@ -1,20 +1,26 @@
-/*  *
- * IBM Confidential
- * OCO Source Materials
+/*------------------------------------------------------------------------------
+ * MIT License
  *
- * 5737-C06
- * (C) Copyright IBM Corp. 2018 All Rights Reserved.
+ * Copyright (c) 2021 IBM
  *
- * The source code for this program is not published or otherwise
- * divested of its trade secrets, irrespective of what has been
- * deposited with the U.S. Copyright Office.
-
- * US Government Users Restricted Rights - Use, duplication or
- * disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
-
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *  */
-
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *----------------------------------------------------------------------------*/
 // Standard
 #include <vector>
 #include <string>
@@ -30,10 +36,8 @@
 int main(int argc, char *argv[])
 {
   // Read configuration from environment
-  const std::string log_file      = util::load_env_string("ALOG_FILE",             ""    );
   const std::string default_level = util::load_env_string("ALOG_DEFAULT_LEVEL",    "info");
   const std::string filters       = util::load_env_string("ALOG_FILTERS",          ""    );
-  const bool log_to_screen        = util::load_env_bool(  "ALOG_LOG_TO_SCREEN",    true  );
   const bool use_json             = util::load_env_bool(  "ALOG_USE_JSON",         false );
   const bool enable_thread_id     = util::load_env_bool(  "ALOG_ENABLE_THREAD_ID", false );
   const bool enable_metadata      = util::load_env_bool(  "ALOG_ENABLE_METADATA",  false );
@@ -44,8 +48,6 @@ int main(int argc, char *argv[])
   // This demonstrates all of the standard configuration features of ALOG.    //
   // The configuration options are:                                           //
   //                                                                          //
-  //   * Log file: If not empty, logs will be saved to the provided file      //
-  //   * Log to screen: Print logs to stdout if true                          //
   //   * Default level: The level to enable for all channels not present in   //
   //       the filters                                                        //
   //   * Filters: Specific channel:level strings to change the enabled level  //
@@ -54,7 +56,7 @@ int main(int argc, char *argv[])
   //   * Thread ID: If true, all logs will contain the thread ID              //
   //   * Metadata: If true, metadata values will be added to each log entry   //
   //////////////////////////////////////////////////////////////////////////////
-  ALOG_SETUP(log_file, log_to_screen, default_level, filters);
+  ALOG_SETUP(default_level, filters);
   if (use_json)
   {
     ALOG_USE_JSON_FORMATTER();

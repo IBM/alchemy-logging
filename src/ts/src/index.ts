@@ -82,7 +82,7 @@ function isValidLevel(lvl: any) {
 }
 
 function isLogCode(arg: any) {
-  return typeof arg === 'string' && arg.match(/^<[A-Z]{3}\d{8}[IWDEFT]>$/) !== null;
+  return typeof arg === 'string' && arg.match(/^<.*>$/) !== null;
 }
 
 function isValidFilterConfig(filterConfig: any) {

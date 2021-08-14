@@ -46,11 +46,11 @@ In addition to the above, the `configure` function also supports the following a
 
 * `formatter`: May be `"pretty"`, `"json"`, or any class derived from `AlogFormatterBase`
 * `thread_id`: Bool indicating whether or not to include a unique thread ID with the logging header (`pretty`) or structure (`json`).
-* `handler_generator`: This allows users to provide their own output handlers and replace the standard handler that sends log messages to `stderr`.
+* `handler_generator`: This allows users to provide their own output handlers and replace the standard handler that sends log messages to `stderr`. See [the `logging` documentation](https://docs.python.org/3/library/logging.handlers.html#module-logging.handlers) for details.
 
 ### Logging Functions
-For each log level, there are two functions you can use to create log lines: The standard `logging` package function (with additional functions for higher debug levels), or the corresponding `alog.<level>` function. The former will always log to the `MAIN` channel while the later requires that
-a channel string be specified.
+For each log level, there are two functions you can use to create log lines: The standard `logging` package function, or the corresponding `alog.use_channel(...).<level>` function. The former will always log to the `root` channel while the later requires that
+a channel string be specified via `use_channel()`.
 
 ```py
 import alog
@@ -76,6 +76,30 @@ def foo(age):
 ```
 
 **NOTE**: In this (python) implementation, this is simply a wrapper around `logging.getLogger()`
+
+### Extra Log Information
+
+There are several other types of information that `alog` supports adding to log records:
+
+#### Log Codes
+
+This is an optional argument to all logging functions which adds a specified code to the record. It can be useful for particularly high-profile messages (such as per-request error summaries in a server) that you want to be able to track in a programmatic way. The only requirement for a `log_code` is that it begin with `<` and end with `>`. The log code always comes before the `message`. For example:
+
+```py
+ch = alog.use_channel("FOO")
+ch.debug("<FOO80349757I>", "Logging is fun!")
+```
+
+#### Dict Data
+
+Sometimes, it's useful to log structured key/value pairs in a record, rather than a plain-text message, even when using the `pretty` output formatter. To do this, simply use a `dict` in place of a `str` in the `message` argument to the logging function. For example:
+
+```py
+ch = alog.use_channel("FOO")
+ch.debug({"foo": "bar"})
+```
+
+When a `dict` is logged with the `json` formatter enabled, all key/value pairs are added as key/value pairs under the top-level `message` key.
 
 ### Log Contexts
 One of the most common uses for logging is to note events when a certain block of code executes. To facilitate this, `alog` has the concept of log contexts. The two primary contexts that `alog` supports are:
