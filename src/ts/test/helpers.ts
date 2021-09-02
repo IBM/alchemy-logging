@@ -8,7 +8,7 @@ const deepCopy = require('deepcopy');
 const deepEqual = require('deep-equal');
 
 // Alog guts
-const alog = require('rewire')('../src');
+const alog = require('rewire')('../src/alog');
 const prettyLevelNames = alog.__get__('prettyLevelNames');
 const prettyIndentation = alog.__get__('prettyIndentation');
 const levelFromName = alog.__get__('levelFromName');

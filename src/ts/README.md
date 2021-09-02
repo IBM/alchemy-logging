@@ -34,7 +34,7 @@ There are three primary pieces of configuration when setting up the `alog` envir
 The `alog.configure()` function allows the default level, filters, and formatter to be set all at once. For example:
 
 ```ts
-import * as alog from 'alchemy-logging';
+import alog from 'alchemy-logging';
 
 // Set the default level to info with filter overrides for the HTTP and ROUTR
 // channels to debug and warning respectively. Configure the formatter to be
@@ -81,7 +81,7 @@ alog.configure({
 By default `alog` will always log to `process.stdout`. If you need to capture the formatted output log (for example in a log file), you can use `alog.addOutputStream`:
 
 ```ts
-import * as alog from 'alchemy-logging';
+import alog from 'alchemy-logging';
 import { createWriteStream } from 'stream';
 
 alog.configure('debug', '', 'json');
@@ -148,7 +148,7 @@ All log functions have several required and optional components:
 Sometimes there are additional pieces of information that you want attached to all log entries (e.g. an env-based deployment identifier). This is supported via the `alog.addMetadata` and `alog.removeMetadata` functions. For example:
 
 ```ts
-import * as alog from 'alchemy-logging';
+import alog from 'alchemy-logging';
 alog.configure('debug');
 
 if (process.env.DEPLOYMENT_ID) {
@@ -161,7 +161,7 @@ if (process.env.DEPLOYMENT_ID) {
 To support the the mission of making logs that are easy to read at dev-time, `alog` supports the notion of `indentation` which allows the `PrettyFormatter` to display nested logs with easy-to-read indentation. This can be performed manually using `alog.indent` and `alog.deindent`. For example:
 
 ```ts
-import * as alog from 'alchemy-logging';
+import alog from 'alchemy-logging';
 alog.configure('debug3');
 
 function doit(arrayOfStuff) {
