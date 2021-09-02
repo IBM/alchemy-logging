@@ -28,6 +28,8 @@ const nameFromLevel = alogInternals.__get__('nameFromLevel');
 // compiles happily with typescript
 import alog from '../src';
 
+// Import old style so that it can be verified
+import * as oldStyle from '../src';
 
 /*-- Tests -------------------------------------------------------------------*/
 
@@ -35,6 +37,16 @@ describe('Alog Typescript Public API Test Suite', () => {
 
   beforeEach(() => {
     alogInternals.__get__('AlogCoreSingleton').getInstance().reset();
+  });
+
+  describe('imports', () => {
+    it('should support old-style import', () => {
+      Object.entries(alog).forEach((entry: [string, any]): void => {
+        const key: string = entry[0];
+        const val: any = entry[1];
+        expect(oldStyle[key as keyof typeof oldStyle]).to.equal(val);
+      });
+    });
   });
 
   describe('configure', () => {
