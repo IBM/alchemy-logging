@@ -20,13 +20,13 @@ import {
 
 // For this test, we are testing the public API. As such, we only want a couple
 // of internals available for validation.
-const alogInternals = require('rewire')('../src');
+const alogInternals = require('rewire')('../src/alog');
 const levelFromName = alogInternals.__get__('levelFromName');
 const nameFromLevel = alogInternals.__get__('nameFromLevel');
 
 // Import in the properly typescript-y way to ensure that the expected API usage
 // compiles happily with typescript
-import * as alog from '../src';
+import alog from '../src';
 
 
 /*-- Tests -------------------------------------------------------------------*/

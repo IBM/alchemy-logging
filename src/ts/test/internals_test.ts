@@ -20,7 +20,7 @@ import {
 
 // Things under test (will be monkey patched)
 const rewire = require('rewire');
-const alog  = rewire('../src');
+const alog  = rewire('../src/alog');
 const isLogCode = alog.__get__('isLogCode');
 const AlogCoreSingleton = alog.__get__('AlogCoreSingleton');
 const PrettyFormatter = alog.__get__('PrettyFormatter');
