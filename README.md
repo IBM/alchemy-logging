@@ -81,7 +81,7 @@ npm install alchemy-logging
 #### Usage
 
 ```ts
-import * as alog from 'alchemy-logging';
+import alog from 'alchemy-logging';
 alog.configure('info', 'FOO:debug2,BAR:off');
 alog.debug('FOO', 'Hello alog!');
 ```
