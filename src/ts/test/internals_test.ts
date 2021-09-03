@@ -19,14 +19,14 @@ import {
 } from './helpers';
 
 // Things under test (will be monkey patched)
+import alog from '../src';
+import { JsonFormatter, PrettyFormatter } from '../src/formatters';
 const rewire = require('rewire');
-const alog  = rewire('../src/alog');
-const isLogCode = alog.__get__('isLogCode');
-const AlogCoreSingleton = alog.__get__('AlogCoreSingleton');
-const PrettyFormatter = alog.__get__('PrettyFormatter');
-const JsonFormatter = alog.__get__('JsonFormatter');
-const levelFromName = alog.__get__('levelFromName');
-const nameFromLevel = alog.__get__('nameFromLevel');
+const core  = rewire('../src/core');
+const AlogCoreSingleton = core.AlogCoreSingleton;
+const isLogCode = AlogCoreSingleton.isLogCode;
+const levelFromName = AlogCoreSingleton.levelFromName;
+const nameFromLevel = AlogCoreSingleton.nameFromLevel;
 
 /*-- Tests -------------------------------------------------------------------*/
 
