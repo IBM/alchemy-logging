@@ -96,6 +96,10 @@ export class AlogCoreSingleton {
   // The singleton instance
   private static instance: AlogCoreSingleton;
 
+  private static isLogCode(arg: any) {
+    return typeof arg === 'string' && arg.match(/^<.*>$/) !== null;
+  }
+
   /////////////////////////
   // Private Member Data //
   /////////////////////////
@@ -252,7 +256,7 @@ export class AlogCoreSingleton {
       }
 
       // Determine if the first variable arg is a log code
-      if (this.isLogCode(argThree)) {
+      if (AlogCoreSingleton.isLogCode(argThree)) {
         record.log_code = argThree as string;
 
         if (typeof argFour === 'function') {
@@ -292,9 +296,5 @@ export class AlogCoreSingleton {
         stream.write(logStr + '\n');
       });
     }
-  }
-
-  private isLogCode(arg: any) {
-    return typeof arg === 'string' && arg.match(/^<.*>$/) !== null;
   }
 }
