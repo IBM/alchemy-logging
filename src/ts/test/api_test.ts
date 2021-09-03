@@ -121,6 +121,7 @@ describe('Alog Typescript Public API Test Suite', () => {
       expect(parsed.channel).to.equal('LONG-CHANNEL-NAME'.substring(0, 12));
     });
   }); // configure
+
   describe('log functions', () => {
 
     let logStream: Writable;
@@ -246,4 +247,13 @@ describe('Alog Typescript Public API Test Suite', () => {
     // CHANNEL LOG TESTS
     */
   }); // ChannelLog
+
+  describe('AlogConfigError', () => {
+    it('should have the right message', () => {
+      const msg = 'some error message';
+      const err = new alog.AlogConfigError(msg);
+      expect(err.message).to.equal(msg);
+      expect(err.name).to.equal('AlogConfigError');
+    });
+  });
 });
