@@ -46,12 +46,10 @@ function isValidLevel(lvl: any) {
 }
 
 function isValidFilterConfig(filterConfig: any) {
-  for (const key of filterConfig) {
-    if (!isValidLevel(filterConfig[key])) {
-      return false;
-    }
-  }
-  return true;
+  return Object.keys(filterConfig).reduce((obj: {[key: string]: boolean}, key: string) => {
+    obj.isValid = obj.isValid && isValidLevel(filterConfig[key]);
+    return obj;
+  }, {isValid: true}).isValid;
 }
 
 function isValidConfig(configObject: any): boolean {
@@ -94,11 +92,13 @@ function levelFromArg(level: string | number): number {
   if (typeof level === 'string') {
     if (isValidLevel(level)) {
       return AlogCoreSingleton.levelFromName[level];
-    } else {
-      throw new AlogConfigError(`Invalid level name: [${level}]`);
     }
+    throw new AlogConfigError(`Invalid level name: [${level}]`);
   } else if (typeof level === 'number') {
-    return level;
+    if (isValidLevel(level)) {
+      return level;
+    }
+    throw new AlogConfigError(`Invalid level number: [${level}]`);
   } else {
     throw new AlogConfigError(`Invalid argument type: [${typeof level}]`);
   }
@@ -126,9 +126,8 @@ function filtersFromArg(filters: FilterMap | string): FilterMap {
       parsed[keyVal[0]] = AlogCoreSingleton.levelFromName[keyVal[1]];
     });
     return parsed;
-  } else {
-    throw new AlogConfigError(`Invalid argument type for filters: [${typeof filters}]`);
   }
+  throw new AlogConfigError(`Invalid argument type for filters: [${typeof filters}]`);
 }
 
 function formatterFromArg(formatter: FormatterFunc | string) {
@@ -140,10 +139,10 @@ function formatterFromArg(formatter: FormatterFunc | string) {
     if (defaultFormatterMap[formatter] === undefined) {
       throw new AlogConfigError(
         `Invalid formatter type "${formatter}". Options are: [${Object.keys(defaultFormatterMap)}]`);
-    } else {
-      return defaultFormatterMap[formatter];
     }
+    return defaultFormatterMap[formatter];
   }
+  throw new AlogConfigError(`Invalid formatter argument type: ${typeof formatter}`);
 }
 
 function parseConfigureArgs(
@@ -157,7 +156,7 @@ function parseConfigureArgs(
   let parsedFormatter: FormatterFunc = defaultFormatterMap.pretty;
 
   // argOne might be a big map of all the things: (defaultLevel, Filters, formatter)
-  if (typeof argOne === "object") {
+  if (typeof argOne === 'object') {
     if (isValidConfig(argOne)) {
 
       // If other arguments specified, throw an error
@@ -180,9 +179,8 @@ function parseConfigureArgs(
           formatter: parsedFormatter,
         };
       }
-    } else {
-      throw new AlogConfigError(`Invalid config object: ${JSON.stringify(argOne)}`);
     }
+    throw new AlogConfigError(`Invalid config object: ${JSON.stringify(argOne)}`);
   } else {
     parsedDefaultLevel = levelFromArg(argOne);
   }

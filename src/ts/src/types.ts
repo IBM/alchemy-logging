@@ -60,7 +60,7 @@ export interface AlogConfig {
 export class AlogConfigError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = this.constructor.name;
+    this.name = 'AlogConfigError';
   }
 };
 
