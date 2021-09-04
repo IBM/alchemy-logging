@@ -141,6 +141,28 @@ All log functions have several required and optional components:
     }
     ```
 
+### Lazy Logging
+
+The `alog` framework is designed to enable low-level logging without incurring performance hits. To support this, you can use lazy log creation to only perform message creation if the given channel and level are enabled. This can be done by creating a `MessageGenerator`. A `MessageGenerator` is a function that takes no arguments and produces a `string`. For example:
+
+```ts
+function expensiveStringCreation() {
+    ...
+    return someString;
+}
+alog.info('CHANL', expensiveStringCreation);
+```
+
+In this example, the `expensiveStringCreation` function will only be invoked if the `CHANL` channel is enabled at the `info` level.
+
+The most common expensive log creation is done with standard [Template Literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals). While expanding a template literal is not terribly expensive for high-level logs, if logs are added to low-level functions, they can add up. The `alog.fmt` function acts as a [Tag](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates) to keep common template literal syntax while leveraging lazy `MessageGenerator`s. For example:
+
+```ts
+largeArray.forEach((element: any) => {
+    alog.debug4('CHANL', alog.fmt`The element is ${element}`);
+});
+```
+
 ## Utilities
 
 ### Global Metadata
