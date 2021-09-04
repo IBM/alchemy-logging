@@ -8,11 +8,14 @@ const deepCopy = require('deepcopy');
 const deepEqual = require('deep-equal');
 
 // Alog guts
-const alog = require('rewire')('../src/alog');
-const prettyLevelNames = alog.__get__('prettyLevelNames');
-const prettyIndentation = alog.__get__('prettyIndentation');
-const levelFromName = alog.__get__('levelFromName');
-const nameFromLevel = alog.__get__('nameFromLevel');
+import alog from '../src';
+import { AlogCoreSingleton } from '../src/core';
+const formatters = require('rewire')('../src/formatters');
+const prettyLevelNames = formatters.__get__('prettyLevelNames');
+const prettyIndentation = formatters.__get__('prettyIndentation');
+
+const levelFromName = AlogCoreSingleton.levelFromName;
+const nameFromLevel = AlogCoreSingleton.nameFromLevel;
 
 /*-- Constants ---------------------------------------------------------------*/
 
