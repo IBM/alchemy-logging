@@ -264,9 +264,48 @@ describe('Alog Typescript Public API Test Suite', () => {
   }); // metadata
 
   describe('ChannelLog', () => {
-    /*
-    // CHANNEL LOG TESTS
-    */
+    it('should create a channel with useChannel', () => {
+      const chan = alog.useChannel('TEST');
+      expect(chan.constructor.name).to.equal('ChannelLog');
+    });
+    describe('should have all valid level functions', () => {
+      const chan = alog.useChannel('TEST');
+      for (const levelName of Object.keys(levelFromName)) {
+        if (levelName === 'off') {
+          expect(chan).to.not.have.property(levelName);
+        } else {
+          expect(chan).to.have.property(levelName);
+
+          it(`should answer isEnabled correctly for ${levelName}`, () => {
+            alog.configure('off');
+            expect(chan.isEnabled(levelFromName[levelName])).to.be.false;
+            alog.configure(levelName);
+            expect(chan.isEnabled(levelFromName[levelName])).to.be.true;
+          });
+
+          it(`should correctly log a string to level ${levelName}`, () => {
+            alog.configure({
+              defaultLevel: levelFromName[levelName],
+              formatter: DirectJsonFormatter,
+            });
+            const logStream = new MemoryStreams.WritableStream();
+            alog.addOutputStream(logStream);
+            const msg: string = 'test msg';
+            (chan as any)[levelName](msg);
+            expect(validateLogRecords(getLogRecords(logStream), [
+              {
+                channel: chan.channel,
+                level: levelFromName[levelName],
+                level_str: levelName,
+                timestamp: IS_PRESENT,
+                num_indent: 0,
+                message: msg,
+              }
+            ]))
+          });
+        }
+      }
+    });
   }); // ChannelLog
 
   describe('AlogConfigError', () => {
