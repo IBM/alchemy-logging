@@ -30,7 +30,7 @@ import { AlogCoreSingleton } from './core';
 
 // Pass-Through exports
 export { configure } from './configure';
-export { JsonFormatter, PrettyFormatter } from './formatters';
+export { JsonFormatter, PrettyFormatter, fmt } from './formatters';
 export {
   AlogConfig,
   AlogConfigError,
