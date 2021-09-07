@@ -193,6 +193,15 @@ describe('Alog Typescript Public API Test Suite', () => {
     });
   }); // log functions
 
+  describe('fmt', () => {
+    it('should produce a lazy message generator', () => {
+      const val: number = 1;
+      const gen: alog.MessageGenerator = alog.fmt`The value is ${val}`;
+      expect(typeof gen).to.equal('function');
+      expect(gen()).to.equal(`The value is ${val}`);
+    });
+  });
+
   describe('indentation', () => {
 
     let logStream: Writable;

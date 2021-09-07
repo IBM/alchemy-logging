@@ -33,6 +33,7 @@ import {
   FATAL,
   FormatterFunc,
   INFO,
+  MessageGenerator,
   TRACE,
   WARNING,
 } from './types';
@@ -117,4 +118,20 @@ export function JsonFormatter(record: any): string {
 export const defaultFormatterMap: {[key: string]: FormatterFunc} = {
   pretty: PrettyFormatter,
   json: JsonFormatter,
+}
+
+/** @brief The fmt function is a tagged template that lazily creates a message
+ * generator
+ *
+ * This function is syntatic sugar around creating a MessageGenerator to perform
+ * lazy logging. It takes advantage of the Tagged Template feature of node to
+ * act as a Templat Literal Tag. For example:
+ *
+ * const val: number = 1;
+ * alog.debug('CHAN', alog.fmt`The value is ${val}`);
+ *
+ * Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates
+ */
+export function fmt(template: TemplateStringsArray, ...substitutions: any[]): MessageGenerator {
+  return () => String.raw(template, ...substitutions);
 }
