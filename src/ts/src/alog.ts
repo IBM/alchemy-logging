@@ -29,7 +29,7 @@ import { Writable } from 'stream';
 import { AlogCoreSingleton } from './core';
 
 // Pass-Through exports
-export { ChannelLog, useChannel } from './channel_log';
+export { ChannelLog, useChannel } from './channel-log';
 export { configure } from './configure';
 export { JsonFormatter, PrettyFormatter, fmt } from './formatters';
 export {
