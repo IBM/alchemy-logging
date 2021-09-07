@@ -114,19 +114,6 @@ export class AlogCoreSingleton {
   // Private constructor
   private constructor() {
     this.reset();
-
-    // Add log functions for each level
-    for (const levelName of Object.keys(AlogCoreSingleton.levelFromName)) {
-      if (levelName !== 'off') {
-        (this as any)[levelName] = (
-          channel: string,
-          argThree: string|MessageGenerator|LogMetadata,
-          argFour?: string|MessageGenerator|LogMetadata,
-          argFive?: LogMetadata) => {
-          this.log(AlogCoreSingleton.levelFromName[levelName], channel, argThree, argFour, argFive);
-        }
-      }
-    }
   }
 
   /////////////////////////////
@@ -184,6 +171,106 @@ export class AlogCoreSingleton {
       AlogCoreSingleton.getInstance().filters[channel] ||
       AlogCoreSingleton.getInstance().defaultLevel);
     return level >= enabledLevel;
+  }
+
+  // Log to fatal
+  public fatal(
+    channel: string,
+    argThree: string|MessageGenerator|LogMetadata,
+    argFour?: string|MessageGenerator|LogMetadata,
+    argFive?: LogMetadata,
+  ): void {
+    AlogCoreSingleton.getInstance().log(AlogCoreSingleton.levelFromName.fatal, channel, argThree, argFour, argFive);
+  }
+
+  // Log to error
+  public error(
+    channel: string,
+    argThree: string|MessageGenerator|LogMetadata,
+    argFour?: string|MessageGenerator|LogMetadata,
+    argFive?: LogMetadata,
+  ): void {
+    AlogCoreSingleton.getInstance().log(AlogCoreSingleton.levelFromName.error, channel, argThree, argFour, argFive);
+  }
+
+  // Log to warning
+  public warning(
+    channel: string,
+    argThree: string|MessageGenerator|LogMetadata,
+    argFour?: string|MessageGenerator|LogMetadata,
+    argFive?: LogMetadata,
+  ): void {
+    AlogCoreSingleton.getInstance().log(AlogCoreSingleton.levelFromName.warning, channel, argThree, argFour, argFive);
+  }
+
+  // Log to info
+  public info(
+    channel: string,
+    argThree: string|MessageGenerator|LogMetadata,
+    argFour?: string|MessageGenerator|LogMetadata,
+    argFive?: LogMetadata,
+  ): void {
+    AlogCoreSingleton.getInstance().log(AlogCoreSingleton.levelFromName.info, channel, argThree, argFour, argFive);
+  }
+
+  // Log to trace
+  public trace(
+    channel: string,
+    argThree: string|MessageGenerator|LogMetadata,
+    argFour?: string|MessageGenerator|LogMetadata,
+    argFive?: LogMetadata,
+  ): void {
+    AlogCoreSingleton.getInstance().log(AlogCoreSingleton.levelFromName.trace, channel, argThree, argFour, argFive);
+  }
+
+  // Log to debug
+  public debug(
+    channel: string,
+    argThree: string|MessageGenerator|LogMetadata,
+    argFour?: string|MessageGenerator|LogMetadata,
+    argFive?: LogMetadata,
+  ): void {
+    AlogCoreSingleton.getInstance().log(AlogCoreSingleton.levelFromName.debug, channel, argThree, argFour, argFive);
+  }
+
+  // Log to debug1
+  public debug1(
+    channel: string,
+    argThree: string|MessageGenerator|LogMetadata,
+    argFour?: string|MessageGenerator|LogMetadata,
+    argFive?: LogMetadata,
+  ): void {
+    AlogCoreSingleton.getInstance().log(AlogCoreSingleton.levelFromName.debug1, channel, argThree, argFour, argFive);
+  }
+
+  // Log to debug2
+  public debug2(
+    channel: string,
+    argThree: string|MessageGenerator|LogMetadata,
+    argFour?: string|MessageGenerator|LogMetadata,
+    argFive?: LogMetadata,
+  ): void {
+    AlogCoreSingleton.getInstance().log(AlogCoreSingleton.levelFromName.debug2, channel, argThree, argFour, argFive);
+  }
+
+  // Log to debug3
+  public debug3(
+    channel: string,
+    argThree: string|MessageGenerator|LogMetadata,
+    argFour?: string|MessageGenerator|LogMetadata,
+    argFive?: LogMetadata,
+  ): void {
+    AlogCoreSingleton.getInstance().log(AlogCoreSingleton.levelFromName.debug3, channel, argThree, argFour, argFive);
+  }
+
+  // Log to debug4
+  public debug4(
+    channel: string,
+    argThree: string|MessageGenerator|LogMetadata,
+    argFour?: string|MessageGenerator|LogMetadata,
+    argFive?: LogMetadata,
+  ): void {
+    AlogCoreSingleton.getInstance().log(AlogCoreSingleton.levelFromName.debug4, channel, argThree, argFour, argFive);
   }
 
   //////////////////////////////
