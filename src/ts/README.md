@@ -141,6 +141,27 @@ All log functions have several required and optional components:
     }
     ```
 
+### Channel Logs
+
+It's often desirable to bind a shared channel name to an object so that it can be reused across a portion of your codebase. To accomplish this, `alog` supports the `useChannel` function which creates a `ChannelLog`. The `ChannelLog` object has a function for each of the log levels which omits the first `channel` argument and instead passes the bound channel name.
+
+```ts
+const channel: alog.ChannelLog = alog.useChannel('CHANL');
+channel.debug2('Some details');
+```
+
+Additionally, a `ChannelLog` supports the `isEnabled` function:
+
+```ts
+const channel: alog.ChannelLog = alog.useChannel('CHANL');
+if (channel.isEnabled(alog.debug2)) {
+    const someNonFunctionalThing = makeLoggingSideEffect();
+    channel.debug2(`The side effect is: ${someNonFunctionalThing}`);
+}
+```
+
+**NOTE**: For complex log creation, the recommended method is to use a `MessageGenerator` to create the message lazily.
+
 ### Lazy Logging
 
 The `alog` framework is designed to enable low-level logging without incurring performance hits. To support this, you can use lazy log creation to only perform message creation if the given channel and level are enabled. This can be done by creating a `MessageGenerator`. A `MessageGenerator` is a function that takes no arguments and produces a `string`. For example:
