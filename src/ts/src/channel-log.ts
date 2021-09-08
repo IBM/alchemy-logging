@@ -24,6 +24,7 @@
 
 // Local
 import { AlogCoreSingleton } from './core';
+import { LogCode, Loggable, LogMetadata } from './types';
 
 /**
  * The ChannelLog object binds a channel name and wraps all of the core
@@ -32,44 +33,143 @@ import { AlogCoreSingleton } from './core';
 export class ChannelLog {
 
   public channel: string;
-  private coreInstance: any;
+  private coreInstance: AlogCoreSingleton;
 
   constructor(channel: string) {
     this.channel = channel;
-    this.coreInstance = AlogCoreSingleton.getInstance() as any;
+    this.coreInstance = AlogCoreSingleton.getInstance();
   }
 
   /*-- Log Functions --*/
 
-  public fatal(...args: any[]): void {
-    this.coreInstance.fatal(this.channel, ...args);
+  // Log to fatal
+  public fatal(message: Loggable, metadata?: LogMetadata): void;
+  public fatal(logCode: LogCode, message?: Loggable, metadata?: LogMetadata): void;
+  public fatal(
+    codeOrMsg: LogCode|Loggable,
+    msgOrMeta?: Loggable|LogMetadata,
+    meta?: LogMetadata,
+  ) {
+    AlogCoreSingleton.getInstance().fatal(
+      this.channel, codeOrMsg as string, msgOrMeta as Loggable, meta,
+    );
   }
-  public error(...args: any[]): void {
-    this.coreInstance.error(this.channel, ...args);
+
+  // Log to error
+  public error(message: Loggable, metadata?: LogMetadata): void;
+  public error(logCode: LogCode, message?: Loggable, metadata?: LogMetadata): void;
+  public error(
+    codeOrMsg: LogCode|Loggable,
+    msgOrMeta?: Loggable|LogMetadata,
+    meta?: LogMetadata,
+  ) {
+    AlogCoreSingleton.getInstance().error(
+      this.channel, codeOrMsg as string, msgOrMeta as Loggable, meta,
+    );
   }
-  public warning(...args: any[]): void {
-    this.coreInstance.warning(this.channel, ...args);
+
+  // Log to warning
+  public warning(message: Loggable, metadata?: LogMetadata): void;
+  public warning(logCode: LogCode, message?: Loggable, metadata?: LogMetadata): void;
+  public warning(
+    codeOrMsg: LogCode|Loggable,
+    msgOrMeta?: Loggable|LogMetadata,
+    meta?: LogMetadata,
+  ) {
+    AlogCoreSingleton.getInstance().warning(
+      this.channel, codeOrMsg as string, msgOrMeta as Loggable, meta,
+    );
   }
-  public info(...args: any[]): void {
-    this.coreInstance.info(this.channel, ...args);
+
+  // Log to info
+  public info(message: Loggable, metadata?: LogMetadata): void;
+  public info(logCode: LogCode, message?: Loggable, metadata?: LogMetadata): void;
+  public info(
+    codeOrMsg: LogCode|Loggable,
+    msgOrMeta?: Loggable|LogMetadata,
+    meta?: LogMetadata,
+  ) {
+    AlogCoreSingleton.getInstance().info(
+      this.channel, codeOrMsg as string, msgOrMeta as Loggable, meta,
+    );
   }
-  public trace(...args: any[]): void {
-    this.coreInstance.trace(this.channel, ...args);
+
+  // Log to trace
+  public trace(message: Loggable, metadata?: LogMetadata): void;
+  public trace(logCode: LogCode, message?: Loggable, metadata?: LogMetadata): void;
+  public trace(
+    codeOrMsg: LogCode|Loggable,
+    msgOrMeta?: Loggable|LogMetadata,
+    meta?: LogMetadata,
+  ) {
+    AlogCoreSingleton.getInstance().trace(
+      this.channel, codeOrMsg as string, msgOrMeta as Loggable, meta,
+    );
   }
-  public debug(...args: any[]): void {
-    this.coreInstance.debug(this.channel, ...args);
+
+  // Log to debug
+  public debug(message: Loggable, metadata?: LogMetadata): void;
+  public debug(logCode: LogCode, message?: Loggable, metadata?: LogMetadata): void;
+  public debug(
+    codeOrMsg: LogCode|Loggable,
+    msgOrMeta?: Loggable|LogMetadata,
+    meta?: LogMetadata,
+  ) {
+    AlogCoreSingleton.getInstance().debug(
+      this.channel, codeOrMsg as string, msgOrMeta as Loggable, meta,
+    );
   }
-  public debug1(...args: any[]): void {
-    this.coreInstance.debug1(this.channel, ...args);
+
+  // Log to debug1
+  public debug1(message: Loggable, metadata?: LogMetadata): void;
+  public debug1(logCode: LogCode, message?: Loggable, metadata?: LogMetadata): void;
+  public debug1(
+    codeOrMsg: LogCode|Loggable,
+    msgOrMeta?: Loggable|LogMetadata,
+    meta?: LogMetadata,
+  ) {
+    AlogCoreSingleton.getInstance().debug1(
+      this.channel, codeOrMsg as string, msgOrMeta as Loggable, meta,
+    );
   }
-  public debug2(...args: any[]): void {
-    this.coreInstance.debug2(this.channel, ...args);
+
+  // Log to debug2
+  public debug2(message: Loggable, metadata?: LogMetadata): void;
+  public debug2(logCode: LogCode, message?: Loggable, metadata?: LogMetadata): void;
+  public debug2(
+    codeOrMsg: LogCode|Loggable,
+    msgOrMeta?: Loggable|LogMetadata,
+    meta?: LogMetadata,
+  ) {
+    AlogCoreSingleton.getInstance().debug2(
+      this.channel, codeOrMsg as string, msgOrMeta as Loggable, meta,
+    );
   }
-  public debug3(...args: any[]): void {
-    this.coreInstance.debug3(this.channel, ...args);
+
+  // Log to debug3
+  public debug3(message: Loggable, metadata?: LogMetadata): void;
+  public debug3(logCode: LogCode, message?: Loggable, metadata?: LogMetadata): void;
+  public debug3(
+    codeOrMsg: LogCode|Loggable,
+    msgOrMeta?: Loggable|LogMetadata,
+    meta?: LogMetadata,
+  ) {
+    AlogCoreSingleton.getInstance().debug3(
+      this.channel, codeOrMsg as string, msgOrMeta as Loggable, meta,
+    );
   }
-  public debug4(...args: any[]): void {
-    this.coreInstance.debug4(this.channel, ...args);
+
+  // Log to debug4
+  public debug4(message: Loggable, metadata?: LogMetadata): void;
+  public debug4(logCode: LogCode, message?: Loggable, metadata?: LogMetadata): void;
+  public debug4(
+    codeOrMsg: LogCode|Loggable,
+    msgOrMeta?: Loggable|LogMetadata,
+    meta?: LogMetadata,
+  ) {
+    AlogCoreSingleton.getInstance().debug4(
+      this.channel, codeOrMsg as string, msgOrMeta as Loggable, meta,
+    );
   }
 
   /*-- Helper Functions --*/

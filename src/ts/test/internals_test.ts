@@ -42,77 +42,77 @@ describe('Alog TypeScript Internals Test Suite', () => {
       });
 
       it('should be able to set the default level', () => {
-        expect((alogCore as any).defaultLevel).to.equal(alog.OFF);
+        expect(alogCore.defaultLevel).to.equal(alog.OFF);
         alogCore.setDefaultLevel(alog.DEBUG);
-        expect((alogCore as any).defaultLevel).to.equal(alog.DEBUG);
+        expect(alogCore.defaultLevel).to.equal(alog.DEBUG);
       });
 
       it('should be able to set filters', () => {
-        expect((alogCore as any).defaultLevel).to.equal(alog.OFF);
+        expect(alogCore.defaultLevel).to.equal(alog.OFF);
         alogCore.setFilters({TEST: alog.INFO});
-        expect((alogCore as any).filters).to.deep.equal({TEST: alog.INFO});
+        expect(alogCore.filters).to.deep.equal({TEST: alog.INFO});
       });
 
       it('should be able to set the formatter', () => {
-        expect((alogCore as any).formatter.name).to.equal(PrettyFormatter.name);
+        expect(alogCore.formatter.name).to.equal(PrettyFormatter.name);
         alogCore.setFormatter(JsonFormatter);
-        expect((alogCore as any).formatter.name).to.equal(JsonFormatter.name);
+        expect(alogCore.formatter.name).to.equal(JsonFormatter.name);
       });
 
       it('should be able to indent', () => {
-        expect((alogCore as any).numIndent).to.equal(0);
+        expect(alogCore.numIndent).to.equal(0);
         alogCore.indent();
-        expect((alogCore as any).numIndent).to.equal(1);
+        expect(alogCore.numIndent).to.equal(1);
       });
 
       it('should be able to deindent', () => {
-        expect((alogCore as any).numIndent).to.equal(0);
+        expect(alogCore.numIndent).to.equal(0);
         alogCore.indent();
-        expect((alogCore as any).numIndent).to.equal(1);
+        expect(alogCore.numIndent).to.equal(1);
         alogCore.deindent();
-        expect((alogCore as any).numIndent).to.equal(0);
+        expect(alogCore.numIndent).to.equal(0);
       });
 
       it('should be not able to deindent past 0', () => {
-        expect((alogCore as any).numIndent).to.equal(0);
+        expect(alogCore.numIndent).to.equal(0);
         alogCore.deindent();
-        expect((alogCore as any).numIndent).to.equal(0);
+        expect(alogCore.numIndent).to.equal(0);
       });
 
       it('should be able to add metadata', () => {
-        expect((alogCore as any).metadata).to.deep.equal({});
+        expect(alogCore.metadata).to.deep.equal({});
         alogCore.addMetadata('key', {nested: 1});
-        expect((alogCore as any).metadata).to.deep.equal({key: {nested: 1}});
+        expect(alogCore.metadata).to.deep.equal({key: {nested: 1}});
       });
 
       it('should be able to remove metadata', () => {
-        expect((alogCore as any).metadata).to.deep.equal({});
+        expect(alogCore.metadata).to.deep.equal({});
         alogCore.addMetadata('key', {nested: 1});
-        expect((alogCore as any).metadata).to.deep.equal({key: {nested: 1}});
+        expect(alogCore.metadata).to.deep.equal({key: {nested: 1}});
         alogCore.removeMetadata('key');
-        expect((alogCore as any).metadata).to.deep.equal({});
+        expect(alogCore.metadata).to.deep.equal({});
       });
 
       it('should ignore request to remove unknown metadata', () => {
-        expect((alogCore as any).metadata).to.deep.equal({});
+        expect(alogCore.metadata).to.deep.equal({});
         alogCore.addMetadata('key', {nested: 1});
-        expect((alogCore as any).metadata).to.deep.equal({key: {nested: 1}});
+        expect(alogCore.metadata).to.deep.equal({key: {nested: 1}});
         alogCore.removeMetadata('foobar');
-        expect((alogCore as any).metadata).to.deep.equal({key: {nested: 1}});
+        expect(alogCore.metadata).to.deep.equal({key: {nested: 1}});
       });
 
       it('should be able to add a custom stream', () => {
-        expect((alogCore as any).streams.length).to.equal(1);
+        expect(alogCore.streams.length).to.equal(1);
         alogCore.addOutputStream(new MemoryStreams.WritableStream());
-        expect((alogCore as any).streams.length).to.equal(2);
+        expect(alogCore.streams.length).to.equal(2);
       });
 
       it('should be able to reset output streams', () => {
-        expect((alogCore as any).streams.length).to.equal(1);
+        expect(alogCore.streams.length).to.equal(1);
         alogCore.addOutputStream(new MemoryStreams.WritableStream());
-        expect((alogCore as any).streams.length).to.equal(2);
+        expect(alogCore.streams.length).to.equal(2);
         alogCore.resetOutputStreams();
-        expect((alogCore as any).streams.length).to.equal(1);
+        expect(alogCore.streams.length).to.equal(1);
       });
     }); // mutators
 

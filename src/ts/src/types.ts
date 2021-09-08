@@ -50,6 +50,12 @@ export type FormatterFunc = (logRecord: LogRecord) => string;
 // The type for a lazy record generator
 export type MessageGenerator = () => string;
 
+// The type used for a log code
+export type LogCode = string;
+
+// The type that defines something which can be logged
+export type Loggable = string|MessageGenerator;
+
 export interface AlogConfig {
   defaultLevel: number;
   filters?: FilterMap;

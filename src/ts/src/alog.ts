@@ -65,13 +65,13 @@ export const removeMetadata = AlogCoreSingleton.getInstance().removeMetadata;
 export const resetOutputStreams = AlogCoreSingleton.getInstance().resetOutputStreams;
 
 // Add all of the level functions
-export const fatal = (AlogCoreSingleton.getInstance() as any).fatal;
-export const error = (AlogCoreSingleton.getInstance() as any).error;
-export const warning = (AlogCoreSingleton.getInstance() as any).warning;
-export const info = (AlogCoreSingleton.getInstance() as any).info;
-export const trace = (AlogCoreSingleton.getInstance() as any).trace;
-export const debug = (AlogCoreSingleton.getInstance() as any).debug;
-export const debug1 = (AlogCoreSingleton.getInstance() as any).debug1;
-export const debug2 = (AlogCoreSingleton.getInstance() as any).debug2;
-export const debug3 = (AlogCoreSingleton.getInstance() as any).debug3;
-export const debug4 = (AlogCoreSingleton.getInstance() as any).debug4;
+export const fatal = AlogCoreSingleton.getInstance().fatal;
+export const error = AlogCoreSingleton.getInstance().error;
+export const warning = AlogCoreSingleton.getInstance().warning;
+export const info = AlogCoreSingleton.getInstance().info;
+export const trace = AlogCoreSingleton.getInstance().trace;
+export const debug = AlogCoreSingleton.getInstance().debug;
+export const debug1 = AlogCoreSingleton.getInstance().debug1;
+export const debug2 = AlogCoreSingleton.getInstance().debug2;
+export const debug3 = AlogCoreSingleton.getInstance().debug3;
+export const debug4 = AlogCoreSingleton.getInstance().debug4;
