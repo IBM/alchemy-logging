@@ -45,7 +45,8 @@ COPY ./test /src/test
 RUN true && \
     ([ "$RELEASE_DRY_RUN" != "true" ] && sleep 30 || true) && \
     sed -i'' 's,alchemy-logging,test-alchemy-logging,g' package.json && \
-    sed -i'' 's,../src,alchemy-logging,g' test/*.ts && \
+    sed -i'' 's,../src/,alchemy-logging/dist/,g' test/*.ts && \
+    sed -i'' "s,../src',alchemy-logging',g" test/*.ts && \
     npm install alchemy-logging@${TS_RELEASE_VERSION} && \
     npm test && \
     true
