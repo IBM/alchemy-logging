@@ -102,6 +102,14 @@ export function PrettyFormatter(record: any, channelLength: number = 5): string 
     }
   }
 
+  //// Add Stack Trace ////
+  if (record.stack !== undefined) {
+    const stackLines = record.stack.split('\n');
+    for (const stackLine of stackLines.slice(1)) {
+      outStr += `${header} ${stackLine}\n`;
+    }
+  }
+
   // Strip off the final newline and return
   return outStr.trimRight();
 }
