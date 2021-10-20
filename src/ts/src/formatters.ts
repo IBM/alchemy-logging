@@ -87,8 +87,10 @@ export function PrettyFormatter(record: any, channelLength: number = 5): string 
 
   //// Log each line in the message ////
   let outStr = '';
-  for (const line of record.message.split('\n')) {
-    outStr += `${header} ${line}\n`;
+  if (record.message) {
+    for (const line of record.message.split('\n')) {
+      outStr += `${header} ${line}\n`;
+    }
   }
 
   //// Add Metadata ////
