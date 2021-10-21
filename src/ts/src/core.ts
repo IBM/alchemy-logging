@@ -376,10 +376,14 @@ export class AlogCoreSingleton {
   // Note that this function implements the following signature options for a
   // given log-level emitter:
   //
-  // log(channel: string, logCode: string, message?: MessageGenerator, metadata?: LogMetadata)
-  // log(channel: string, logCode: string, message?: string, metadata?: LogMetadata)
-  // log(channel: string, messageGenerator: string, metadata?: LogMetadata)
-  // log(channel: string, message: string, metadata?: LogMetadata)
+  // 1. log(channel: string, logCode: string, message?: MessageGenerator, metadata?: LogMetadata)
+  // 2. log(channel: string, logCode: string, message?: string, metadata?: LogMetadata)
+  // 3. log(channel: string, logCode: string, message?: Error, metadata?: LogMetadata)
+  // 4. log(channel: string, logCode: string, metadata?: LogMetadata)
+  // 5. log(channel: string, message: MessageGenerator, metadata?: LogMetadata)
+  // 6. log(channel: string, message: string, metadata?: LogMetadata)
+  // 7. log(channel: string, message: Error, metadata?: LogMetadata)
+  // 8. log(channel: string, metadata: LogMetadata)
   //
   // @param level: The level to emit the log at
   // @param channel: The channel to log on
@@ -436,7 +440,15 @@ export class AlogCoreSingleton {
           // Signature 2
           // log(channel: string, logCode: string, message?: string, metadata?: LogRecord)
           record.message = meta as string;
-        } // else ignore meta because it's invalid
+        } else if (meta instanceof Error) {
+          // Signature 3
+          // log(channel: string, logCode: string, message?: Error, metadata?: LogMetadata)
+          record.message = (meta as Error).toString();
+          record.stack = (meta as Error).stack;
+        } else if (typeof meta === 'object') {
+          record.message = '';
+          record.metadata = Object.assign((record.metadata || {}), deepCopy(meta));
+        } // else ignore msgOrMeta because it's invalid
         if (argFive !== undefined && Object.keys(argFive).length) {
           record.metadata = Object.assign((record.metadata || {}), deepCopy(argFive));
         }
@@ -444,13 +456,23 @@ export class AlogCoreSingleton {
       } else {
 
         if (typeof msgOrMeta === 'function') {
-          // Signature 3
+          // Signature 5
           // log(channel: string, message?: MessageGenerator, metadata?: LogRecord)
           record.message = msgOrMeta() as string;
         } else if (typeof msgOrMeta === 'string')  {
-          // Signature 4
+          // Signature 6
           // log(channel: string, message?: string, metadata?: LogRecord)
           record.message = msgOrMeta as string;
+        } else if (msgOrMeta instanceof Error) {
+          // Signature 7
+          // log(channel: string, message?: Error, metadata?: LogMetadata)
+          record.message = (msgOrMeta as Error).toString();
+          record.stack = (msgOrMeta as Error).stack;
+        } else if (typeof msgOrMeta === 'object') {
+          // Signature 8
+          // log(channel: string, metadata: LogMetadata)
+          record.message = '';
+          record.metadata = Object.assign((record.metadata || {}), deepCopy(msgOrMeta));
         } // else ignore msgOrMeta because it's invalid
         if (meta !== undefined && typeof meta === 'object' && Object.keys(meta).length) {
           record.metadata = Object.assign((record.metadata || {}), deepCopy(meta));

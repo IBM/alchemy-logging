@@ -191,6 +191,44 @@ describe('Alog Typescript Public API Test Suite', () => {
       alog.info('LOWER', "Some fun message");
       expect(validateLogRecords(getLogRecords(logStream), [])).to.be.true;
     });
+
+    it('should support all logging signatures', () => {
+      const logcode = '<logcode>';
+      const err = new Error('barf');
+      const md = { foo: 1 };
+
+      // 1. log(channel: string, logCode: string, message?: MessageGenerator, metadata?: LogMetadata)
+      alog.info('CH', logcode, () => 'message', md);
+      // 2. log(channel: string, logCode: string, message?: string, metadata?: LogMetadata)
+      alog.info('CH', logcode, 'message', md);
+      // 3. log(channel: string, logCode: string, message?: Error, metadata?: LogMetadata)
+      alog.info('CH', logcode, err, md);
+      // 4. log(channel: string, logCode: string, metadata?: LogMetadata)
+      alog.info('CH', logcode, md);
+      // 5. log(channel: string, message: MessageGenerator, metadata?: LogMetadata)
+      alog.info('CH', () => 'message', md);
+      // 6. log(channel: string, message: string, metadata?: LogMetadata)
+      alog.info('CH', 'message', md);
+      // 7. log(channel: string, message: Error, metadata?: LogMetadata)
+      alog.info('CH', err, md);
+      // 8. log(channel: string, metadata: LogMetadata)
+      alog.info('CH', md);
+      const records = getLogRecords(logStream);
+      const baseRecord = {
+        channel: 'CH', level: alog.INFO, level_str: nameFromLevel[alog.INFO],
+        timestamp: IS_PRESENT, num_indent: 0,
+      }
+      expect(validateLogRecords(records, [
+        Object.assign({log_code: logcode, message: 'message', metadata: md}, baseRecord),
+        Object.assign({log_code: logcode, message: 'message', metadata: md}, baseRecord),
+        Object.assign({log_code: logcode, message: err.toString(), stack: err.stack, metadata: md}, baseRecord),
+        Object.assign({log_code: logcode, message: '', metadata: md}, baseRecord),
+        Object.assign({message: 'message', metadata: md}, baseRecord),
+        Object.assign({message: 'message', metadata: md}, baseRecord),
+        Object.assign({message: err.toString(), stack: err.stack, metadata: md}, baseRecord),
+        Object.assign({message: '', metadata: md}, baseRecord),
+      ])).to.be.true;
+    });
   }); // log functions
 
   describe('fmt', () => {

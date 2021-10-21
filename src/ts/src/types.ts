@@ -42,6 +42,7 @@ export interface LogRecord {
   // Specific optional fields
   log_code?: string;
   metadata?: LogMetadata;
+  stack?: string;
 }
 
 // The type for a custom formatter function
@@ -54,7 +55,7 @@ export type MessageGenerator = () => string;
 export type LogCode = string;
 
 // The type that defines something which can be logged
-export type Loggable = string|MessageGenerator;
+export type Loggable = string|MessageGenerator|Error|any;
 
 export interface AlogConfig {
   defaultLevel: number;

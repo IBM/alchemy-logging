@@ -87,8 +87,10 @@ export function PrettyFormatter(record: any, channelLength: number = 5): string 
 
   //// Log each line in the message ////
   let outStr = '';
-  for (const line of record.message.split('\n')) {
-    outStr += `${header} ${line}\n`;
+  if (record.message) {
+    for (const line of record.message.split('\n')) {
+      outStr += `${header} ${line}\n`;
+    }
   }
 
   //// Add Metadata ////
@@ -97,6 +99,14 @@ export function PrettyFormatter(record: any, channelLength: number = 5): string 
     for (const key of Object.keys(record.metadata)) {
       const val: string = JSON.stringify(record.metadata[key]);
       outStr += `${header} * ${key}: ${val}\n`;
+    }
+  }
+
+  //// Add Stack Trace ////
+  if (record.stack !== undefined) {
+    const stackLines = record.stack.split('\n');
+    for (const stackLine of stackLines.slice(1)) {
+      outStr += `${header} ${stackLine}\n`;
     }
   }
 

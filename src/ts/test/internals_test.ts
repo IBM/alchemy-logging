@@ -402,6 +402,24 @@ and a third!`}));
       expect(parsePPLine(formattedLines[3])).to.not.have.property('message');
       expect(parsePPLine(formattedLines[3]).baz).to.deep.equal({biz: ['buz']});
     });
+
+    it('should format an Error with message and stack', () => {
+      const err = new Error('barf');
+      const formatted: string[] = PrettyFormatter(makeTestRecord({
+        message: err.toString(),
+        stack: err.stack,
+      })).split('\n');
+      // NOTE: The stack string includes the message, so it is skipped as to not
+      //  duplicate the error message printed when the message is printed
+      const stackLines = err.stack.split('\n');
+      expect(formatted.length).to.equal(stackLines.length);
+      expect(parsePPLine(formatted[0]).message).to.equal(err.toString());
+      let i = 1;
+      for (const line of stackLines.slice(1)) {
+        expect(parsePPLine(formatted[i]).message).to.equal(line.trim());
+        i += 1;
+      }
+    });
   });
 
   // json suite
