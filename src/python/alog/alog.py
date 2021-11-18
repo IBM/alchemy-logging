@@ -402,6 +402,16 @@ def _parse_str_of_filters(filters):
             logging.warning("Invalid filter entry [%s]", entry)
     return chan_map
 
+## Import-time Setup ###########################################################
+
+# Add custom low levels
+for level, name in g_alog_level_to_name.items():
+    if name not in ["off", "notset"]:
+        _add_level_fn(name, level)
+
+# Patch over isEnabledFor to support level names
+_add_is_enabled()
+
 ## Core ########################################################################
 
 def configure(
@@ -470,14 +480,6 @@ def configure(
     handler = handler_generator()
     handler.setFormatter(g_alog_formatter)
     logging.root.addHandler(handler)
-
-    # Add custom low levels
-    for level, name in g_alog_level_to_name.items():
-        if name not in ["off", "notset"]:
-            _add_level_fn(name, level)
-
-    # Patch over isEnabledFor to support level names
-    _add_is_enabled()
 
     # Set default level
     default_level_val = g_alog_name_to_level.get(default_level, None)
@@ -752,8 +754,3 @@ def timed_function(log_fn, format_str="", *fmt_args):
                 return func(*args, **kwargs)
         return wrapper
     return decorator
-
-# Run a static configure when first imported to ensure that all custom logging
-# configuration (including function names) is available before user-provided
-# configure is called.
-configure("off")
