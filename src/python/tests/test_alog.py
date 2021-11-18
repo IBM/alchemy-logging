@@ -286,7 +286,7 @@ class TestThreadId(unittest.TestCase):
         # Log a sample message
         test_channel.info('This is a test')
 
-        # run in subprocess and capture stderr
+        # Capture the output and make sure the thread id is present
         logged_output = capture_formatter.get_json_records()
         self.assertEqual(len(logged_output), 1)
         self.assertIn('thread_id', logged_output[0])
@@ -302,7 +302,7 @@ class TestThreadId(unittest.TestCase):
         # Log a sample message
         test_channel.info('This is a test')
 
-        # run in subprocess and capture stderr
+        # Capture the output and make sure the thread id is present
         self.assertTrue(len(capture_formatter.captured), 1)
         logged_output = capture_formatter.get_pretty_records()[0]
         self.assertIn('thread_id', logged_output)
