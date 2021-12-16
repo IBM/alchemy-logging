@@ -36,7 +36,7 @@
   "author": "Gabe Goodhart",
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^16.6.1",
+    "@types/node": "^17.0.0",
     "deepcopy": "^2.0.0",
     "typescript": "^3.6.4"
   },
