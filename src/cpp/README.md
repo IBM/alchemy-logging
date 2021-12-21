@@ -2,7 +2,7 @@
 The `alog` framework provides tunable logging with easy-to-use defaults and power-user capabilities. The mantra of `alog` is **"Log Early And Often"**. To accomplish this goal, `alog` makes it easy to enable verbose logging at develop/debug time and trim the verbosity at production run time.
 
 ## Dependencies
-The `alog` library is intentionally light on dependencies. The only dependencies necessary are [nlohmann/json](hhttps://github.com/nlohmann/json) and [boost/algorithm](https://github.com/boostorg/algorithm/tree/boost-1.69.0) and [boost/locale](https://github.com/boostorg/locale/tree/boost-1.69.0).
+The `alog` library is intentionally light on dependencies. The only dependency necessary is [nlohmann/json](hhttps://github.com/nlohmann/json).
 
 ## Channels and Levels
 The primary components of the system are **channels** and **levels** which allow for each log statement to be enabled or disabled when appropriate.
