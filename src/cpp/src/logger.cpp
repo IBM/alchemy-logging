@@ -35,9 +35,6 @@
 #include <utility>
 #include <vector>
 
-// Third Party
-#include <boost/algorithm/string/join.hpp>
-
 namespace logging
 {
 
@@ -152,7 +149,10 @@ void addPrettyPrintMap(
     {
       std::vector<std::string> lines;
       addPrettyPrintMap(val, a_format, a_indent+1, false, lines);
-      ss << "\n" + boost::algorithm::join(lines, "\n");
+      for (const auto& line : lines)
+      {
+        ss << "\n" << line;
+      }
     }
     else
     {
