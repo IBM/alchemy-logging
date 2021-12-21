@@ -36,8 +36,7 @@ install(
 option(BUILD_UNIT_TESTS "Build the unit tests" ON)
 if (${BUILD_UNIT_TESTS})
 
-  # Find boost and gtest with local package install
-  find_package(Boost REQUIRED COMPONENTS regex)
+  # Find gtest with local package install
   find_package(GTest REQUIRED)
 
   enable_testing()
@@ -51,10 +50,8 @@ if (${BUILD_UNIT_TESTS})
   )
   target_include_directories(${ut_exe_name} PUBLIC tests/include)
   target_include_directories(${ut_exe_name} PUBLIC ${GTEST_INCLUDE_DIRS})
-  target_include_directories(${library_name} PUBLIC ${Boost_INCLUDE_DIRECTORIES})
   target_link_libraries(${ut_exe_name} ${library_name})
   target_link_libraries(${ut_exe_name} ${GTEST_LIBRARIES})
-  target_link_libraries(${ut_exe_name} ${Boost_LIBRARIES})
   target_link_options(${ut_exe_name} PUBLIC "-pthread")
   add_test(${ut_exe_name} "${ut_binary_dir}/${ut_exe_name}")
 endif()

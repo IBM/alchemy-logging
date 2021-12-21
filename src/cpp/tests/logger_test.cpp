@@ -23,13 +23,11 @@
  *----------------------------------------------------------------------------*/
 #include "unit_testing.h"
 
+#include <chrono>
+#include <functional>
 #include <regex>
 #include <stdlib.h>
-#include <functional>
-#include <chrono>
 #include <thread>
-
-#include <boost/regex.hpp>
 
 using json = nlohmann::json;
 
@@ -121,9 +119,9 @@ std::shared_ptr<CParsedLogEntry> parseStdLine(const std::string& a_line)
   std::string restOfRegex = "([^\\]]*)\\[([^:]*):([^\\]:]*):?([^\\]\\s]*)\\] ([\\s]*)([^\\s].*)\n?";
   std::stringstream ss;
   ss << "^" << timestampRegex << " " << restOfRegex << "$";
-  boost::regex re(ss.str());
-  boost::smatch m;
-  boost::regex_match(a_line, m, re);
+  std::regex re(ss.str());
+  std::smatch m;
+  std::regex_match(a_line, m, re);
   if (m.size() != 8)
   {
     return {};
@@ -140,9 +138,9 @@ std::shared_ptr<CParsedLogEntry> parseStdLine(const std::string& a_line)
     out->serviceName = m[2];
     if (not out->serviceName.empty())
     {
-      boost::regex snRe("<([^>]*)> ");
-      boost::smatch snM;
-      boost::regex_match(out->serviceName, snM, snRe);
+      std::regex snRe("<([^>]*)> ");
+      std::smatch snM;
+      std::regex_match(out->serviceName, snM, snRe);
       if (snM.size() == 2)
       {
         out->serviceName = snM[1];
