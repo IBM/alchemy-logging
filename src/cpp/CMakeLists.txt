@@ -21,16 +21,11 @@ CPMAddPackage(
     "JSON_BuildTests OFF"
 )
 
-# Find boost and gtest with local package install
-find_package(Boost REQUIRED COMPONENTS locale regex)
-
 # Add the library
 set(library_name alog)
 add_library(${library_name} src/logger.cpp)
 target_include_directories(${library_name} PUBLIC include)
-target_include_directories(${library_name} PUBLIC ${Boost_INCLUDE_DIRECTORIES})
 target_include_directories(${library_name} PUBLIC ${nlohmann_json_SOURCE_DIR}/single_include)
-target_link_libraries(${library_name} ${Boost_locale_LIBRARIES})
 set_target_properties(alog PROPERTIES PUBLIC_HEADER include/alog/logger.hpp)
 install(
   TARGETS alog
@@ -40,7 +35,10 @@ install(
 # Add the unit tests if enabled
 option(BUILD_UNIT_TESTS "Build the unit tests" ON)
 if (${BUILD_UNIT_TESTS})
+
+  # Find gtest with local package install
   find_package(GTest REQUIRED)
+
   enable_testing()
   set(ut_binary_dir ${CMAKE_BINARY_DIR}/bin/test)
   set(ut_exe_name alog_test.ut)
@@ -54,7 +52,6 @@ if (${BUILD_UNIT_TESTS})
   target_include_directories(${ut_exe_name} PUBLIC ${GTEST_INCLUDE_DIRS})
   target_link_libraries(${ut_exe_name} ${library_name})
   target_link_libraries(${ut_exe_name} ${GTEST_LIBRARIES})
-  target_link_libraries(${ut_exe_name} ${Boost_LIBRARIES})
   target_link_options(${ut_exe_name} PUBLIC "-pthread")
   add_test(${ut_exe_name} "${ut_binary_dir}/${ut_exe_name}")
 endif()
