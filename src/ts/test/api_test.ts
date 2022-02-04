@@ -295,6 +295,11 @@ describe('Alog Typescript Public API Test Suite', () => {
       ])).to.be.true;
     });
 
+    it('should handle null metadata', () => {
+      alog.info('TEST', 'foobar', null)
+      alog.info('TEST', 'foobar', undefined)
+    });
+
     /*
     // SCOPED METADATA TESTS
     */

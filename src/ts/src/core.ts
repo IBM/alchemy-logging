@@ -474,7 +474,7 @@ export class AlogCoreSingleton {
           record.message = '';
           record.metadata = Object.assign((record.metadata || {}), deepCopy(msgOrMeta));
         } // else ignore msgOrMeta because it's invalid
-        if (meta !== undefined && typeof meta === 'object' && Object.keys(meta).length) {
+        if (meta !== undefined && meta !== null && typeof meta === 'object' && Object.keys(meta).length) {
           record.metadata = Object.assign((record.metadata || {}), deepCopy(meta));
         }
       }
