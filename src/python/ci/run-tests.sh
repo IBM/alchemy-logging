@@ -9,4 +9,4 @@ python3 -m pytest \
     --cov=util \
     --cov-report=term \
     --cov-report=html \
-    --disable-pytest-warnings "$@"
+    -Werror "$@"
