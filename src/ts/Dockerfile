@@ -17,7 +17,7 @@ RUN npm install
 ##
 FROM base as test
 COPY . /src
-RUN npm test
+RUN npm run lint && npm test
 
 ## Release #####################################################################
 #

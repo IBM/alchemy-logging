@@ -363,7 +363,7 @@ class TestLogCode(unittest.TestCase):
         self.assertEqual(record['message'], 'This is a test')
 
         # Make sure the percent encoding in the message was preserved
-        self.assertEquals('https://url.com/a%20b', logged_output[1]['message'])
+        self.assertEqual('https://url.com/a%20b', logged_output[1]['message'])
 
     def test_log_code_arg(self):
         '''Test that logging with the first argument as a log code adds the code
