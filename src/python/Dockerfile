@@ -50,6 +50,7 @@ COPY ./tests /src/tests
 COPY ./ci/run-tests.sh /src/ci/run-tests.sh
 RUN true && \
     ([ "$RELEASE_DRY_RUN" != "true" ] && sleep 30 || true) && \
+    pip cache purge && \
     pip install alchemy-logging==${PYTHON_RELEASE_VERSION} && \
     ./ci/run-tests.sh ./tests/test_alog.py && \
     true
