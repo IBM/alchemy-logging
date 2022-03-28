@@ -31,7 +31,7 @@ COPY . /src
 RUN true && \
     mkdir build && \
     cd build && \
-    cmake .. && \
+    cmake .. -D CMAKE_CXX_FLAGS="-Wall -Werror" && \
     make && \
     ctest && \
     make install && \
