@@ -24,6 +24,7 @@
 '''ALog unit tests.
 '''
 
+import inspect
 import io
 import json
 import logging
@@ -209,6 +210,36 @@ class TestConfigure(unittest.TestCase):
 
         all_lines = [l for l in stream.getvalue().split('\n') if l]
         self.assertEqual(len(all_lines), 3)
+
+    def test_formatter_with_filename(self):
+        '''Test that using logging to create a logger with a formatter that
+        includes %(filename)s, %(lineno)s, and %(funcName)s does not point at
+        alog.py.
+
+        https://github.com/IBM/alchemy-logging/issues/152
+        '''
+
+        stream = io.StringIO()
+        formatter = logging.Formatter("%(filename)s:%(lineno)s:%(funcName)s")
+        handler = logging.StreamHandler(stream)
+        handler.setLevel(logging.INFO)
+        handler.setFormatter(formatter)
+        logger = logging.getLogger("native-fname-test")
+        logger.setLevel(logging.INFO)
+        logger.addHandler(handler)
+
+        # Grab this file, line, function
+        frameinfo = inspect.getframeinfo(inspect.currentframe())
+        logger.info("This is a test")
+        expected_fname = os.path.basename(frameinfo.filename)
+        expected_lineno = str(frameinfo.lineno + 1)
+        expected_function = frameinfo.function
+
+        logged_content = stream.getvalue()
+        fname, lineno, func_name = logged_content.strip().split(":")
+        assert fname == expected_fname
+        assert lineno == expected_lineno
+        assert func_name == expected_function
 
 class TestJsonCompatibility(unittest.TestCase):
     '''Ensures that printed messages are valid json format when json formatting is specified'''

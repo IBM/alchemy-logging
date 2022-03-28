@@ -29,8 +29,9 @@ configurable formatting and scoped loggers.
 import functools
 import json
 import logging
-import time
+import sys
 import threading
+import time
 import traceback
 from datetime import datetime, timedelta
 
@@ -299,6 +300,37 @@ g_alog_formatter = None
 # necessary to enable reconfiguring dynamically
 g_filtered_channels = []
 
+class _MultiEqualString:
+    """This 'str' class is used to allow the __eq__ operator to match multiple
+    strings. This is needed for python 3.6 and 3.7 in order to indicate that
+    this file matches True for == when checking if a stack frame matches an
+    "internal" name.
+    """
+    def __init__(self, *strings):
+        self._strings = strings
+
+    def __eq__(self, other):
+        return other in self._strings
+
+# If this is python 3.8+, the _log function has a `stacklevel` argument that
+# can be given to indicate the need to pop additional levels off the stack.
+# This is the _right_ way to de-ailas the wrapper function, but it doesn't
+# work on python 3.6 and 3.7.
+g_log_extra_kwargs = {}
+if sys.version_info >= (3, 8, 0, "", 0):
+    # Pop 2 additional levels off the stack:
+    #   - _log_with_code_method_override
+    #   - inline lambda
+    g_log_extra_kwargs["stacklevel"] = 3
+
+# If this is an old version of python, we overwrite logging._srcfile with a
+# _MultiEqualString so that _this_ file will also match True to stack frames
+# from this file. This is "safe" to do as the notion of explicitly setting
+# _srcfile is supported based on the comment here:
+# https://github.com/python/cpython/blob/v3.6.15/Lib/logging/__init__.py#L180
+else:
+    logging._srcfile = _MultiEqualString(logging._srcfile, __file__)
+
 def is_log_code(arg):
     return arg.startswith('<') and arg.endswith('>')
 
@@ -318,17 +350,17 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
         return
 
     # If no positional args, arg_one is message
-    elif len(args) == 0:
-        self.log(value, arg_one, **kwargs)
+    if len(args) == 0:
+        self.log(value, arg_one, **g_log_extra_kwargs, **kwargs)
 
     # If arg_one looks like a log code, use the first positional arg as message
     elif is_log_code(arg_one):
         message = args[0] % tuple(args[1:]) if len(args) > 1 else args[0]
-        self.log(value, {"log_code": arg_one, "message": message}, **kwargs)
+        self.log(value, {"log_code": arg_one, "message": message}, **g_log_extra_kwargs, **kwargs)
 
     # Otherwise, treat arg_one as the message
     else:
-        self.log(value, arg_one, *args, **kwargs)
+        self.log(value, arg_one, *args, **g_log_extra_kwargs, **kwargs)
 
 def _add_level_fn(name, value):
     logging.addLevelName(value, name.upper())

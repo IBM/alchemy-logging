@@ -7,11 +7,43 @@ on:
     branches: [ main ]
   workflow_dispatch: {}
 jobs:
-  build:
+  build-36:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Run unit tests
         run: |
           cd src/python
-          docker build . --target=test
+          docker build . --target=test --build-arg PYTHON_VERSION=3.6
+  build-37:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run unit tests
+        run: |
+          cd src/python
+          docker build . --target=test --build-arg PYTHON_VERSION=3.7
+  build-38:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run unit tests
+        run: |
+          cd src/python
+          docker build . --target=test --build-arg PYTHON_VERSION=3.8
+  build-39:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run unit tests
+        run: |
+          cd src/python
+          docker build . --target=test --build-arg PYTHON_VERSION=3.9
+  build-310:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run unit tests
+        run: |
+          cd src/python
+          docker build . --target=test --build-arg PYTHON_VERSION=3.10
