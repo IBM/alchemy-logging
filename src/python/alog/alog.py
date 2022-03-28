@@ -317,8 +317,11 @@ class _MultiEqualString:
 # This is the _right_ way to de-ailas the wrapper function, but it doesn't
 # work on python 3.6 and 3.7.
 g_log_extra_kwargs = {}
-if sys.version_info >= (3, 8, "", 0):
-    g_log_extra_kwargs["stacklevel"] = 2
+if sys.version_info >= (3, 8, 0, "", 0):
+    # Pop 2 additional levels off the stack:
+    #   - _log_with_code_method_override
+    #   - inline lambda
+    g_log_extra_kwargs["stacklevel"] = 3
 
 # If this is an old version of python, we overwrite logging._srcfile with a
 # _MultiEqualString so that _this_ file will also match True to stack frames
