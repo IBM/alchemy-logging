@@ -61,11 +61,9 @@ jobs:
       if: matrix.language == 'cpp'
       working-directory: ./src/cpp
       run: |
-        apt-get update -y
-        apt-get install -y libgtest-dev
         mkdir build
         cd build
-        cmake ..
+        cmake .. -D BUILD_UNIT_TESTS=OFF
         make
         make install
 
