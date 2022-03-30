@@ -60,13 +60,15 @@ jobs:
     - name: build-cpp
       working-directory: ./src/cpp
       run: |
+       docker build . --target=test -t alchemy-logging-cpp:test
        mkdir build
-       cd build && cmake .. && make
-
-    - name: build-go
-      working-directory: ./src/go
-      run: |
-       go test ./...
+       docker run --rm -it -v $PWD/build:/dump --entrypoint bash alchemy-logging-cpp:test \
+         -c "mkdir -p /dump/include/alog; \
+             mkdir /dump/include/nlohmann; \
+             mkdir /dump/lib; \
+             cp /usr/local/include/alog/logger.hpp /dump/include/alog/; \
+             cp /usr/local/include/nlohmann/json.hpp /dump/include/nlohmann/; \
+             cp /usr/local/lib/libalog.so /dump/lib/"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
