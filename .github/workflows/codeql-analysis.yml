@@ -58,17 +58,16 @@ jobs:
     #    uses a compiled language
 
     - name: build-cpp
+      if: matrix.language == 'cpp'
       working-directory: ./src/cpp
       run: |
-       docker build . --target=test -t alchemy-logging-cpp:test
-       mkdir build
-       docker run --rm -v $PWD/build:/dump --entrypoint bash alchemy-logging-cpp:test \
-         -c "mkdir -p /dump/include/alog; \
-             mkdir /dump/include/nlohmann; \
-             mkdir /dump/lib; \
-             cp /usr/local/include/alog/logger.hpp /dump/include/alog/; \
-             cp /usr/local/include/nlohmann/json.hpp /dump/include/nlohmann/; \
-             cp /usr/local/lib/libalog.so /dump/lib/"
+        apt-get update -y
+        apt-get install -y libgtest-dev
+        mkdir build
+        cd build
+        cmake ..
+        make
+        make install
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
