@@ -65,7 +65,6 @@ jobs:
         cd build
         cmake .. -D BUILD_UNIT_TESTS=OFF
         make
-        make install
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
