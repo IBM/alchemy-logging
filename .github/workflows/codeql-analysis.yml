@@ -62,7 +62,7 @@ jobs:
       run: |
        docker build . --target=test -t alchemy-logging-cpp:test
        mkdir build
-       docker run --rm -it -v $PWD/build:/dump --entrypoint bash alchemy-logging-cpp:test \
+       docker run --rm -v $PWD/build:/dump --entrypoint bash alchemy-logging-cpp:test \
          -c "mkdir -p /dump/include/alog; \
              mkdir /dump/include/nlohmann; \
              mkdir /dump/lib; \
