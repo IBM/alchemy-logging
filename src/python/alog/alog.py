@@ -350,7 +350,7 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
         return
 
     # If no positional args, arg_one is message
-    if len(args) == 0:
+    if not args:
         self.log(value, arg_one, **g_log_extra_kwargs, **kwargs)
 
     # If arg_one looks like a log code, use the first positional arg as message
@@ -359,8 +359,12 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
         self.log(value, {"log_code": arg_one, "message": message}, **g_log_extra_kwargs, **kwargs)
 
     # Otherwise, treat arg_one as the message
+    # NOTE: We perform the string interpolation here so that incorrectly passed
+    #   interpolation arguments will raise rather than being swallowed by the
+    #   logging package
     else:
-        self.log(value, arg_one, *args, **g_log_extra_kwargs, **kwargs)
+        message = arg_one % args
+        self.log(value, message, **g_log_extra_kwargs, **kwargs)
 
 def _add_level_fn(name, value):
     logging.addLevelName(value, name.upper())

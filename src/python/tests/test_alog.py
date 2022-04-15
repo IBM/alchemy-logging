@@ -24,6 +24,7 @@
 '''ALog unit tests.
 '''
 
+# Standard
 import inspect
 import io
 import json
@@ -35,6 +36,9 @@ import sys
 import threading
 import time
 import unittest
+
+# Third Party
+import pytest
 
 # Import the implementation details so that we can test them
 import alog.alog as alog
@@ -444,6 +448,22 @@ class TestLogCode(unittest.TestCase):
         self.assertEqual(record['log_code'], test_code)
         self.assertIn('message', record)
         self.assertEqual(record['message'], 'This is a test')
+
+    def test_formatting_error_with_and_without_log_code(self):
+        '''Test that a TypeError is raised when lazy log interpolation is used
+        both with and without a log code as the first argument
+        '''
+        alog.configure('info', formatter='pretty')
+        test_channel = alog.use_channel('TEST')
+        with pytest.raises(TypeError):
+            test_channel.info("<ABC12345I>", "HELLO %s", "WORLD", "FOO")
+        with pytest.raises(TypeError):
+            test_channel.info("<ABC12345I>", "HELLO %s %s", "WORLD")
+        with pytest.raises(TypeError):
+            test_channel.info("HELLO %s", "WORLD", "FOO")
+        with pytest.raises(TypeError):
+            test_channel.info("HELLO %s %s", "WORLD")
+
 
 class TestScopedLoggers(unittest.TestCase):
     def test_context_managed_scoping(self):
