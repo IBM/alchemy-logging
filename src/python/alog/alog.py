@@ -227,7 +227,11 @@ class AlogPrettyFormatter(AlogFormatterBase):
         metadata = None
         if isinstance(record.msg, dict):
             if 'message' in record.msg:
-                record.message = record.msg.pop('message')
+                message = record.msg.pop('message')
+                args = record.msg.pop('args', None)
+                if args:
+                    message = message % args
+                record.message = message
             if 'log_code' in record.msg:
                 record.log_code = record.msg.pop('log_code')
             metadata = record.msg
@@ -355,16 +359,20 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
 
     # If arg_one looks like a log code, use the first positional arg as message
     elif is_log_code(arg_one):
-        message = args[0] % tuple(args[1:]) if len(args) > 1 else args[0]
-        self.log(value, {"log_code": arg_one, "message": message}, **g_log_extra_kwargs, **kwargs)
+        self.log(
+            value,
+            {
+                "log_code": arg_one,
+                "message": args[0],
+                "args": tuple(args[1:]) if len(args) > 1 else None,
+            },
+            **g_log_extra_kwargs,
+            **kwargs,
+        )
 
     # Otherwise, treat arg_one as the message
-    # NOTE: We perform the string interpolation here so that incorrectly passed
-    #   interpolation arguments will raise rather than being swallowed by the
-    #   logging package
     else:
-        message = arg_one % args
-        self.log(value, message, **g_log_extra_kwargs, **kwargs)
+        self.log(value, arg_one, *args, **g_log_extra_kwargs, **kwargs)
 
 def _add_level_fn(name, value):
     logging.addLevelName(value, name.upper())
