@@ -446,20 +446,18 @@ def test_log_code_json():
     assert 'message' in record
     assert record['message'] == 'This is a test'
 
-def test_log_code_formatting_error_with_and_without_log_code():
-    '''Test that a TypeError is raised when lazy log interpolation is used
-    both with and without a log code as the first argument
+def test_log_code_formatting_error_with_and_without_log_code(capsys):
+    '''Test that a Logging Error is sent to stderr for invalid log interpolation
+    with and without a log code argument
     '''
     alog.configure('info', formatter='pretty')
     test_channel = alog.use_channel('TEST')
-    with pytest.raises(TypeError):
-        test_channel.info("<ABC12345I>", "HELLO %s", "WORLD", "FOO")
-    with pytest.raises(TypeError):
-        test_channel.info("<ABC12345I>", "HELLO %s %s", "WORLD")
-    with pytest.raises(TypeError):
-        test_channel.info("HELLO %s", "WORLD", "FOO")
-    with pytest.raises(TypeError):
-        test_channel.info("HELLO %s %s", "WORLD")
+    test_channel.info("<ABC12345I>", "HELLO %s", "WORLD", "FOO")
+    test_channel.info("<ABC12345I>", "HELLO %s %s", "WORLD")
+    test_channel.info("HELLO %s", "WORLD", "FOO")
+    test_channel.info("HELLO %s %s", "WORLD")
+    captured = str(capsys.readouterr().err)
+    assert captured.count("--- Logging error ---") == 4
 
 
 ## Scoped Loggers ##############################################################
