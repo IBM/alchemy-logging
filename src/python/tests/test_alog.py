@@ -849,3 +849,28 @@ def test_lazy_interp_disabled_by_filter_with_log_code():
     capturer = StringifyCapturer()
     test_channel.info('<FOO52345123D>', '%s', capturer)
     assert not capturer.called_str
+
+## One Off Bugs ################################################################
+
+def test_bug_uvicorn_access_log(capsys):
+    '''This test emulates the behavior of uvicorn's access logger which makes
+    assumptions about the shape of the arguments passed through.
+
+    REF: https://github.com/encode/uvicorn/blob/0.17.6/uvicorn/logging.py#L97
+    BUG: https://github.com/IBM/alchemy-logging/issues/183
+    '''
+    class UvicornFormatter:
+        @staticmethod
+        def format(record):
+            # This should raise if interpolation is done ahead of time
+            (arg_one, arg_two) = record.args
+            return "made it"
+
+    logger = logging.getLogger("fake.uvicorn.access")
+    handler = logging.StreamHandler()
+    handler.setFormatter(UvicornFormatter())
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    logger.info("One %s, Two %s", 1, 2)
+    captured = str(capsys.readouterr().err)
+    assert "--- Logging error ---" not in captured
