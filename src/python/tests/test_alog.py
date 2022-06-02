@@ -849,7 +849,3 @@ def test_lazy_interp_disabled_by_filter_with_log_code():
     capturer = StringifyCapturer()
     test_channel.info('<FOO52345123D>', '%s', capturer)
     assert not capturer.called_str
-
-if __name__ == "__main__":
-    # has verbose output of tests; otherwise just says all passed or not
-    unittest.main(verbosity=2)
