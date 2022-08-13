@@ -188,4 +188,4 @@ foo()
 ```
 
 ## Tip
-- Visual Studio Code (VSCode) users can take advantage of [alchemy-logging extension](https://marketplace.visualstudio.com/items?itemName=Gaurav-Kumbhat.alog-code-generator) that provides automatic random log code generation and insertion.
+- Visual Studio Code (VSCode) users can take advantage of [alchemy-logging extension](https://marketplace.visualstudio.com/items?itemName=Gaurav-Kumbhat.alog-code-generator) that provides automatic log code generation and insertion.
