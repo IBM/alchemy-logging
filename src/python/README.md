@@ -186,3 +186,6 @@ foo()
 2021-07-29T19:19:47.468428 [DEMO :DBUG] This is a test
 2021-07-29T19:19:48.471788 [DEMO :TRCE] 0:00:01.003284
 ```
+
+## Tip
+- Visual Studio Code (VSCode) users can take advantage of [alchemy-logging extension](https://marketplace.visualstudio.com/items?itemName=Gaurav-Kumbhat.alog-code-generator) that provides automatic log code generation and insertion.
