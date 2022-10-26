@@ -298,6 +298,44 @@ def test_json_json_level_formatting():
     assert 'level' in logged_output[0]
     assert logged_output[0]['level'].lower() == logged_output[0]['level']
 
+def test_json_with_functions():
+    '''Make sure that function arguments are formatted correctly with json'''
+
+    # Configure for log capture
+    capture_formatter = LogCaptureFormatter('json')
+    alog.configure(default_level='info', formatter=capture_formatter)
+    test_channel = alog.use_channel('TEST')
+
+    # Log a message with a function
+    test_channel.info('Logging a function %s', is_log_msg)
+
+    # Validate that we get a dict back
+    logged_output = capture_formatter.get_json_records()
+    assert len(logged_output) == 1
+    assert isinstance(logged_output[0], dict)
+    assert 'level' in logged_output[0]
+    assert logged_output[0]['level'].lower() == logged_output[0]['level']
+
+def test_log_code_json_function():
+    '''Test that logging with a log code and the json formatter with a function works as expected.
+    '''
+    # Configure for log capture
+    capture_formatter = LogCaptureFormatter('json')
+    alog.configure(default_level='info', formatter=capture_formatter)
+    test_channel = alog.use_channel('TEST')
+
+    # Log with a code and some functions
+    test_channel.info(test_code, "Logging 2 functions, %s and %s", is_log_msg, pretty_level_to_name)
+    logged_output = capture_formatter.get_json_records()
+
+    # Make sure the code and message came through as fields
+    assert len(logged_output) == 1
+    record = logged_output[0]
+    assert 'log_code' in record
+    assert record['log_code'] == test_code
+    assert 'message' in record
+    assert record['message'] == f"Logging 2 functions, {is_log_msg} and {pretty_level_to_name}"
+
 ## Custom Formatter ############################################################
 
 def test_custom_formatter_pretty_with_args():
