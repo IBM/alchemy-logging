@@ -168,6 +168,15 @@ class AlogJsonFormatter(AlogFormatterBase):
         if g_thread_id_enabled:
             log_record['thread_id'] = threading.get_ident()
 
+        # Interpolate message and args if present
+        record_args = log_record.pop('args', None)
+        if record_args:
+            message = log_record.get('message')
+            if message:
+                log_record['message'] = message % record_args
+            else:
+                log_record['message'] = str(record_args)
+
         return json.dumps(log_record, sort_keys=True)
 
 class AlogPrettyFormatter(AlogFormatterBase):
