@@ -17,7 +17,7 @@ RUN true && \
     cmake --version && \
     rm cmake-${CMAKE_VERSION}-linux-x86_64.sh && \
     apt-get update -y && \
-    apt-get install -y libgtest-dev && \
+    apt-get install -y libgtest-dev libgmock-dev && \
     apt-get clean autoclean && \
     apt-get autoremove --yes && \
     true
