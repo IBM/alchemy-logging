@@ -622,6 +622,10 @@ class _ScopedLogBase:
         self.log_fn = log_fn
         self.format_str = format_str
         self.args = args
+        self.kwargs = kwargs
+
+        # By default no filter is added
+        self.arg_filter = None
 
         # This context is enabled IFF the function bound to it is enabled. To
         # get at that information, we need to figure out which function it is,
@@ -634,9 +638,6 @@ class _ScopedLogBase:
         assert hasattr(self.log_fn, '_level_value'), \
             'Cannot use non-logging function for scoped log'
 
-        if len(kwargs):
-            arg_filter = _AdditionalContextFilter(str(log_fn), **kwargs)
-            self.log_fn.__self__.addFilter(arg_filter)
         self.enabled = self.log_fn.__self__.isEnabledFor(self.log_fn._level_value)
 
     def _start_scoped_log(self):
@@ -646,6 +647,9 @@ class _ScopedLogBase:
             self.log_fn(scope_start_str + str(self.format_str), *self.args)
             global g_alog_formatter
             g_alog_formatter.indent()
+            if len(self.kwargs):
+                self.arg_filter = _AdditionalContextFilter(str(self.log_fn), **self.kwargs)
+                self.log_fn.__self__.addFilter(self.arg_filter)
 
     def _end_scoped_log(self):
         """Log the end message for a scoped logger and decrement the indentor.
@@ -654,6 +658,8 @@ class _ScopedLogBase:
             global g_alog_formatter
             g_alog_formatter.deindent()
             self.log_fn(scope_end_str + str(self.format_str), *self.args)
+            if self.arg_filter:
+                self.log_fn.__self__.removeFilter(self.arg_filter)
 
 # pylint: disable=too-few-public-methods
 class ScopedLog(_ScopedLogBase):
