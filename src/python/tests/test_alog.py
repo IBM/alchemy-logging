@@ -605,6 +605,26 @@ def test_scoped_logger_disabled_scope_indentation():
     record = logged_output[0]
     assert record['num_indent'] == 0
 
+def test_scoped_logger_context_additional_metadata():
+    '''Test if additional metadata is passed and logged correctly
+    and works only within scope with context logger'''
+    # Configure for log capture
+    capture_formatter = LogCaptureFormatter('json')
+    alog.configure(default_level='info', formatter=capture_formatter)
+    test_channel = alog.use_channel('TEST')
+
+    # Log with a context timer
+    with alog.ContextLog(test_channel.info, 'inner', context_id="temp-id-1"):
+       test_channel.info(test_code, 'This should be scoped')
+    test_channel.info(test_code, 'This should not be scoped')
+    logged_output = capture_formatter.get_json_records()
+
+    # Checks to see if a log message is a scope messsage (starts with BEGIN/END) or a "normal" log
+    assert len(logged_output) == 4
+    # Parse out the two messages we explicitly logged. Only the first should be indented
+    in_scope_log, out_scope_log = [line for line in logged_output if is_log_msg(line['message'])]
+    assert "context_id" in in_scope_log and in_scope_log["context_id"] == "temp-id-1"
+    assert "context_id" not in out_scope_log
 
 ## Timed Loggers ###############################################################
 

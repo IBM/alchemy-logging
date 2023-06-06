@@ -177,6 +177,9 @@ class AlogJsonFormatter(AlogFormatterBase):
             else:
                 log_record['message'] = str(record_args)
 
+        if hasattr(record, "additional_ctxt_metadata"):
+            log_record = {**log_record, **record.additional_ctxt_metadata}
+
         return json.dumps(log_record, sort_keys=True)
 
 class AlogPrettyFormatter(AlogFormatterBase):
@@ -232,6 +235,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
 
         timestamp [CHANL:LEVL] message
         """
+
         # Extract special values from the message if it's a dict
         metadata = None
         if isinstance(record.msg, dict):
@@ -247,13 +251,27 @@ class AlogPrettyFormatter(AlogFormatterBase):
         else:
             record.message = record.getMessage()
 
+
         # Add metadata if present
+        if hasattr(record, "additional_ctxt_metadata"):
+            if metadata is not None:
+                metadata = {**metadata, **record.additional_ctxt_metadata}
+            else:
+                metadata = record.additional_ctxt_metadata
+
         if not hasattr(record, 'message'):
             record.message = ''
+
         if metadata is not None and len(metadata) > 0:
-            if len(record.message) > 0:
-                record.message += ' '
-            record.message += json.dumps(metadata)
+
+            # NOTE: json.dumps does make the metadata appear in JSON format
+            # record.message can be a dict or str
+            if isinstance(record.message, str):
+                if len(record.message) > 0:
+                    record.message += ' '
+                record.message += json.dumps(metadata)
+            else:
+                record.message =  json.dumps({**record.message, **metadata})
 
         level = record.levelname
         channel = record.name
@@ -357,7 +375,6 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
     ch = alog.use_channel('FOO')
     ch.debug('<FOO80349757I>', 'Logging is fun!')
     """
-
     # If this level is disabled, don't do any of the other expensive work here
     if not self.isEnabledFor(value):
         return
@@ -577,6 +594,19 @@ def use_channel(channel):
     """
     return logging.getLogger(channel)
 
+## Logger Filters ##############################################################
+
+class _AdditionalContextFilter(logging.Filter):
+
+    def __init__(self, name: str = "", **kwargs) -> None:
+        super().__init__(name)
+        self._kwargs = kwargs
+
+    def filter(self, record):
+        if len(self._kwargs):
+            setattr(record, "additional_ctxt_metadata", self._kwargs)
+
+        return True
 ## Scoped Loggers ##############################################################
 
 # The whole point of this class is act on scope changes
@@ -586,12 +616,16 @@ class _ScopedLogBase:
     and stopping the logger and expects the child class to call them when
     appropriate.
     """
-    def __init__(self, log_fn, format_str="", *args):
+    def __init__(self, log_fn, format_str="", *args, **kwargs):
         """Construct a new scoped logger.
         """
         self.log_fn = log_fn
         self.format_str = format_str
         self.args = args
+        self.kwargs = kwargs
+
+        # By default no filter is added
+        self.arg_filter = None
 
         # This context is enabled IFF the function bound to it is enabled. To
         # get at that information, we need to figure out which function it is,
@@ -603,6 +637,7 @@ class _ScopedLogBase:
         # 3. Check if that level value is enabled for that logger
         assert hasattr(self.log_fn, '_level_value'), \
             'Cannot use non-logging function for scoped log'
+
         self.enabled = self.log_fn.__self__.isEnabledFor(self.log_fn._level_value)
 
     def _start_scoped_log(self):
@@ -612,6 +647,9 @@ class _ScopedLogBase:
             self.log_fn(scope_start_str + str(self.format_str), *self.args)
             global g_alog_formatter
             g_alog_formatter.indent()
+            if len(self.kwargs):
+                self.arg_filter = _AdditionalContextFilter(str(self.log_fn), **self.kwargs)
+                self.log_fn.__self__.addFilter(self.arg_filter)
 
     def _end_scoped_log(self):
         """Log the end message for a scoped logger and decrement the indentor.
@@ -620,6 +658,8 @@ class _ScopedLogBase:
             global g_alog_formatter
             g_alog_formatter.deindent()
             self.log_fn(scope_end_str + str(self.format_str), *self.args)
+            if self.arg_filter:
+                self.log_fn.__self__.removeFilter(self.arg_filter)
 
 # pylint: disable=too-few-public-methods
 class ScopedLog(_ScopedLogBase):
@@ -653,6 +693,10 @@ class ContextLog(_ScopedLogBase):
         >>>   print('hello world')
         >>>   # logs the end message when the context manager exits
     """
+
+    def __init__(self, log_fn, format_str="", *args, **kwargs):
+        super().__init__(log_fn, format_str, *args, **kwargs)
+
     def __enter__(self):
         """Log the begin message when the context manager starts.
         """
