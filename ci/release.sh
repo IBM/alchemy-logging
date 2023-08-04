@@ -11,6 +11,11 @@ echo "The tag is ${tag}!!"
 release_type=$(echo $tag | cut -d'-' -f1)
 version=$(echo $tag | cut -d'-' -f2)
 
+# We explicitly don't want to run with buildkit so that the docker builds happen
+# in a linear fashion since our `release_test` stages intentionally don't
+# inherit from the stages where the publication happens.
+export DOCKER_BUILDKIT=0
+
 # Dispatch to the various types of releases
 if [ "$release_type" == "py" ]
 then
