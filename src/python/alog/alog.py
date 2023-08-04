@@ -95,7 +95,7 @@ class AlogJsonFormatter(AlogFormatterBase):
     """
     _FIELDS_TO_PRINT = ['name', 'levelname', 'asctime', 'message',
                         'exc_text', 'region-id', 'org-id', 'tran-id',
-                        'watson-txn-id', 'channel']
+                        'watson-txn-id', 'channel', 'duration']
 
     def __init__(self):
         AlogFormatterBase.__init__(self)
@@ -735,10 +735,10 @@ class _TimedLogBase:
     def _end_timed_log(self):
         """Gets the end time and prints the end message for this timed logger.
         """
-        duration = str(timedelta(seconds=time.time() - self.start_time))
+        duration = timedelta(seconds=time.time() - self.start_time)
         fmt = self.format_str + "%s"
-        args = list(self.args) + [duration]
-        self.log_fn(fmt, *args)
+        args = list(self.args) + [str(duration)]
+        self.log_fn(fmt, *args, extra={"duration": duration.total_seconds()})
 
 # pylint: disable=too-few-public-methods
 class ScopedTimer(_TimedLogBase):
