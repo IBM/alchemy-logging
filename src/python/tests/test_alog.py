@@ -628,6 +628,7 @@ def test_timed_logger_context_managed_timer():
     timed_message = timed_log['message']
     assert timed_message.startswith('timed: 0:')
     assert re.match(r'^timed: [0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9]+$', timed_message)
+    assert timed_log["duration"] > 0
 
 def test_timed_logger_scoped_timer():
     # Configure for log capture
@@ -651,6 +652,7 @@ def test_timed_logger_scoped_timer():
     timed_message = timed_log['message']
     assert timed_message.startswith('timed: 0:')
     assert re.match(r'^timed: [0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9]+$', timed_message)
+    assert timed_log["duration"] > 0
 
 def test_timed_logger_decorated_timer():
     # Configure for log capture
@@ -674,6 +676,7 @@ def test_timed_logger_decorated_timer():
     timed_message = timed_log['message']
     assert timed_message.startswith('timed: 0:')
     assert re.match(r'^timed: [0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9]+$', timed_message)
+    assert timed_log["duration"] > 0
 
 ## IsEnabled ###################################################################
 
