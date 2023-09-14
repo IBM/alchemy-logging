@@ -611,14 +611,16 @@ class _ScopedLogBase:
         if self.enabled:
             self.log_fn(scope_start_str + str(self.format_str), *self.args)
             global g_alog_formatter
-            g_alog_formatter.indent()
+            if g_alog_formatter:
+                g_alog_formatter.indent()
 
     def _end_scoped_log(self):
         """Log the end message for a scoped logger and decrement the indentor.
         """
         if self.enabled:
             global g_alog_formatter
-            g_alog_formatter.deindent()
+            if g_alog_formatter:
+                g_alog_formatter.deindent()
             self.log_fn(scope_end_str + str(self.format_str), *self.args)
 
 # pylint: disable=too-few-public-methods
