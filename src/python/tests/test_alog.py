@@ -25,6 +25,7 @@
 '''
 
 # Standard
+from unittest import mock
 import inspect
 import io
 import json
@@ -35,9 +36,6 @@ import re
 import sys
 import threading
 import time
-
-# Third Party
-import pytest
 
 # Import the implementation details so that we can test them
 import alog.alog as alog
@@ -605,6 +603,20 @@ def test_scoped_logger_disabled_scope_indentation():
     record = logged_output[0]
     assert record['num_indent'] == 0
 
+def test_default_log_config_with_scope():
+    """The scoped loggers need to run cleanly when default configuration has
+    enabled a given logger, but alog.configure has not been called to set up the
+    extra alog state.
+    """
+    with mock.patch.object(alog, "g_alog_formatter", None):
+        log = alog.use_channel("test-channel-basic-config")
+        log.setLevel(logging.INFO)
+
+        @alog.logged_function(log.info)
+        def foo():
+            pass
+
+        foo()
 
 ## Timed Loggers ###############################################################
 
