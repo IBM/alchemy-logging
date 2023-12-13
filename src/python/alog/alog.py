@@ -347,6 +347,17 @@ else:
 def is_log_code(arg):
     return arg.startswith('<') and arg.endswith('>')
 
+def _get_level_value(level_name):
+    if isinstance(level_name, int):
+        return level_name
+    val = g_alog_name_to_level.get(level_name, None)
+    if val is not None:
+        return val
+    try:
+        return int(level_name)
+    except ValueError:
+        logging.warning("Invalid log level: %s", level_name)
+
 def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
     """This helper is used as an override to the native logging.Logger instance
     methods for each level. As such, it's first argument, self, is the logger
@@ -392,8 +403,8 @@ def _add_level_fn(name, value):
     setattr(logging.Logger, name, log_using_self_func)
 
 def _add_is_enabled():
-    is_enabled_func = lambda self, level: \
-        self.isEnabledFor(level if isinstance(level, int) else g_alog_name_to_level.get(level))
+    def is_enabled_func(self, level):
+        return self.isEnabledFor(_get_level_value(level))
     setattr(logging.Logger, 'isEnabled', is_enabled_func)
 
 def _setup_formatter(formatter):
@@ -432,7 +443,7 @@ def _parse_filters(filters):
 
 def _parse_dict_of_filters(filters):
     for entry, level_name in filters.items():
-        if g_alog_name_to_level.get(level_name, None) is None:
+        if _get_level_value(level_name) is None:
             logging.warning("Invalid filter entry [%s]", entry)
             del filters[entry]
     return filters
@@ -446,7 +457,7 @@ def _parse_str_of_filters(filters):
                 logging.warning("Invalid filter entry [%s]", entry)
             else:
                 chan, level_name = parts
-                level = g_alog_name_to_level.get(level_name, None)
+                level = _get_level_value(level_name)
                 if level is None:
                     logging.warning("Invalid level [%s] for channel [%s]", level_name, chan)
                 else:
@@ -535,7 +546,7 @@ def configure(
     logging.root.addHandler(handler)
 
     # Set default level
-    default_level_val = g_alog_name_to_level.get(default_level, None)
+    default_level_val = _get_level_value(default_level)
     if default_level_val is not None:
         logging.root.setLevel(default_level_val)
         for handler in logging.root.handlers:
@@ -557,7 +568,7 @@ def configure(
     # Add level filters by name
     # NOTE: All levels assumed valid after call to _parse_filters
     for chan, level_name in parsed_filters.items():
-        level = g_alog_name_to_level[level_name]
+        level = _get_level_value(level_name)
         handler = handler_generator()
         handler.setFormatter(g_alog_formatter)
         handler.setLevel(level)

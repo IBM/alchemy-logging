@@ -33,9 +33,11 @@ import logging
 import os
 import pickle
 import re
-import sys
 import threading
 import time
+
+# Third Party
+import pytest
 
 # Import the implementation details so that we can test them
 import alog.alog as alog
@@ -237,6 +239,22 @@ def test_configure_formatter_with_filename():
     assert fname == expected_fname
     assert lineno == expected_lineno
     assert func_name == expected_function
+
+@pytest.mark.parametrize(
+    'configure_kwargs',
+    [
+        {'default_level': 14},
+        {'default_level': '14'},
+        {'default_level': 'info', 'filters': 'FOO:14'},
+    ],
+)
+def test_configure_numeric_levels(configure_kwargs):
+    '''Test that a numeric value can be used to configure a level'''
+    alog.configure(**configure_kwargs)
+    ch = alog.use_channel('FOO')
+    assert ch.isEnabled('trace')
+    assert not ch.isEnabled('debug1')
+
 
 ## json ########################################################################
 
