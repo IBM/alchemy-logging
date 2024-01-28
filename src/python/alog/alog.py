@@ -34,6 +34,9 @@ import threading
 import time
 import traceback
 from datetime import datetime, timedelta
+from typing import Any, Callable, Union, Optional
+
+_Level = Union[int, str]
 
 ## Formatters ##################################################################
 
@@ -66,7 +69,7 @@ class AlogFormatterBase(logging.Formatter):
         # Initialize the underlying logger with this formatter
         logging.Formatter.__init__(self)
 
-    def formatTime(self, record, datefmt=None):
+    def formatTime(self, record:logging.LogRecord, datefmt:Optional[str]=None):
         """A wrapper for the parent formatTime that returns UTC timezone
         time stamp inISO format.
 
@@ -101,7 +104,7 @@ class AlogJsonFormatter(AlogFormatterBase):
         AlogFormatterBase.__init__(self)
 
     @staticmethod
-    def _map_to_common_key_name(log_record_keyname):
+    def _map_to_common_key_name(log_record_keyname:str):
         if log_record_keyname == 'levelname':
             return 'level'
         elif log_record_keyname == 'asctime':
@@ -113,7 +116,7 @@ class AlogJsonFormatter(AlogFormatterBase):
         else:
             return log_record_keyname
 
-    def _extract_fields_from_record_as_dict(self, record):
+    def _extract_fields_from_record_as_dict(self, record:logging.LogRecord):
         """Extracts the fields we want out of log record and puts them into an
         dict for easy jsonification.
 
@@ -124,7 +127,7 @@ class AlogJsonFormatter(AlogFormatterBase):
             The relevant fields pulled out from the log record object and
             initialized into a dictionary.
         """
-        out = {}
+        out:dict[Any, Any] = {}
         for field_name in self._FIELDS_TO_PRINT:
             if hasattr(record, field_name):
                 record_field = getattr(record, field_name)
@@ -136,7 +139,7 @@ class AlogJsonFormatter(AlogFormatterBase):
         out["level"] = out["level"].lower()
         return out
 
-    def format(self, record):
+    def format(self, record:logging.LogRecord):
         """Formats the log record as a JSON formatted string
        (also removes new line characters so everything prints on a single line)
 
@@ -148,7 +151,7 @@ class AlogJsonFormatter(AlogFormatterBase):
         """
         # Maintain the message as a dict if passed in as one
         if isinstance(record.msg, dict):
-            record.message = record.msg
+            record.message = record.msg # type: ignore
         else:
             record.message = record.getMessage()
 
@@ -201,7 +204,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
         AlogFormatterBase.__init__(self)
         self.channel_len = channel_len
 
-    def _make_header(self, timestamp, channel, level, log_code):
+    def _make_header(self, timestamp:str, channel:str, level:str, log_code:Optional[str]):
         """Create the header for a log line with proper padding.
         """
         # Get the padded or truncated channel
@@ -227,7 +230,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
 
         return header
 
-    def format(self, record):
+    def format(self, record:logging.LogRecord):
         """Formats the log record as pretty-printed lines of the format:
 
         timestamp [CHANL:LEVL] message
@@ -258,7 +261,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
         level = record.levelname
         channel = record.name
         timestamp = self.formatTime(record, self.datefmt)
-        log_code = record.log_code if hasattr(record, 'log_code') else None
+        log_code = record.log_code if hasattr(record, 'log_code') else None # type: ignore
         header = self._make_header(timestamp, channel, level, log_code)
         # Pretty format the message
         indent = self._INDENT*self._indent.indent
@@ -296,7 +299,7 @@ g_disable_level = "disable"
 g_alog_name_to_level = {name: level for level, name in g_alog_level_to_name.items()}
 
 # Global map of default formatters
-g_alog_formatters = {
+g_alog_formatters:dict[str, type[AlogFormatterBase]] = {
     "json": AlogJsonFormatter,
     "pretty": AlogPrettyFormatter,
 }
@@ -311,7 +314,7 @@ g_alog_formatter = None
 
 # The current set of channel names that are managed via filters. This is
 # necessary to enable reconfiguring dynamically
-g_filtered_channels = []
+g_filtered_channels:list[str] = []
 
 class _MultiEqualString:
     """This 'str' class is used to allow the __eq__ operator to match multiple
@@ -319,7 +322,7 @@ class _MultiEqualString:
     this file matches True for == when checking if a stack frame matches an
     "internal" name.
     """
-    def __init__(self, *strings):
+    def __init__(self, *strings:str):
         self._strings = strings
 
     def __eq__(self, other):
@@ -327,10 +330,10 @@ class _MultiEqualString:
 
 # If this is python 3.8+, the _log function has a `stacklevel` argument that
 # can be given to indicate the need to pop additional levels off the stack.
-# This is the _right_ way to de-ailas the wrapper function, but it doesn't
+# This is the _right_ way to de-alias the wrapper function, but it doesn't
 # work on python 3.6 and 3.7.
-g_log_extra_kwargs = {}
-if sys.version_info >= (3, 8, 0, "", 0):
+g_log_extra_kwargs:dict[str, Any] = {}
+if sys.version_info >= (3, 8, 0, "", 0): # type: ignore
     # Pop 2 additional levels off the stack:
     #   - _log_with_code_method_override
     #   - inline lambda
@@ -344,10 +347,10 @@ if sys.version_info >= (3, 8, 0, "", 0):
 else:
     logging._srcfile = _MultiEqualString(logging._srcfile, __file__)
 
-def is_log_code(arg):
+def is_log_code(arg:str):
     return arg.startswith('<') and arg.endswith('>')
 
-def _get_level_value(level_name):
+def _get_level_value(level_name: _Level):
     if isinstance(level_name, int):
         return level_name
     val = g_alog_name_to_level.get(level_name, None)
@@ -358,7 +361,7 @@ def _get_level_value(level_name):
     except ValueError:
         logging.warning("Invalid log level: %s", level_name)
 
-def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
+def _log_with_code_method_override(self: logging.Logger, value:int, arg_one, *args, **kwargs):
     """This helper is used as an override to the native logging.Logger instance
     methods for each level. As such, it's first argument, self, is the logger
     instance (or the global root logger singleton) on which to call the method.
@@ -394,7 +397,7 @@ def _log_with_code_method_override(self, value, arg_one, *args, **kwargs):
     else:
         self.log(value, arg_one, *args, **g_log_extra_kwargs, **kwargs)
 
-def _add_level_fn(name, value):
+def _add_level_fn(name:str, value:int):
     logging.addLevelName(value, name.upper())
 
     log_using_self_func = lambda self, arg_one, *args, **kwargs: \
@@ -403,11 +406,11 @@ def _add_level_fn(name, value):
     setattr(logging.Logger, name, log_using_self_func)
 
 def _add_is_enabled():
-    def is_enabled_func(self, level):
+    def is_enabled_func(self, level: _Level):
         return self.isEnabledFor(_get_level_value(level))
     setattr(logging.Logger, 'isEnabled', is_enabled_func)
 
-def _setup_formatter(formatter):
+def _setup_formatter(formatter:Union[str, AlogFormatterBase]):
     # If the formatter is a string, pull it from the defaults
     global g_alog_formatter
     if isinstance(formatter, str):
@@ -428,7 +431,8 @@ def _setup_formatter(formatter):
     else:
         raise ValueError("Invalid formatter type: %s" % type(formatter))
 
-def _parse_filters(filters):
+def _parse_filters(filters:Union[str, dict[str, _Level]]) -> dict[str, _Level]:
+    """Parse and remove filters with invalid log levels."""
     # Check to see if we've got a dictionary. If we do, keep the valid filter entries
     if isinstance(filters, dict):
         return _parse_dict_of_filters(filters)
@@ -441,15 +445,15 @@ def _parse_filters(filters):
         logging.warning("Invalid filter type [%s] was ignored!", type(filters).__name__)
         return {}
 
-def _parse_dict_of_filters(filters):
+def _parse_dict_of_filters(filters:dict[str, _Level]):
     for entry, level_name in filters.items():
         if _get_level_value(level_name) is None:
             logging.warning("Invalid filter entry [%s]", entry)
             del filters[entry]
     return filters
 
-def _parse_str_of_filters(filters):
-    chan_map = {}
+def _parse_str_of_filters(filters:str):
+    chan_map:dict[str, _Level] = {}
     for entry in filters.split(','):
         if len(entry):
             parts = entry.split(':')
@@ -479,11 +483,11 @@ _add_is_enabled()
 ## Core ########################################################################
 
 def configure(
-    default_level,
-    filters="",
-    formatter='pretty',
+    default_level:str,
+    filters:Union[str, dict[str, _Level]]="",
+    formatter:Union[str, AlogFormatterBase]='pretty',
     thread_id=False,
-    handler_generator=None,
+    handler_generator:Optional[Callable[[], logging.Handler]]=None,
 ):
     """Top-level configuration function for the alog module. This function
     configures the logging package to use the given default level and
@@ -554,7 +558,7 @@ def configure(
     else:
         logging.warning("Invalid default_level [%s]", default_level)
 
-    # Parse the filters
+    # Parse the filters and remove filters with invalid log levels
     parsed_filters = _parse_filters(filters)
 
     # There seems to be no way to reattach a logger to the root after being
@@ -566,9 +570,10 @@ def configure(
             parsed_filters[chan] = default_level
 
     # Add level filters by name
-    # NOTE: All levels assumed valid after call to _parse_filters
     for chan, level_name in parsed_filters.items():
         level = _get_level_value(level_name)
+        assert level is not None # All levels assumed valid after call to _parse_filters
+
         handler = handler_generator()
         handler.setFormatter(g_alog_formatter)
         handler.setLevel(level)
@@ -582,7 +587,7 @@ def configure(
     # Store the names of all channels currently managed by filters
     g_filtered_channels = list(parsed_filters.keys())
 
-def use_channel(channel):
+def use_channel(channel:Optional[str]):
     """Interface wrapper for python alog implementation to keep consistency with
     other languages.
     """
@@ -680,11 +685,11 @@ class ContextLog(_ScopedLogBase):
 # pylint: disable=too-few-public-methods
 class FunctionLog(ScopedLog):
     """Function log behaves like a ScopedLog but adds the function name to the
-    begin and end messages.  This is intended to be used for loging when a
+    begin and end messages.  This is intended to be used for logging when a
     function starts and ends.
 
     Notes:
-        Using the @alog.logged_function decorator is the prefered (pythonic) method
+        Using the @alog.logged_function decorator is the preferred (pythonic) method
         for logging functions, consider using that instead.
 
     Examples:
@@ -704,7 +709,7 @@ class FnLog(FunctionLog):
 
 def logged_function(log_fn, format_str="", *fmt_args):
     """Function log decorator is a scoped log that adds the function name to the
-    begin and end messages.  This is intended to be used for loging when a
+    begin and end messages.  This is intended to be used for logging when a
     function starts and ends.
 
     Examples:
@@ -759,7 +764,7 @@ class ScopedTimer(_TimedLogBase):
     at destruction.
 
     Notes:
-        Using the @alog.timed_function decorator is the prefered (pythonic)
+        Using the @alog.timed_function decorator is the preferred (pythonic)
         method for timing entire functions, consider using that instead.
 
     Examples:
@@ -801,7 +806,7 @@ class ContextTimer(_TimedLogBase):
 
 def timed_function(log_fn, format_str="", *fmt_args):
     """Timed function decorator is a scoped timer that adds the function name to
-    the end messages.  This is intended to be used for loging the time required
+    the end messages.  This is intended to be used for logging the time required
     for a function to complete.
 
     Examples:
