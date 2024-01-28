@@ -71,7 +71,7 @@ class AlogFormatterBase(logging.Formatter):
 
     def formatTime(self, record:logging.LogRecord, datefmt:Optional[str]=None):
         """A wrapper for the parent formatTime that returns UTC timezone
-        time stamp inISO format.
+        time stamp in ISO format.
 
         Args:
             record (LogRecord):  Log record to pull the created date from.
