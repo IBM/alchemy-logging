@@ -34,7 +34,7 @@ import threading
 import time
 import traceback
 from datetime import datetime, timedelta
-from typing import Any, Callable, Union, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 _Level = Union[int, str]
 
@@ -51,16 +51,16 @@ class AlogFormatterBase(logging.Formatter):
         construction
         """
 
-        def __init__(self):
+        def __init__(self) -> None:
             self.indent = 0
 
-        def __getstate__(self):
+        def __getstate__(self) -> None:
             return None
 
-        def __setstate__(self, d):
+        def __setstate__(self, d) -> None:
             pass
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Hold a thread-local map for storing indentation so that the counts are
         # kept independently for each thread. Note that threading.local values
         # are cleaned up when their local thread dies, so this is safe to use
@@ -70,7 +70,9 @@ class AlogFormatterBase(logging.Formatter):
         # Initialize the underlying logger with this formatter
         logging.Formatter.__init__(self)
 
-    def formatTime(self, record: logging.LogRecord, datefmt: Optional[str] = None):
+    def formatTime(
+        self, record: logging.LogRecord, datefmt: Optional[str] = None
+    ) -> str:
         """A wrapper for the parent formatTime that returns UTC timezone
         time stamp in ISO format.
 
@@ -83,11 +85,11 @@ class AlogFormatterBase(logging.Formatter):
         """
         return datetime.utcfromtimestamp(record.created).isoformat()
 
-    def indent(self):
+    def indent(self) -> None:
         """Add a level of indentation for this thread."""
         self._indent.indent += 1
 
-    def deindent(self):
+    def deindent(self) -> None:
         """Remove a level of indentation for this thread."""
         if self._indent.indent > 0:
             self._indent.indent -= 1
@@ -96,7 +98,7 @@ class AlogFormatterBase(logging.Formatter):
 class AlogJsonFormatter(AlogFormatterBase):
     """Log formatter which prints messages a single-line json."""
 
-    _FIELDS_TO_PRINT = [
+    _FIELDS_TO_PRINT: List[str] = [
         "name",
         "levelname",
         "asctime",
@@ -110,11 +112,11 @@ class AlogJsonFormatter(AlogFormatterBase):
         "duration",
     ]
 
-    def __init__(self):
+    def __init__(self) -> None:
         AlogFormatterBase.__init__(self)
 
     @staticmethod
-    def _map_to_common_key_name(log_record_keyname: str):
+    def _map_to_common_key_name(log_record_keyname: str) -> str:
         if log_record_keyname == "levelname":
             return "level"
         elif log_record_keyname == "asctime":
@@ -137,7 +139,7 @@ class AlogJsonFormatter(AlogFormatterBase):
             The relevant fields pulled out from the log record object and
             initialized into a dictionary.
         """
-        out: dict[Any, Any] = {}
+        out: Dict[Any, Any] = {}
         for field_name in self._FIELDS_TO_PRINT:
             if hasattr(record, field_name):
                 record_field = getattr(record, field_name)
@@ -149,7 +151,7 @@ class AlogJsonFormatter(AlogFormatterBase):
         out["level"] = out["level"].lower()
         return out
 
-    def format(self, record: logging.LogRecord):
+    def format(self, record: logging.LogRecord) -> str:
         """Formats the log record as a JSON formatted string
         (also removes new line characters so everything prints on a single line)
 
@@ -197,7 +199,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
     """Log formatter that pretty-prints lines for easy visibility."""
 
     _INDENT = "  "
-    _LEVEL_MAP = {
+    _LEVEL_MAP: Dict[str, str] = {
         "critical": "FATL",
         "fatal": "FATL",
         "error": "ERRR",
@@ -211,13 +213,13 @@ class AlogPrettyFormatter(AlogFormatterBase):
         "debug4": "DBG4",
     }
 
-    def __init__(self, channel_len=5):
+    def __init__(self, channel_len=5) -> None:
         AlogFormatterBase.__init__(self)
         self.channel_len = channel_len
 
     def _make_header(
         self, timestamp: str, channel: str, level: str, log_code: Optional[str]
-    ):
+    ) -> str:
         """Create the header for a log line with proper padding."""
         # Get the padded or truncated channel
         chan = channel
@@ -242,7 +244,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
 
         return header
 
-    def format(self, record: logging.LogRecord):
+    def format(self, record: logging.LogRecord) -> str:
         """Formats the log record as pretty-printed lines of the format:
 
         timestamp [CHANL:LEVL] message
@@ -302,7 +304,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
 
 # Global maps from name <-> level, pull from logging packages for consistency
 # pylint: disable=protected-access
-g_alog_level_to_name = {
+g_alog_level_to_name: Dict[int, str] = {
     level: name.lower() for level, name in logging._levelToName.items()
 }
 
@@ -321,10 +323,12 @@ g_alog_level_to_name.update(
 # Special "level" used to disable all logging
 g_disable_level = "disable"
 
-g_alog_name_to_level = {name: level for level, name in g_alog_level_to_name.items()}
+g_alog_name_to_level: Dict[str, int] = {
+    name: level for level, name in g_alog_level_to_name.items()
+}
 
 # Global map of default formatters
-g_alog_formatters: dict[str, type[AlogFormatterBase]] = {
+g_alog_formatters: Dict[str, type[AlogFormatterBase]] = {
     "json": AlogJsonFormatter,
     "pretty": AlogPrettyFormatter,
 }
@@ -339,7 +343,7 @@ g_alog_formatter = None
 
 # The current set of channel names that are managed via filters. This is
 # necessary to enable reconfiguring dynamically
-g_filtered_channels: list[str] = []
+g_filtered_channels: List[str] = []
 
 
 class _MultiEqualString:
@@ -349,10 +353,10 @@ class _MultiEqualString:
     "internal" name.
     """
 
-    def __init__(self, *strings: str):
+    def __init__(self, *strings: str) -> None:
         self._strings = strings
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return other in self._strings
 
 
@@ -360,7 +364,7 @@ class _MultiEqualString:
 # can be given to indicate the need to pop additional levels off the stack.
 # This is the _right_ way to de-alias the wrapper function, but it doesn't
 # work on python 3.6 and 3.7.
-g_log_extra_kwargs: dict[str, Any] = {}
+g_log_extra_kwargs: Dict[str, Any] = {}
 if sys.version_info >= (3, 8, 0, "", 0):  # type: ignore
     # Pop 2 additional levels off the stack:
     #   - _log_with_code_method_override
@@ -376,11 +380,11 @@ else:
     logging._srcfile = _MultiEqualString(logging._srcfile, __file__)
 
 
-def is_log_code(arg: str):
+def is_log_code(arg: str) -> bool:
     return arg.startswith("<") and arg.endswith(">")
 
 
-def _get_level_value(level_name: _Level):
+def _get_level_value(level_name: _Level) -> Optional[int]:
     if isinstance(level_name, int):
         return level_name
     val = g_alog_name_to_level.get(level_name, None)
@@ -394,7 +398,7 @@ def _get_level_value(level_name: _Level):
 
 def _log_with_code_method_override(
     self: logging.Logger, value: int, arg_one, *args, **kwargs
-):
+) -> None:
     """This helper is used as an override to the native logging.Logger instance
     methods for each level. As such, it's first argument, self, is the logger
     instance (or the global root logger singleton) on which to call the method.
@@ -431,7 +435,7 @@ def _log_with_code_method_override(
         self.log(value, arg_one, *args, **g_log_extra_kwargs, **kwargs)
 
 
-def _add_level_fn(name: str, value: int):
+def _add_level_fn(name: str, value: int) -> None:
     logging.addLevelName(value, name.upper())
 
     log_using_self_func = (
@@ -443,14 +447,14 @@ def _add_level_fn(name: str, value: int):
     setattr(logging.Logger, name, log_using_self_func)
 
 
-def _add_is_enabled():
+def _add_is_enabled() -> None:
     def is_enabled_func(self, level: _Level):
         return self.isEnabledFor(_get_level_value(level))
 
     setattr(logging.Logger, "isEnabled", is_enabled_func)
 
 
-def _setup_formatter(formatter: Union[str, AlogFormatterBase]):
+def _setup_formatter(formatter: Union[str, AlogFormatterBase]) -> None:
     # If the formatter is a string, pull it from the defaults
     global g_alog_formatter
     if isinstance(formatter, str):
@@ -472,7 +476,7 @@ def _setup_formatter(formatter: Union[str, AlogFormatterBase]):
         raise ValueError("Invalid formatter type: %s" % type(formatter))
 
 
-def _parse_filters(filters: Union[str, dict[str, _Level]]) -> dict[str, _Level]:
+def _parse_filters(filters: Union[str, Dict[str, _Level]]) -> Dict[str, _Level]:
     """Parse and remove filters with invalid log levels."""
     # Check to see if we've got a dictionary. If we do, keep the valid filter entries
     if isinstance(filters, dict):
@@ -487,7 +491,7 @@ def _parse_filters(filters: Union[str, dict[str, _Level]]) -> dict[str, _Level]:
         return {}
 
 
-def _parse_dict_of_filters(filters: dict[str, _Level]):
+def _parse_dict_of_filters(filters: Dict[str, _Level]) -> Dict[str, _Level]:
     for entry, level_name in filters.items():
         if _get_level_value(level_name) is None:
             logging.warning("Invalid filter entry [%s]", entry)
@@ -495,8 +499,8 @@ def _parse_dict_of_filters(filters: dict[str, _Level]):
     return filters
 
 
-def _parse_str_of_filters(filters: str):
-    chan_map: dict[str, _Level] = {}
+def _parse_str_of_filters(filters: str) -> Dict[str, _Level]:
+    chan_map: Dict[str, _Level] = {}
     for entry in filters.split(","):
         if len(entry):
             parts = entry.split(":")
@@ -531,11 +535,11 @@ _add_is_enabled()
 
 def configure(
     default_level: str,
-    filters: Union[str, dict[str, _Level]] = "",
+    filters: Union[str, Dict[str, _Level]] = "",
     formatter: Union[str, AlogFormatterBase] = "pretty",
     thread_id=False,
     handler_generator: Optional[Callable[[], logging.Handler]] = None,
-):
+) -> None:
     """Top-level configuration function for the alog module. This function
     configures the logging package to use the given default level and
     overwrites the levels for all filters as specified. It can also configure
@@ -637,7 +641,7 @@ def configure(
     g_filtered_channels = list(parsed_filters.keys())
 
 
-def use_channel(channel: Optional[str]):
+def use_channel(channel: Optional[str]) -> logging.Logger:
     """Interface wrapper for python alog implementation to keep consistency with
     other languages.
     """
@@ -655,7 +659,7 @@ class _ScopedLogBase:
     appropriate.
     """
 
-    def __init__(self, log_fn, format_str="", *args):
+    def __init__(self, log_fn, format_str="", *args) -> None:
         """Construct a new scoped logger."""
         self.log_fn = log_fn
         self.format_str = format_str
@@ -674,7 +678,7 @@ class _ScopedLogBase:
         ), "Cannot use non-logging function for scoped log"
         self.enabled = self.log_fn.__self__.isEnabledFor(self.log_fn._level_value)
 
-    def _start_scoped_log(self):
+    def _start_scoped_log(self) -> None:
         """Log the start message for a scoped logger and increment the indentor."""
         if self.enabled:
             self.log_fn(scope_start_str + str(self.format_str), *self.args)
@@ -682,7 +686,7 @@ class _ScopedLogBase:
             if g_alog_formatter:
                 g_alog_formatter.indent()
 
-    def _end_scoped_log(self):
+    def _end_scoped_log(self) -> None:
         """Log the end message for a scoped logger and decrement the indentor."""
         if self.enabled:
             global g_alog_formatter
@@ -702,12 +706,12 @@ class ScopedLog(_ScopedLogBase):
         >>>     _ = alog.ScopedLog(log_channel.debug)
     """
 
-    def __init__(self, log_fn, format_str="", *args):
+    def __init__(self, log_fn, format_str="", *args) -> None:
         """Construct a new scoped logger and print the begin message."""
         super().__init__(log_fn, format_str, *args)
         self._start_scoped_log()
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Print the end message when this logger is deleted."""
         self._end_scoped_log()
 
@@ -724,12 +728,12 @@ class ContextLog(_ScopedLogBase):
         >>>   # logs the end message when the context manager exits
     """
 
-    def __enter__(self):
+    def __enter__(self) -> "ContextLog":
         """Log the begin message when the context manager starts."""
         self._start_scoped_log()
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Log the end message when the context manager exits."""
         self._end_scoped_log()
 
@@ -751,7 +755,7 @@ class FunctionLog(ScopedLog):
         >>>     _ = alog.FunctionLog(log_channel.debug)
     """
 
-    def __init__(self, log_fn, format_str="", *args):
+    def __init__(self, log_fn, format_str="", *args) -> None:
         fn_name = (
             traceback.format_stack()[-2].strip().split(",")[2].split(" ")[2].strip()
         )
@@ -800,18 +804,18 @@ class _TimedLogBase:
     appropriate.
     """
 
-    def __init__(self, log_fn, format_str="", *args):
+    def __init__(self, log_fn, format_str="", *args) -> None:
         """Construct a new timed logger."""
         self.log_fn = log_fn
         self.format_str = format_str
         self.args = args
         self.start_time = 0
 
-    def _start_timed_log(self):
+    def _start_timed_log(self) -> None:
         """Get the start time for this timed logger."""
         self.start_time = time.time()
 
-    def _end_timed_log(self):
+    def _end_timed_log(self) -> None:
         """Gets the end time and prints the end message for this timed logger."""
         duration = timedelta(seconds=time.time() - self.start_time)
         fmt = self.format_str + "%s"
@@ -834,12 +838,12 @@ class ScopedTimer(_TimedLogBase):
         >>>     _ = alog.ScopedTimer(log_channel.debug)
     """
 
-    def __init__(self, log_fn, format_str="", *args):
+    def __init__(self, log_fn, format_str="", *args) -> None:
         """Construct a new scoped timer and get the start time."""
         super().__init__(log_fn, format_str, *args)
         self._start_timed_log()
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Log the end message, including time delta, when this timer is deleted."""
         self._end_timed_log()
 
@@ -855,12 +859,12 @@ class ContextTimer(_TimedLogBase):
         >>>   # logs the time delta when the context manager exits
     """
 
-    def __enter__(self):
+    def __enter__(self) -> "ContextTimer":
         """Start the timer when a context is entered."""
         self._start_timed_log()
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Log the end message, including time delta, when the context exits."""
         self._end_timed_log()
 
