@@ -356,7 +356,7 @@ class _MultiEqualString:
     def __init__(self, *strings: str) -> None:
         self._strings = strings
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return other in self._strings
 
 
