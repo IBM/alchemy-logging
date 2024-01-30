@@ -34,7 +34,7 @@ import threading
 import time
 import traceback
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 _Level = Union[int, str]
 
@@ -328,7 +328,7 @@ g_alog_name_to_level: Dict[str, int] = {
 }
 
 # Global map of default formatters
-g_alog_formatters: Dict[str, type[AlogFormatterBase]] = {
+g_alog_formatters: Dict[str, Type[AlogFormatterBase]] = {
     "json": AlogJsonFormatter,
     "pretty": AlogPrettyFormatter,
 }
