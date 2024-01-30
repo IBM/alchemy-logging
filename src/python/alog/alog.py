@@ -224,7 +224,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
         # Get the padded or truncated channel
         chan = channel
         if len(channel) > self.channel_len:
-            chan = channel[: self.channel_len]
+            chan = channel[:self.channel_len]
 
         elif len(channel) < self.channel_len:
             chan = channel + " " * (self.channel_len - len(channel))
