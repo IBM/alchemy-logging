@@ -34,9 +34,12 @@ import threading
 import time
 import traceback
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 
-_Level = Union[int, str]
+if TYPE_CHECKING:
+    from logging import _Level
+
+    from .protocols import ALogLoggerProtocol
 
 ## Formatters ##################################################################
 
@@ -641,7 +644,7 @@ def configure(
     g_filtered_channels = list(parsed_filters.keys())
 
 
-def use_channel(channel: Optional[str]) -> logging.Logger:
+def use_channel(channel: Optional[str]) -> "ALogLoggerProtocol":
     """Interface wrapper for python alog implementation to keep consistency with
     other languages.
     """
