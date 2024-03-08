@@ -37,9 +37,9 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 
 if TYPE_CHECKING:
-    from logging import _Level
-
     from .protocols import ALogLoggerProtocol
+
+_Level = Union[int, str]
 
 ## Formatters ##################################################################
 
@@ -648,7 +648,8 @@ def use_channel(channel: Optional[str]) -> "ALogLoggerProtocol":
     """Interface wrapper for python alog implementation to keep consistency with
     other languages.
     """
-    return logging.getLogger(channel)
+    logger: "ALogLoggerProtocol" = logging.getLogger(channel)  # type: ignore
+    return logger
 
 
 ## Scoped Loggers ##############################################################
