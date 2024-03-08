@@ -397,7 +397,7 @@ def _get_level_value(level_name: _Level) -> Optional[int]:
 
 
 def _log_with_code_method_override(
-    self: logging.Logger, value: int, arg_one, *args, **kwargs
+    self: logging.Logger, value: int, arg_one: object, *args: object, **kwargs
 ) -> None:
     """This helper is used as an override to the native logging.Logger instance
     methods for each level. As such, it's first argument, self, is the logger
@@ -523,9 +523,9 @@ def _parse_str_of_filters(filters: str) -> Dict[str, _Level]:
 ## Import-time Setup ###########################################################
 
 # Add custom low levels
-for level, name in g_alog_level_to_name.items():
-    if name not in ["off", "notset"]:
-        _add_level_fn(name, level)
+for log_level, log_level_name in g_alog_level_to_name.items():
+    if log_level_name not in ["off", "notset"]:
+        _add_level_fn(log_level_name, log_level)
 
 # Patch over isEnabledFor to support level names
 _add_is_enabled()
