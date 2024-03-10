@@ -28,7 +28,7 @@ import inspect
 import logging
 from typing import List
 
-from alog.protocols import LoggerProtocol  # pylint: disable=wrong-import-position
+from alog.protocols import LoggerProtocol
 
 
 def get_parameter_names(obj: object, method_name: str) -> List[str]:
