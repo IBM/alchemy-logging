@@ -70,8 +70,6 @@ def test_protocol_is_complete():
     """
     Test that all functions in stdlib `Logger` exists in the protocol `LoggerProtocol`
     """
-    print(LOGGER_DOCSTRINGS)
-
     excluded_functions = {"__reduce__", "__repr__"}
 
     fn_not_in_protocol = LOGGER_FUNCTIONS.difference(PROTOCOL_FUNCTIONS)
@@ -92,7 +90,6 @@ def test_protocol_function_signatures():
     Test that all function parameter names in `LoggerProtocol` matches those of the
     stdlib `Logger`
     """
-
     # Adjust LOGGER_PARAMETERS for expected differences.
     # These are aligned with the typeshed type definition where `*kwargs` is replaced
     # with `exc_info`, `stack_info`, `stacklevel`, `extra`
