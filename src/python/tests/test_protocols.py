@@ -39,16 +39,21 @@ def get_parameter_names(obj: object, method_name: str) -> List[str]:
     return list(signature.parameters)
 
 
-def get_original_logger_details():
-    importlib.reload(logging)
-    fn = {fn[0] for fn in inspect.getmembers(logging.Logger, inspect.isfunction)}
-    docstring = {fn: inspect.getdoc(getattr(logging.Logger, fn)) for fn in fn}
-    params = {fn: get_parameter_names(logging.Logger, fn) for fn in fn}
+# Reset logging to its original definition
+importlib.reload(logging)
 
-    return fn, docstring, params
+LOGGER_FUNCTIONS = {
+    fn[0] for fn in inspect.getmembers(logging.Logger, inspect.isfunction)
+}
+LOGGER_DOCSTRINGS = {
+    fn: inspect.getdoc(getattr(logging.Logger, fn)) for fn in LOGGER_FUNCTIONS
+}
+LOGGER_PARAMETERS = {
+    fn: get_parameter_names(logging.Logger, fn) for fn in LOGGER_FUNCTIONS
+}
 
-
-LOGGER_FUNCTIONS, LOGGER_DOCSTRINGS, LOGGER_PARAMETERS = get_original_logger_details()
+# Apply alog overrides again
+importlib.import_module("alog")
 
 PROTOCOL_FUNCTIONS = {
     fn[0] for fn in inspect.getmembers(LoggerProtocol, inspect.isfunction)
