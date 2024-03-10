@@ -34,13 +34,17 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Protocol,
     Set,
     Tuple,
     Union,
 )
 
 from .alog import _Level
+
+if sys.version_info < (3, 8):
+    from typing_extensions import Protocol
+else:
+    from typing import Protocol
 
 if TYPE_CHECKING:
     from logging import (

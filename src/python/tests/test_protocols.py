@@ -23,16 +23,32 @@
 ################################################################################
 """ALog unit tests to confirm that the protocol is aligned `logging.Logger`."""
 
+import importlib
 import inspect
+import logging
+from typing import List
 
 from alog.protocols import LoggerProtocol  # pylint: disable=wrong-import-position
 
-from tests.conftest import (
-    LOGGER_DOCSTRINGS,
-    LOGGER_FUNCTIONS,
-    LOGGER_PARAMETERS,
-    get_parameter_names,
-)
+
+def get_parameter_names(obj: object, method_name: str) -> List[str]:
+    """
+    Get the parameter names for an object's method
+    """
+    signature = inspect.signature(getattr(obj, method_name))
+    return list(signature.parameters)
+
+
+def get_original_logger_details():
+    importlib.reload(logging)
+    fn = {fn[0] for fn in inspect.getmembers(logging.Logger, inspect.isfunction)}
+    docstring = {fn: inspect.getdoc(getattr(logging.Logger, fn)) for fn in fn}
+    params = {fn: get_parameter_names(logging.Logger, fn) for fn in fn}
+
+    return fn, docstring, params
+
+
+LOGGER_FUNCTIONS, LOGGER_DOCSTRINGS, LOGGER_PARAMETERS = get_original_logger_details()
 
 PROTOCOL_FUNCTIONS = {
     fn[0] for fn in inspect.getmembers(LoggerProtocol, inspect.isfunction)
@@ -49,6 +65,8 @@ def test_protocol_is_complete():
     """
     Test that all functions in stdlib `Logger` exists in the protocol `LoggerProtocol`
     """
+    print(LOGGER_DOCSTRINGS)
+
     excluded_functions = {"__reduce__", "__repr__"}
 
     fn_not_in_protocol = LOGGER_FUNCTIONS.difference(PROTOCOL_FUNCTIONS)
