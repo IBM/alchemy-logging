@@ -461,19 +461,6 @@ class ALogLoggerProtocol(LoggerProtocol):
         Also supports referencing the level by name.
         """
 
-    def off(
-        self,
-        arg_one: object,
-        *args: object,
-        exc_info: "_ExcInfoType" = None,
-        stack_info: bool = False,
-        stacklevel: int = 1,
-        extra: Optional[Mapping[str, object]] = None,
-    ) -> None:
-        """
-        Disable the given channel completely.
-        """
-
     def trace(
         self,
         arg_one: object,
