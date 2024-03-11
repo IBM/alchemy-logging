@@ -23,11 +23,16 @@
 ################################################################################
 """ALog unit tests to confirm that the protocol is aligned `logging.Logger`."""
 
+# Standard
+from typing import List
 import importlib
 import inspect
-import logging
-from typing import List
+import sys
 
+# Third Party
+import pytest
+
+# Local
 from alog.protocols import LoggerProtocol
 
 
@@ -39,21 +44,30 @@ def get_parameter_names(obj: object, method_name: str) -> List[str]:
     return list(signature.parameters)
 
 
-# Reset logging to its original definition
-importlib.reload(logging)
+def _populate_constants():
+    """
+    Idempotent function to populate the "plain vanilla" logging constants
+    without the additions from alog
+    """
+    real_logging = sys.modules.pop("logging")
+    local_logging = importlib.import_module("logging")
+    LOGGER_FUNCTIONS = {
+        fn[0] for fn in inspect.getmembers(local_logging.Logger, inspect.isfunction)
+    }
+    LOGGER_DOCSTRINGS = {
+        fn: inspect.getdoc(getattr(local_logging.Logger, fn)) for fn in LOGGER_FUNCTIONS
+    }
+    LOGGER_PARAMETERS = {
+        fn: get_parameter_names(local_logging.Logger, fn) for fn in LOGGER_FUNCTIONS
+    }
 
-LOGGER_FUNCTIONS = {
-    fn[0] for fn in inspect.getmembers(logging.Logger, inspect.isfunction)
-}
-LOGGER_DOCSTRINGS = {
-    fn: inspect.getdoc(getattr(logging.Logger, fn)) for fn in LOGGER_FUNCTIONS
-}
-LOGGER_PARAMETERS = {
-    fn: get_parameter_names(logging.Logger, fn) for fn in LOGGER_FUNCTIONS
-}
+    sys.modules["logging"] = real_logging
 
-# Apply alog overrides again
-importlib.import_module("alog")
+    return (LOGGER_FUNCTIONS, LOGGER_DOCSTRINGS, LOGGER_PARAMETERS)
+
+
+LOGGER_FUNCTIONS, LOGGER_DOCSTRINGS, LOGGER_PARAMETERS = _populate_constants()
+
 
 PROTOCOL_FUNCTIONS = {
     fn[0] for fn in inspect.getmembers(LoggerProtocol, inspect.isfunction)
