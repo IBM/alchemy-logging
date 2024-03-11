@@ -526,9 +526,9 @@ def _parse_str_of_filters(filters: str) -> Dict[str, _Level]:
 ## Import-time Setup ###########################################################
 
 # Add custom low levels
-for log_level, log_level_name in g_alog_level_to_name.items():
-    if log_level_name not in ["off", "notset"]:
-        _add_level_fn(log_level_name, log_level)
+for _log_level, _log_level_name in g_alog_level_to_name.items():
+    if _log_level_name not in ["off", "notset"]:
+        _add_level_fn(_log_level_name, _log_level)
 
 # Patch over isEnabledFor to support level names
 _add_is_enabled()
