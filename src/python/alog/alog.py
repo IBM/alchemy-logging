@@ -34,7 +34,10 @@ import threading
 import time
 import traceback
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
+
+if TYPE_CHECKING:
+    from .protocols import ALogLoggerProtocol
 
 _Level = Union[int, str]
 
@@ -224,7 +227,7 @@ class AlogPrettyFormatter(AlogFormatterBase):
         # Get the padded or truncated channel
         chan = channel
         if len(channel) > self.channel_len:
-            chan = channel[:self.channel_len]
+            chan = channel[: self.channel_len]
 
         elif len(channel) < self.channel_len:
             chan = channel + " " * (self.channel_len - len(channel))
@@ -397,7 +400,7 @@ def _get_level_value(level_name: _Level) -> Optional[int]:
 
 
 def _log_with_code_method_override(
-    self: logging.Logger, value: int, arg_one, *args, **kwargs
+    self: logging.Logger, value: int, arg_one: object, *args: object, **kwargs
 ) -> None:
     """This helper is used as an override to the native logging.Logger instance
     methods for each level. As such, it's first argument, self, is the logger
@@ -523,9 +526,9 @@ def _parse_str_of_filters(filters: str) -> Dict[str, _Level]:
 ## Import-time Setup ###########################################################
 
 # Add custom low levels
-for level, name in g_alog_level_to_name.items():
-    if name not in ["off", "notset"]:
-        _add_level_fn(name, level)
+for _log_level, _log_level_name in g_alog_level_to_name.items():
+    if _log_level_name not in ["off", "notset"]:
+        _add_level_fn(_log_level_name, _log_level)
 
 # Patch over isEnabledFor to support level names
 _add_is_enabled()
@@ -641,11 +644,12 @@ def configure(
     g_filtered_channels = list(parsed_filters.keys())
 
 
-def use_channel(channel: Optional[str]) -> logging.Logger:
+def use_channel(channel: Optional[str]) -> "ALogLoggerProtocol":
     """Interface wrapper for python alog implementation to keep consistency with
     other languages.
     """
-    return logging.getLogger(channel)
+    logger: "ALogLoggerProtocol" = logging.getLogger(channel)  # type: ignore
+    return logger
 
 
 ## Scoped Loggers ##############################################################

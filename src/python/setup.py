@@ -59,4 +59,5 @@ setup(
     ],
     keywords="logging",
     packages=["alog"],
+    install_requires=["typing_extensions;python_version<'3.8'"],
 )
