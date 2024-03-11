@@ -99,6 +99,7 @@ def test_protocol_docstrings():
     assert PROTOCOL_DOCSTRINGS == LOGGER_DOCSTRINGS
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="Skipping deprecated python signatures")
 def test_protocol_function_signatures():
     """
     Test that all function parameter names in `LoggerProtocol` matches those of the
