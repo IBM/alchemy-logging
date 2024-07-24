@@ -367,20 +367,22 @@ class _MultiEqualString:
 # can be given to indicate the need to pop additional levels off the stack.
 # This is the _right_ way to de-alias the wrapper function, but it doesn't
 # work on python 3.6 and 3.7.
-g_log_extra_kwargs: Dict[str, Any] = {}
-if sys.version_info >= (3, 8, 0, "", 0):  # type: ignore
-    # Pop 2 additional levels off the stack:
-    #   - _log_with_code_method_override
-    #   - inline lambda
-    g_log_extra_kwargs["stacklevel"] = 3
+def _set_stacklevel(stacklevel: int = 1, **kwargs):
+    if sys.version_info >= (3, 8, 0, "", 0):  # type: ignore
+        # Pop 2 additional levels off the stack:
+        #   - _log_with_code_method_override
+        #   - inline lambda
+        kwargs["stacklevel"] = stacklevel + 2
 
-# If this is an old version of python, we overwrite logging._srcfile with a
-# _MultiEqualString so that _this_ file will also match True to stack frames
-# from this file. This is "safe" to do as the notion of explicitly setting
-# _srcfile is supported based on the comment here:
-# https://github.com/python/cpython/blob/v3.6.15/Lib/logging/__init__.py#L180
-else:
-    logging._srcfile = _MultiEqualString(logging._srcfile, __file__)
+    # If this is an old version of python, we overwrite logging._srcfile with a
+    # _MultiEqualString so that _this_ file will also match True to stack frames
+    # from this file. This is "safe" to do as the notion of explicitly setting
+    # _srcfile is supported based on the comment here:
+    # https://github.com/python/cpython/blob/v3.6.15/Lib/logging/__init__.py#L180
+    else:
+        logging._srcfile = _MultiEqualString(logging._srcfile, __file__)
+
+    return kwargs
 
 
 def is_log_code(arg: str) -> bool:
@@ -416,9 +418,13 @@ def _log_with_code_method_override(
     if not self.isEnabledFor(value):
         return
 
+    # Update the stacklevel in a version-safe way to avoid identifying this
+    # wrapper as the source of the logging message
+    kwargs = _set_stacklevel(**kwargs)
+
     # If no positional args, arg_one is message
     if not args:
-        self.log(value, arg_one, **g_log_extra_kwargs, **kwargs)
+        self.log(value, arg_one, **kwargs)
 
     # If arg_one looks like a log code, use the first positional arg as message
     elif is_log_code(arg_one):
@@ -429,13 +435,12 @@ def _log_with_code_method_override(
                 "message": args[0],
                 "args": tuple(args[1:]) if len(args) > 1 else None,
             },
-            **g_log_extra_kwargs,
             **kwargs,
         )
 
     # Otherwise, treat arg_one as the message
     else:
-        self.log(value, arg_one, *args, **g_log_extra_kwargs, **kwargs)
+        self.log(value, arg_one, *args, **kwargs)
 
 
 def _add_level_fn(name: str, value: int) -> None:

@@ -945,3 +945,12 @@ def test_bug_uvicorn_access_log(capsys):
     logger.info("One %s, Two %s", 1, 2)
     captured = str(capsys.readouterr().err)
     assert "--- Logging error ---" not in captured
+
+
+def test_stacklevel_provided():
+    '''Test that a logging statement which specifies stacklevel does not cause a
+    logging error
+    '''
+    alog.configure('debug')
+    log = alog.use_channel('FOO')
+    log.info('asdf', stacklevel=2)
