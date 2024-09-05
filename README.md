@@ -1,7 +1,7 @@
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5788/badge)](https://bestpractices.coreinfrastructure.org/projects/5788)
 
 # Alchemy Logging (alog)
-The `alog` framework provides tunable logging with easy-to-use defaults and power-user capabilities. The mantra of `alog` is **"Log Early And Often"**. To accomplish this goal, `alog` makes it easy to enable verbose logging at develop/debug time and trim the verbosity at production run time, all while avoiding performance degredation by using lazily evaluated log messages which only render if enabled. The `alog` project maintains language-naitve implementations in many popular programming languages with the goal of giving a consistent application logging experience both when writing your code and when administering a cloud service written in multiple programming languages.
+The `alog` framework provides tunable logging with easy-to-use defaults and power-user capabilities. The mantra of `alog` is **"Log Early And Often"**. To accomplish this goal, `alog` makes it easy to enable verbose logging at develop/debug time and trim the verbosity at production run time, all while avoiding performance degradation by using lazily evaluated log messages which only render if enabled. The `alog` project maintains language-naitve implementations in many popular programming languages with the goal of giving a consistent application logging experience both when writing your code and when administering a cloud service written in multiple programming languages.
 
 ## Channels and Levels
 The primary components of the framework are **channels** and **levels** which allow for each log statement to be enabled or disabled when appropriate.
