@@ -272,8 +272,9 @@ class AlogPrettyFormatter(AlogFormatterBase):
             record.message = ""
         if metadata is not None and len(metadata) > 0:
             if len(record.message) > 0:
-                record.message += " "
-            record.message += json.dumps(metadata)
+                record.message = json.dumps(metadata)+" "+record.message
+            else:
+                record.message = json.dumps(metadata)
 
         level = record.levelname
         channel = record.name
