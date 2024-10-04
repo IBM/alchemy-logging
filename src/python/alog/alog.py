@@ -822,11 +822,11 @@ class _TimedLogBase:
 
     def _start_timed_log(self) -> None:
         """Get the start time for this timed logger."""
-        self.start_time = time.time()
+        self.start_time = time.monotonic()
 
     def _end_timed_log(self) -> None:
         """Gets the end time and prints the end message for this timed logger."""
-        duration = timedelta(seconds=time.time() - self.start_time)
+        duration = timedelta(seconds=time.monotonic() - self.start_time)
         fmt = self.format_str + "%s"
         args = list(self.args) + [str(duration)]
         self.log_fn(fmt, *args, extra={"duration": duration.total_seconds()})
