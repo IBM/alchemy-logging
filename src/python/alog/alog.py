@@ -25,10 +25,10 @@
 logging package with a number of additional features, including log channels,
 configurable formatting and scoped loggers.
 """
-import os
 import functools
 import json
 import logging
+import os
 import sys
 import threading
 import time
@@ -550,9 +550,9 @@ def configure(
     default_level: str,
     filters: Union[str, Dict[str, _Level]] = "",
     formatter: Union[str, AlogFormatterBase] = "pretty",
-    thread_id: bool =False,
+    thread_id: bool = False,
     handler_generator: Optional[Callable[[], logging.Handler]] = None,
-    process_id: bool =False,
+    process_id: bool = False,
 ) -> None:
     """Top-level configuration function for the alog module. This function
     configures the logging package to use the given default level and
