@@ -216,9 +216,10 @@ class AlogPrettyFormatter(AlogFormatterBase):
         "debug4": "DBG4",
     }
 
-    def __init__(self, channel_len=5) -> None:
+    def __init__(self, channel_len=5, include_metadata: bool = False) -> None:
         AlogFormatterBase.__init__(self)
         self.channel_len = channel_len
+        self.include_metadata = include_metadata
 
     def _make_header(
         self, timestamp: str, channel: str, level: str, log_code: Optional[str]
@@ -270,10 +271,11 @@ class AlogPrettyFormatter(AlogFormatterBase):
         # Add metadata if present
         if not hasattr(record, "message"):
             record.message = ""
-        if metadata is not None and len(metadata) > 0:
+        if self.include_metadata and metadata is not None and len(metadata) > 0:
             if len(record.message) > 0:
-                record.message += " "
-            record.message += json.dumps(metadata)
+                record.message = json.dumps(metadata)+" "+record.message
+            else:
+                record.message = json.dumps(metadata)
 
         level = record.levelname
         channel = record.name
