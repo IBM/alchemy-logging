@@ -25,7 +25,7 @@
 logging package with a number of additional features, including log channels,
 configurable formatting and scoped loggers.
 """
-
+import os
 import functools
 import json
 import logging
@@ -44,6 +44,7 @@ _Level = Union[int, str]
 ## Formatters ##################################################################
 
 g_thread_id_enabled = False
+g_process_id_enabled = False
 
 
 class AlogFormatterBase(logging.Formatter):
@@ -185,6 +186,8 @@ class AlogJsonFormatter(AlogFormatterBase):
         # If enabled, add thread id
         if g_thread_id_enabled:
             log_record["thread_id"] = threading.get_ident()
+        if g_process_id_enabled:
+            log_record["process"] = os.getpid()
 
         # Interpolate message and args if present
         record_args = log_record.pop("args", None)
@@ -239,6 +242,8 @@ class AlogPrettyFormatter(AlogFormatterBase):
         header = "%s [%s:%s" % (timestamp, chan, lvl)
         if g_thread_id_enabled:
             header += ":%d" % threading.get_ident()
+        if g_process_id_enabled:
+            header += ":%d" % os.getpid()
         header += "]"
 
         # Add log code if present
@@ -545,8 +550,9 @@ def configure(
     default_level: str,
     filters: Union[str, Dict[str, _Level]] = "",
     formatter: Union[str, AlogFormatterBase] = "pretty",
-    thread_id=False,
+    thread_id: bool =False,
     handler_generator: Optional[Callable[[], logging.Handler]] = None,
+    process_id: bool =False,
 ) -> None:
     """Top-level configuration function for the alog module. This function
     configures the logging package to use the given default level and
@@ -571,6 +577,8 @@ def configure(
         handler_generator:  function () -> logging.Handler
             A function which takes no args and generates a logging handler. If
             not provided, this defaults to `lambda: logging.StreamHandler()`
+        process_id:  bool
+            If true, include process id in log
     """
 
     # If the default_level is the disable value, make sure no other values are
@@ -589,6 +597,8 @@ def configure(
     # Set up thread id logging
     global g_thread_id_enabled
     g_thread_id_enabled = thread_id
+    global g_process_id_enabled
+    g_process_id_enabled = process_id
 
     # Remove any existing handlers
     # NOTE: We remove *all* handlers, even those added by other logging
