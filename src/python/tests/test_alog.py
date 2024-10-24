@@ -54,7 +54,7 @@ def pretty_level_to_name(pretty_level):
 
 def parse_pretty_line(line):
     timestamp_regex = r"([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{6})"
-    rest_of_regex = r"\[([^:]*):([^\]:]*):?([0-9]*)\]( ?<[^\s]*>)? ([\s]*)([^\s].*)\n?"
+    rest_of_regex = r"\[([^:]*):([^\]:]*):?([0-9]*):?([0-9]*)\]( ?<[^\s]*>)? ([\s]*)([^\s].*)\n?"
     whole_regex = "^%s %s$" % (timestamp_regex, rest_of_regex)
     expr = re.compile(whole_regex)
     if isinstance(line, bytes):
@@ -65,13 +65,15 @@ def parse_pretty_line(line):
         'timestamp': match[1],
         'channel': match[2].strip(),
         'level': pretty_level_to_name(match[3]),
-        'num_indent': len(match[6]) / len(alog.AlogPrettyFormatter._INDENT),
-        'message': match[7],
+        'num_indent': len(match[7]) / len(alog.AlogPrettyFormatter._INDENT),
+        'message': match[8],
     }
     if len(match[4]) > 0:
         res['thread_id'] = int(match[4])
-    if match[5] is not None:
-        res['log_code'] = match[5].strip()
+    if len(match[5]) > 0:
+        res['process'] = int(match[4])
+    if match[6] is not None:
+        res['log_code'] = match[6].strip()
     return res
 
 def is_log_msg(msg):
@@ -391,6 +393,41 @@ def test_thread_id_pretty():
     assert len(capture_formatter.captured), 1
     logged_output = capture_formatter.get_pretty_records()[0]
     assert 'thread_id' in logged_output
+
+## Process Id ###################################################################
+
+def test_process_id_json():
+    '''Test that the process id is given with json formatting'''
+
+    # Configure for log capture
+    capture_formatter = LogCaptureFormatter('json')
+    alog.configure(default_level='info', process_id=True, formatter=capture_formatter)
+    test_channel = alog.use_channel('TEST')
+
+    # Log a sample message
+    test_channel.info('This is a test')
+
+    # Capture the output and make sure the thread id is present
+    logged_output = capture_formatter.get_json_records()
+    assert len(logged_output) == 1
+    assert 'process' in logged_output[0]
+
+def test_process_id_pretty():
+    '''Test that the process id is given with pretty formatting'''
+
+    # Configure for log capture
+    capture_formatter = LogCaptureFormatter('pretty')
+    # ! Enable both thread and process id so that parsing works
+    alog.configure(default_level='info', thread_id=True, process_id=True, formatter=capture_formatter)
+    test_channel = alog.use_channel('TEST')
+
+    # Log a sample message
+    test_channel.info('This is a test')
+
+    # Capture the output and make sure the thread id is present
+    assert len(capture_formatter.captured), 1
+    logged_output = capture_formatter.get_pretty_records()[0]
+    assert 'process' in logged_output
 
 ## Log Code ####################################################################
 
