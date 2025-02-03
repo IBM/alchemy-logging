@@ -38,7 +38,7 @@
   "dependencies": {
     "@types/node": "^22.0.0",
     "deepcopy": "^2.0.0",
-    "typescript": "^3.6.4"
+    "typescript": "^5.7.3"
   },
   "devDependencies": {
     "@types/chai": "^4.2.4",
