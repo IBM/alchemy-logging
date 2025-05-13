@@ -363,7 +363,7 @@ bool entriesMatch(const CParsedLogEntry& exp,
     }
     result = false;
   }
-  for (const auto eEntry : exp.mapData.items())
+  for (const auto& eEntry : exp.mapData.items())
   {
     const auto gIter = got.mapData.find(eEntry.key());
     if (gIter == got.mapData.end())
@@ -380,7 +380,7 @@ bool entriesMatch(const CParsedLogEntry& exp,
       result = false;
     }
   }
-  for (const auto gEntry : got.mapData.items())
+  for (const auto& gEntry : got.mapData.items())
   {
     const auto eIter = exp.mapData.find(gEntry.key());
     if (eIter == exp.mapData.end())
