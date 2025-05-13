@@ -2,7 +2,7 @@
 #
 # This phase sets up dependenices for the other phases
 ##
-FROM gcc:9 as base
+FROM gcc:15 as base
 
 # This image is only for building, so we run as root
 WORKDIR /src
