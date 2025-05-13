@@ -2,7 +2,7 @@
 #
 # This phase sets up dependenices for the other phases
 ##
-FROM node:14-slim as base
+FROM node:22-slim as base
 
 # This image is only for building, so we run as root
 WORKDIR /src
