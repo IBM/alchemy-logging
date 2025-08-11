@@ -10,7 +10,7 @@ jobs:
   build-36:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run unit tests
         run: |
           cd src/python
@@ -18,7 +18,7 @@ jobs:
   build-37:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run unit tests
         run: |
           cd src/python
@@ -26,7 +26,7 @@ jobs:
   build-38:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run unit tests
         run: |
           cd src/python
@@ -34,7 +34,7 @@ jobs:
   build-39:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run unit tests
         run: |
           cd src/python
@@ -42,7 +42,7 @@ jobs:
   build-310:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run unit tests
         run: |
           cd src/python
