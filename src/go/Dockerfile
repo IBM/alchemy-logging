@@ -2,7 +2,7 @@
 #
 # This phase sets up the working environment for the other phases
 ##
-FROM golang:1.24-alpine as base
+FROM golang:1.25-alpine as base
 WORKDIR /src
 RUN apk add gcc musl-dev curl bash
 
