@@ -33,7 +33,7 @@ import sys
 import threading
 import time
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 
 if TYPE_CHECKING:
@@ -87,7 +87,7 @@ class AlogFormatterBase(logging.Formatter):
         Returns:
             A string representation of created datetime.
         """
-        return datetime.utcfromtimestamp(record.created).isoformat()
+        return datetime.fromtimestamp(record.created, tz=timezone.utc).replace(tzinfo=None).isoformat()
 
     def indent(self) -> None:
         """Add a level of indentation for this thread."""
