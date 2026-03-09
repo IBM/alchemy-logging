@@ -350,12 +350,8 @@ class LoggerProtocol(FilterProtocol):
         logger.log(level, "We have a %s", "mysterious problem", exc_info=1)
         """
 
-    # gh-114494: stdlib Logger docstrings changed exc_info=1 to exc_info=True
-    # Backported to 3.11.9 and 3.12.3
-    # https://github.com/python/cpython/issues/114494
-    if sys.version_info >= (3, 12, 3) or (
-        sys.version_info >= (3, 11, 9) and sys.version_info < (3, 12)
-    ):
+    # In Python 3.14, the stdlib Logger docstrings changed exc_info=1 to exc_info=True
+    if sys.version_info >= (3, 14):
         debug.__doc__ = """
         Log 'msg % args' with severity 'DEBUG'.
 
