@@ -350,6 +350,62 @@ class LoggerProtocol(FilterProtocol):
         logger.log(level, "We have a %s", "mysterious problem", exc_info=1)
         """
 
+    # In Python 3.14, the stdlib Logger docstrings changed exc_info=1 to exc_info=True
+    if sys.version_info >= (3, 14):
+        debug.__doc__ = """
+        Log 'msg % args' with severity 'DEBUG'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.debug("Houston, we have a %s", "thorny problem", exc_info=True)
+        """
+
+        info.__doc__ = """
+        Log 'msg % args' with severity 'INFO'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.info("Houston, we have a %s", "notable problem", exc_info=True)
+        """
+
+        warning.__doc__ = """
+        Log 'msg % args' with severity 'WARNING'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.warning("Houston, we have a %s", "bit of a problem", exc_info=True)
+        """
+
+        error.__doc__ = """
+        Log 'msg % args' with severity 'ERROR'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.error("Houston, we have a %s", "major problem", exc_info=True)
+        """
+
+        critical.__doc__ = """
+        Log 'msg % args' with severity 'CRITICAL'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.critical("Houston, we have a %s", "major disaster", exc_info=True)
+        """
+
+        log.__doc__ = """
+        Log 'msg % args' with the integer severity 'level'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.log(level, "We have a %s", "mysterious problem", exc_info=True)
+        """
+
     def _log(
         self,
         level: int,

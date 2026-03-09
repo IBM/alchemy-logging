@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "alchemy-logging"
+dynamic = ["version"]
+description = "A wrapper around the logging package to provide Alchemy Logging functionality"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "Gabe Goodhart", email = "ghart@us.ibm.com" },
+]
+keywords = ["logging"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: User Interfaces",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/IBM/alchemy-logging"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.1,<10",
+    "pytest-cov>=4.0.0,<8",
+]
+util = [
+    "munch>=2.5.0,<5",
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--cov=alog",
+    "--cov=util",
+    "--cov-report=term",
+    "--cov-report=html",
+    "-W error"
+    ]
+
+[tool.hatch.version]
+source = "vcs"
+tag-pattern = "py-(?P<version>.*)"
+raw-options = { root = "../.." }
+
+[tool.hatch.build.targets.sdist]
+include = ["alog/", "README.md"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["alog"]

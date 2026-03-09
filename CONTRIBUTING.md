@@ -69,7 +69,7 @@ When proposing support for a new language, please submit a [GitHub issue using t
 
 ## Set up your dev environments
 
-Each language-specific implementation has its own dockerized development environment. You can launch the dev environment by running `ci/develop.sh`:
+Most language-specific implementations have dockerized development environments. You can launch the dev environment by running `ci/develop.sh`:
 
 ```sh
 cd src/<lang>
@@ -80,9 +80,16 @@ For each language, this will mount the `src/<lang>` directory to `/src` in a run
 
 ### Python
 
+Python uses [uv](https://docs.astral.sh/uv/) directly (no Docker needed):
+
 ```sh
+cd src/python
+
+# Set up dev environment
+uv sync --extra test --extra util
+
 # Run unit tests
-./ci/run-tests.sh
+uv run pytest
 ```
 
 ### Typescript
