@@ -7,9 +7,9 @@ For general contribution practices, please refer to [the overall project CONTRIB
 You can run the unit tests as follows:
 
 ```sh
-# One-time setup to get the development environment set up
-PYTHON_RELEASE_VERSION=0.0.0 python setup.py develop
+# Set up dev environment
+uv sync --extra test --extra util
 
 # Run the tests
-./ci/run-tests.sh
+uv run pytest
 ```

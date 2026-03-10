@@ -1,9 +1,9 @@
-alchemy_logging.egg-info
+__pycache__/
+*.pyc
 build
 dist
-__pycache__/
 htmlcov
 .coverage
-# output files from util tests
+.venv
+uv.lock
 tests/**/*_copy.py
-**/*.pyc

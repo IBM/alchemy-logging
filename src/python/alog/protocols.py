@@ -232,16 +232,6 @@ class LoggerProtocol(FilterProtocol):
         logger.info("Houston, we have a %s", "interesting problem", exc_info=1)
         """
 
-    if sys.version_info >= (3, 12):
-        info.__doc__ = """
-        Log 'msg % args' with severity 'INFO'.
-
-        To pass exception information, use the keyword argument exc_info with
-        a true value, e.g.
-
-        logger.info("Houston, we have a %s", "notable problem", exc_info=1)
-        """
-
     # Aligned with the typeshed type definition:
     # `*kwargs` replaced with: `exc_info`, `stack_info`, `stacklevel`, `extra`
     def warning(
@@ -348,6 +338,91 @@ class LoggerProtocol(FilterProtocol):
         a true value, e.g.
 
         logger.log(level, "We have a %s", "mysterious problem", exc_info=1)
+        """
+
+    # Logger.info version specific docstring equivalents
+    if sys.version_info >= (3, 11, 9) and sys.version_info < (3, 12):
+        # exc_info=true
+        info.__doc__ = """
+        Log 'msg % args' with severity 'INFO'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.info("Houston, we have a %s", "interesting problem", exc_info=True)
+        """
+    elif sys.version_info >= (3, 12) and sys.version_info < (3, 12, 3):
+        # "interesting problem" changed to "notable problem" with exc_info=1
+        info.__doc__ = """
+        Log 'msg % args' with severity 'INFO'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.info("Houston, we have a %s", "notable problem", exc_info=1)
+        """
+    elif sys.version_info >= (3, 12, 3):
+        # exc_info=true
+        info.__doc__ = """
+        Log 'msg % args' with severity 'INFO'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.info("Houston, we have a %s", "notable problem", exc_info=True)
+        """
+
+    # gh-114494: stdlib Logger docstrings changed exc_info=1 to exc_info=True
+    # Backported to 3.11.9 and 3.12.3
+    # https://github.com/python/cpython/issues/114494
+    if (
+        sys.version_info >= (3, 11, 9)
+        and sys.version_info < (3, 12)
+        or sys.version_info >= (3, 12, 3)
+    ):
+        debug.__doc__ = """
+        Log 'msg % args' with severity 'DEBUG'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.debug("Houston, we have a %s", "thorny problem", exc_info=True)
+        """
+
+        warning.__doc__ = """
+        Log 'msg % args' with severity 'WARNING'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.warning("Houston, we have a %s", "bit of a problem", exc_info=True)
+        """
+
+        error.__doc__ = """
+        Log 'msg % args' with severity 'ERROR'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.error("Houston, we have a %s", "major problem", exc_info=True)
+        """
+
+        critical.__doc__ = """
+        Log 'msg % args' with severity 'CRITICAL'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.critical("Houston, we have a %s", "major disaster", exc_info=True)
+        """
+
+        log.__doc__ = """
+        Log 'msg % args' with the integer severity 'level'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.log(level, "We have a %s", "mysterious problem", exc_info=True)
         """
 
     def _log(

@@ -19,11 +19,8 @@ export DOCKER_BUILDKIT=0
 # Dispatch to the various types of releases
 if [ "$release_type" == "py" ]
 then
-    cd src/python
-    docker build . \
-        --target=release_test \
-        --build-arg PYTHON_RELEASE_VERSION=$version \
-        --build-arg PYPI_TOKEN=$PYPI_TOKEN
+    echo "Python releases are handled by the python-release workflow"
+    exit 0
 elif [ "$release_type" == "ts" ]
 then
     cd src/ts

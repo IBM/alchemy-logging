@@ -1,49 +1,21 @@
-# This workflow runs the typescript implementation unit tests
 name: python-tests
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch: {}
 jobs:
-  build-36:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
       - name: Run unit tests
-        run: |
-          cd src/python
-          docker build . --target=test --build-arg PYTHON_VERSION=3.6
-  build-37:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Run unit tests
-        run: |
-          cd src/python
-          docker build . --target=test --build-arg PYTHON_VERSION=3.7
-  build-38:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Run unit tests
-        run: |
-          cd src/python
-          docker build . --target=test --build-arg PYTHON_VERSION=3.8
-  build-39:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Run unit tests
-        run: |
-          cd src/python
-          docker build . --target=test --build-arg PYTHON_VERSION=3.9
-  build-310:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Run unit tests
-        run: |
-          cd src/python
-          docker build . --target=test --build-arg PYTHON_VERSION=3.10
+        working-directory: src/python
+        run: uv run --python ${{ matrix.python-version }} --extra test --extra util pytest
