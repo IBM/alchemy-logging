@@ -25,9 +25,6 @@
 // Standard
 import { Writable } from 'stream';
 
-// Third Party
-const deepCopy = require('deepcopy');
-
 // Local
 import { defaultFormatterMap } from './formatters';
 import {
@@ -45,7 +42,6 @@ import {
   Loggable,
   LogMetadata,
   LogRecord,
-  MessageGenerator,
   OFF,
   TRACE,
   WARNING,
@@ -425,7 +421,7 @@ export class AlogCoreSingleton {
 
       // If there is global metadata configured, add it as a clean copy
       if (Object.keys(AlogCoreSingleton.getInstance().metadata).length) {
-        record.metadata = deepCopy(AlogCoreSingleton.getInstance().metadata);
+        record.metadata = structuredClone(AlogCoreSingleton.getInstance().metadata);
       }
 
       // Determine if the first variable arg is a log code
@@ -447,10 +443,10 @@ export class AlogCoreSingleton {
           record.stack = (meta as Error).stack;
         } else if (typeof meta === 'object') {
           record.message = '';
-          record.metadata = Object.assign((record.metadata || {}), deepCopy(meta));
+          record.metadata = Object.assign((record.metadata || {}), structuredClone(meta));
         } // else ignore msgOrMeta because it's invalid
         if (argFive !== undefined && Object.keys(argFive).length) {
-          record.metadata = Object.assign((record.metadata || {}), deepCopy(argFive));
+          record.metadata = Object.assign((record.metadata || {}), structuredClone(argFive));
         }
 
       } else {
@@ -472,10 +468,10 @@ export class AlogCoreSingleton {
           // Signature 8
           // log(channel: string, metadata: LogMetadata)
           record.message = '';
-          record.metadata = Object.assign((record.metadata || {}), deepCopy(msgOrMeta));
+          record.metadata = Object.assign((record.metadata || {}), structuredClone(msgOrMeta));
         } // else ignore msgOrMeta because it's invalid
         if (meta !== undefined && meta !== null && typeof meta === 'object' && Object.keys(meta).length) {
-          record.metadata = Object.assign((record.metadata || {}), deepCopy(meta));
+          record.metadata = Object.assign((record.metadata || {}), structuredClone(meta));
         }
       }
 

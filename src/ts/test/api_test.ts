@@ -5,7 +5,6 @@ import { Writable } from 'stream';
 // Third Party
 import { expect } from 'chai';
 import MemoryStreams from 'memory-streams';
-const deepEqual = require('deep-equal');
 
 // Test helpers
 import {
@@ -13,7 +12,6 @@ import {
   getLogRecords,
   IS_PRESENT,
   parsePPLine,
-  sampleLogCode,
   stubValidationRecord,
   validateLogRecords,
 } from './helpers';
