@@ -9,9 +9,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22, 24]
     steps:
       - uses: actions/checkout@v6
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies
+        working-directory: src/ts
+        run: npm install
+      - name: Lint
+        working-directory: src/ts
+        run: npm run lint
       - name: Run unit tests
-        run: |
-          cd src/ts
-          docker build . --target=test
+        working-directory: src/ts
+        run: npm test

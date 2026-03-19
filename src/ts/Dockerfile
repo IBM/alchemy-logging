@@ -2,13 +2,13 @@
 #
 # This phase sets up dependenices for the other phases
 ##
-FROM node:14-slim as base
+FROM node:24-slim as base
 
 # This image is only for building, so we run as root
 WORKDIR /src
 
 # Install build, test, andn publish dependencies
-COPY *.json /src/
+COPY package*.json tsconfig.json eslint.config.mjs /src/
 RUN npm install
 
 ## Test ########################################################################
