@@ -3,8 +3,6 @@
 import { Writable } from 'stream';
 
 // Third Party
-import MemoryStreams from 'memory-streams';
-const deepCopy = require('deepcopy');
 const deepEqual = require('deep-equal');
 
 // Alog guts
@@ -102,7 +100,7 @@ export function getLogRecords(logStream: Writable): string[] {
 // Helper to create a stub record for validation where all default fields are
 // just set to IS_PRESENT
 export function stubValidationRecord(): any {
-  return deepCopy({
+  return structuredClone({
     channel: IS_PRESENT,
     level: IS_PRESENT,
     level_str: IS_PRESENT,

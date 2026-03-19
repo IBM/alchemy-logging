@@ -22,9 +22,6 @@
  * SOFTWARE.
  *----------------------------------------------------------------------------*/
 
-// Standard
-import { Writable } from 'stream';
-
 // Local
 import { AlogCoreSingleton } from './core';
 
