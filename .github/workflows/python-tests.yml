@@ -2,14 +2,8 @@ name: python-tests
 on:
   push:
     branches: [main]
-    paths:
-      - 'src/python/**'
-      - '.github/workflows/python-tests.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'src/python/**'
-      - '.github/workflows/python-tests.yml'
   workflow_dispatch: {}
 jobs:
   test:
