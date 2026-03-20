@@ -49,7 +49,7 @@ addopts = [
 [tool.hatch.version]
 source = "vcs"
 tag-pattern = "py-(?P<version>.*)"
-raw-options = { root = "../.." }
+raw-options = { root = "../..", git_describe_command = ["git", "describe", "--dirty", "--tags", "--long", "--match", "py-*"] }
 
 [tool.hatch.build.targets.sdist]
 include = ["alog/", "README.md"]
