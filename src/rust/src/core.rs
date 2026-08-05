@@ -61,7 +61,7 @@ pub enum FormatterKind {
 impl FormatterKind {
     fn into_formatter(self) -> Box<dyn Formatter> {
         match self {
-            FormatterKind::Pretty => Box::new(PrettyFormatter::default()),
+            FormatterKind::Pretty => Box::<PrettyFormatter>::default(),
             FormatterKind::Json => Box::new(JsonFormatter),
             FormatterKind::Custom(f) => f,
         }
@@ -121,7 +121,7 @@ fn config() -> &'static RwLock<ConfigState> {
 fn sink() -> &'static Mutex<SinkState> {
     SINK.get_or_init(|| {
         Mutex::new(SinkState {
-            formatter: Box::new(PrettyFormatter::default()),
+            formatter: Box::<PrettyFormatter>::default(),
             sink: Box::new(io::stdout()),
         })
     })
