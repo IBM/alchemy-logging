@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        toolchain: [stable, "1.70"]
+        toolchain: [stable, "1.71"]
     steps:
       - uses: actions/checkout@v7
       - name: Set up Rust ${{ matrix.toolchain }}
