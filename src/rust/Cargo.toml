@@ -1,6 +1,8 @@
 [package]
 name = "alchemy-logging"
-version = "0.1.0"
+# Sentinel value overwritten with the real version (derived from the git tag)
+# during the release build. See the `release` stage in ./Dockerfile.
+version = "0.0.0"
 edition = "2021"
 rust-version = "1.70"
 description = "Multi-language logging framework with configurable channels and levels"

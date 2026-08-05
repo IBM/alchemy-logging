@@ -32,9 +32,14 @@ RUN true && \
 # This phase publishes the crate to crates.io
 ##
 FROM base as release
+ARG RUST_RELEASE_VERSION
 ARG CARGO_REGISTRY_TOKEN
 COPY . /src
-RUN cargo publish --token ${CARGO_REGISTRY_TOKEN}
+# Overwrite the sentinel version in Cargo.toml with the real version derived
+# from the git tag before publishing.
+RUN sed -i.bak "s/^version = \"0\.0\.0\"/version = \"${RUST_RELEASE_VERSION}\"/" Cargo.toml && \
+    rm Cargo.toml.bak && \
+    cargo publish --token ${CARGO_REGISTRY_TOKEN}
 
 ## Release Test ################################################################
 #
