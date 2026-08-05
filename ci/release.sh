@@ -36,6 +36,14 @@ then
         --target=release_test \
         --build-arg CPP_RELEASE_VERSION=$tag
 
+elif [ "$release_type" == "rs" ]
+then
+    cd src/rust
+    docker build . \
+        --target=release_test \
+        --build-arg RUST_RELEASE_VERSION=$version \
+        --build-arg CARGO_REGISTRY_TOKEN=$CARGO_REGISTRY_TOKEN
+
 # Go is special and requires valid semantic versioning for its version tags and
 # those tags must be scoped by the subdirectory where the go.mod file lives
 elif [[ "$tag" =~ src/go/v[0-9]+\.[0-9]+\.[0-9]+.* ]]
