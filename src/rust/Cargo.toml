@@ -4,7 +4,7 @@ name = "alchemy-logging"
 # during the release build. See the `release` stage in ./Dockerfile.
 version = "0.0.0"
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.71"
 description = "Multi-language logging framework with configurable channels and levels"
 license = "MIT"
 repository = "https://github.com/IBM/alchemy-logging"
