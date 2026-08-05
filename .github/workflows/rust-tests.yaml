@@ -1,0 +1,46 @@
+# This workflow runs the rust implementation unit tests
+name: rust-tests
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain: [stable, "1.70"]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Rust ${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: rustfmt, clippy
+      - name: Check formatting
+        working-directory: src/rust
+        run: cargo fmt --check
+      - name: Lint
+        working-directory: src/rust
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Run unit tests
+        working-directory: src/rust
+        run: cargo test
+      # NOTE: deliberately not `--all-features` above - the `disable-logging`
+      # feature strips every logging macro down to a no-op, which would break
+      # most of the functional test suite's assertions (by design, not by
+      # bug). It gets its own lint/test pass instead.
+      - name: Lint (disable-logging feature)
+        working-directory: src/rust
+        run: cargo clippy --all-targets --features disable-logging -- -D warnings
+      - name: Run unit tests (disable-logging feature)
+        working-directory: src/rust
+        run: cargo test --features disable-logging
+      - name: Build examples
+        working-directory: src/rust
+        run: cargo build --release --examples
+      - name: Build examples (disable-logging feature)
+        working-directory: src/rust
+        run: cargo build --release --examples --features disable-logging
