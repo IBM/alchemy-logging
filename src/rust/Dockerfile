@@ -2,7 +2,7 @@
 #
 # This phase sets up dependencies for the other phases
 ##
-FROM rust:1.71 as base
+FROM rust:1.97 as base
 WORKDIR /src
 RUN rustup component add rustfmt clippy
 
