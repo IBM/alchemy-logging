@@ -7,3 +7,4 @@ htmlcov
 .venv
 uv.lock
 tests/**/*_copy.py
+*.egg-info
