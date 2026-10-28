@@ -35,9 +35,28 @@ def get_copy_file_name(filename):
     # Get the of an output file (if changes found) in copy mode
     return '{}_copy.py'.format(os.path.splitext(filename)[0])
 
+
 def get_code_match(line):
     # Return search result for our main log code regex
     return correct_log_codes.LOG_PATTERN.search(line)
+
+
+# Module-level constants used by the fixture
+fixtures_dir = os.path.join(os.path.dirname(__file__), 'fixtures')
+prefix = '<REP'
+
+
+@pytest.fixture(scope="session", autouse=True)
+def run_log_code_corrector():
+    # Run the log code correction script over the fixtures directory with copy on
+    if not os.path.isdir(fixtures_dir):
+        raise IOError('ERROR: Fixtures directory: [{}] does not exist'.format(fixtures_dir))
+    correct_log_codes.validate_or_correct_log_codes(
+        root_dir=fixtures_dir,
+        prefix=prefix,
+        validate_only=False,
+        copy=True)
+
 
 class TestLogCorrection(unittest.TestCase):
     '''Ensures that printed messages are valid json format when json formatting is specified'''
@@ -49,18 +68,7 @@ class TestLogCorrection(unittest.TestCase):
     placholders_file_dir = os.path.join(fixtures_dir, 'placeholders')
     prefix_file = os.path.join(placholders_file_dir, 'test_case_3.py')
     prefixless_file = os.path.join(placholders_file_dir, 'test_case_4.py')
-    prefix = '<REP'
-
-    @pytest.fixture(scope="session", autouse=True)
-    def run_log_code_corrector(self, request):
-        if not os.path.isdir(self.fixtures_dir):
-            raise IOError('ERROR: Fixtures directory: [{}] does not exist'.format(self.fixtures_dir))
-        # Run the log code correction script over the whole fixteres directory with copy on
-        correct_log_codes.validate_or_correct_log_codes(
-            root_dir=self.fixtures_dir,
-            prefix=self.prefix,
-            validate_only=False,
-            copy=True)
+    prefix = prefix
 
     @classmethod
     def tearDownClass(cls):
