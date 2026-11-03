@@ -8,9 +8,11 @@ const deepEqual = require('deep-equal');
 // Alog guts
 import alog from '../src';
 import { AlogCoreSingleton } from '../src/core';
-const formatters = require('rewire')('../src/formatters');
-const prettyLevelNames = formatters.__get__('prettyLevelNames');
-const prettyIndentation = formatters.__get__('prettyIndentation');
+
+// Import from compiled dist folder to avoid rewire issues with TypeScript 7
+const formatters = require('../dist/formatters');
+const prettyLevelNames = formatters.prettyLevelNames;
+const prettyIndentation = formatters.prettyIndentation;
 
 const levelFromName = AlogCoreSingleton.levelFromName;
 const nameFromLevel = AlogCoreSingleton.nameFromLevel;

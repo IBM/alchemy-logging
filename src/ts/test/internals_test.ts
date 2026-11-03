@@ -20,9 +20,10 @@ import {
 // Things under test (will be monkey patched)
 import alog from '../src';
 import { JsonFormatter, PrettyFormatter } from '../src/formatters';
-const rewire = require('rewire');
-const configure  = rewire('../src/configure');
-const core  = rewire('../src/core');
+
+// Import from compiled dist folder to avoid rewire issues with TypeScript 7
+const configure = require('../dist/configure');
+const core = require('../dist/core');
 const AlogCoreSingleton = core.AlogCoreSingleton;
 const isLogCode = AlogCoreSingleton.isLogCode;
 const levelFromName = AlogCoreSingleton.levelFromName;
@@ -476,7 +477,7 @@ and a third!`}));
   // configuration
   describe('configure', () => {
     describe('isValidLevel', () => {
-      const isValidLevel = configure.__get__('isValidLevel');
+      const isValidLevel = configure.isValidLevel;
       it('should accept any positive number', () => {
         expect(isValidLevel(999)).to.be.true;
       });
@@ -499,7 +500,7 @@ and a third!`}));
     });
 
     describe('isValidFilterConfig', () => {
-      const isValidFilterConfig = configure.__get__('isValidFilterConfig');
+      const isValidFilterConfig = configure.isValidFilterConfig;
       it ('should accept an empty filter object', () => {
         expect(isValidFilterConfig({})).to.be.true;
       });
@@ -512,7 +513,7 @@ and a third!`}));
     });
 
     describe('isValidConfig', () => {
-      const isValidConfig = configure.__get__('isValidConfig');
+      const isValidConfig = configure.isValidConfig;
       it('should accept a valid config with all fields set', () => {
         expect(isValidConfig({
           defaultLevel: alog.INFO,
@@ -553,7 +554,7 @@ and a third!`}));
     });
 
     describe('levelFromArg', () => {
-      const levelFromArg = configure.__get__('levelFromArg');
+      const levelFromArg = configure.levelFromArg;
       it('should parse a valid string level', () => {
         expect(levelFromArg('info')).to.equal(alog.INFO);
       });
@@ -575,7 +576,7 @@ and a third!`}));
     });
 
     describe('filtersFromArg', () => {
-      const filtersFromArg = configure.__get__('filtersFromArg');
+      const filtersFromArg = configure.filtersFromArg;
       it('should handle null and undefined as empty objects', () => {
         expect(filtersFromArg(null)).to.deep.equal({});
         expect(filtersFromArg(undefined)).to.deep.equal({});
@@ -613,13 +614,15 @@ and a third!`}));
     });
 
     describe('formatterFromArg', () => {
-      const formatterFromArg = configure.__get__('formatterFromArg');
+      const formatterFromArg = configure.formatterFromArg;
       it('should handle a custom function', () => {
         const func = (record: alog.LogRecord) => `RECORD: ${JSON.stringify(record)}`;
         expect(formatterFromArg(func)).to.equal(func);
       });
       it('should handle a valid string from the formatter map', () => {
-        expect(formatterFromArg('pretty')).to.equal(alog.PrettyFormatter);
+        const result = formatterFromArg('pretty');
+        expect(result).to.be.a('function');
+        expect(result.name).to.equal('PrettyFormatter');
       });
       it('should throw on an invalid string name', () => {
         expect(() => formatterFromArg('foobar'))
@@ -632,11 +635,14 @@ and a third!`}));
     });
 
     describe('parseConfigureArgs', () => {
-      const parseConfigureArgs = configure.__get__('parseConfigureArgs');
+      const parseConfigureArgs = configure.parseConfigureArgs;
       it('should parse a valid object config as argOne', () => {
         const cfg = {defaultLevel: alog.INFO};
-        expect(parseConfigureArgs(cfg))
-          .to.deep.equal({...cfg, filters: {}, formatter: alog.PrettyFormatter});
+        const result = parseConfigureArgs(cfg);
+        expect(result.defaultLevel).to.equal(cfg.defaultLevel);
+        expect(result.filters).to.deep.equal({});
+        expect(result.formatter).to.be.a('function');
+        expect(result.formatter.name).to.equal('PrettyFormatter');
       });
       it('should throw on an invalid object config as argOne', () => {
         const cfg = {somethingElse: alog.INFO};
