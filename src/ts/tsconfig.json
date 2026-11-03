@@ -1,18 +1,19 @@
 {
   "declarations": true,
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "node16",
     "esModuleInterop": true,
-    "noImplicitAny": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "outDir": "dist",
     "declaration": true,
-    "baseUrl": ".",
+    "rootDir": "./src",
     "sourceMap": true,
     "lib": [
       "dom",
       "es2017"
-    ]
+    ],
+    "types": ["node"],
+
   },
   "include": [
     "src/**/*"
