@@ -35,7 +35,7 @@ import {
 
 // Validation //////////////////////////////////////////////////////////////////
 
-function isValidLevel(lvl: any) {
+export function isValidLevel(lvl: any): boolean {
   if (typeof lvl === 'number') {
     return Number.isInteger(lvl) && lvl > 0;
   } else if (typeof lvl === 'string') {
@@ -45,14 +45,14 @@ function isValidLevel(lvl: any) {
   }
 }
 
-function isValidFilterConfig(filterConfig: any) {
+export function isValidFilterConfig(filterConfig: any): boolean {
   return Object.keys(filterConfig).reduce((obj: {[key: string]: boolean}, key: string) => {
     obj.isValid = obj.isValid && isValidLevel(filterConfig[key]);
     return obj;
   }, {isValid: true}).isValid;
 }
 
-function isValidConfig(configObject: any): boolean {
+export function isValidConfig(configObject: any): boolean {
 
   // defaultLevel
   if (!isValidLevel(configObject.defaultLevel)) {
@@ -88,7 +88,7 @@ function isValidConfig(configObject: any): boolean {
 
 // Configure Implementation ////////////////////////////////////////////////////
 
-function levelFromArg(level: string | number): number {
+export function levelFromArg(level: string | number): number {
   if (typeof level === 'string') {
     if (isValidLevel(level)) {
       return AlogCoreSingleton.levelFromName[level];
@@ -104,7 +104,7 @@ function levelFromArg(level: string | number): number {
   }
 }
 
-function filtersFromArg(filters: FilterMap | string): FilterMap {
+export function filtersFromArg(filters: FilterMap | string): FilterMap {
 
   if (filters === null || filters === undefined) {
     return {};
@@ -130,7 +130,7 @@ function filtersFromArg(filters: FilterMap | string): FilterMap {
   throw new AlogConfigError(`Invalid argument type for filters: [${typeof filters}]`);
 }
 
-function formatterFromArg(formatter: FormatterFunc | string) {
+export function formatterFromArg(formatter: FormatterFunc | string): FormatterFunc {
   if (typeof formatter === 'function') {
     // If it's a function, just use it (and hope it's a valid one!)
     return formatter;
@@ -145,7 +145,7 @@ function formatterFromArg(formatter: FormatterFunc | string) {
   throw new AlogConfigError(`Invalid formatter argument type: ${typeof formatter}`);
 }
 
-function parseConfigureArgs(
+export function parseConfigureArgs(
   argOne: AlogConfig | string | number,
   filters?: FilterMap| string,
   formatter?: string | FormatterFunc): AlogConfig {
@@ -231,6 +231,10 @@ export function configure(
   // Set the current defaults
   const config: AlogConfig = parseConfigureArgs(argOne, filters, formatter);
   instance.setDefaultLevel(config.defaultLevel);
-  instance.setFilters(config.filters);
-  instance.setFormatter(config.formatter);
+  if (config.filters !== undefined) {
+    instance.setFilters(config.filters);
+  }
+  if (config.formatter !== undefined) {
+    instance.setFormatter(config.formatter);
+  }
 }

@@ -102,12 +102,12 @@ export class AlogCoreSingleton {
   // Private Member Data //
   /////////////////////////
 
-  private defaultLevel: number;
-  private filters: FilterMap;
-  private formatter: FormatterFunc;
-  private numIndent: number;
-  private metadata: LogMetadata;
-  private streams: Writable[];
+  private defaultLevel!: number;
+  private filters!: FilterMap;
+  private formatter!: FormatterFunc;
+  private numIndent!: number;
+  private metadata!: LogMetadata;
+  private streams!: Writable[];
 
   // Private constructor
   private constructor() {
