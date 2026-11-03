@@ -45,7 +45,7 @@ import {
 ////////////////////////////////////////////////////////////////////////////////
 
 // Map from level to 4-character string for pretty-print header
-const prettyLevelNames: {[key: number]: string} = {
+export const prettyLevelNames: {[key: number]: string} = {
   [FATAL]: "FATL",
   [ERROR]: "ERRR",
   [WARNING]: "WARN",
@@ -59,7 +59,7 @@ const prettyLevelNames: {[key: number]: string} = {
 }
 
 // The pretty-print representation of an indentation
-const prettyIndentation = '  ';
+export const prettyIndentation = '  ';
 
 export function PrettyFormatter(record: any, channelLength: number = 5): string {
 
