@@ -26,6 +26,8 @@ package alog
 
 import (
 	// Standard
+	"fmt"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -275,6 +277,50 @@ func Test_Alog_GID(t *testing.T) {
 		ExpEntry{channel: "MAIN ", level: "INFO", body: "Done with 3", hasGid: true},
 		ExpEntry{channel: "MAIN ", level: "INFO", body: "All goroutines done", hasGid: true},
 	}))
+
+	// Reset for next test
+	ResetDefaults()
+}
+
+////
+// GID padding - Verify that pretty-print headers stay aligned as goroutine IDs
+// of different widths are logged
+//
+// 1) Pad IDs of growing and shrinking widths
+//  -> Each ID is padded to the widest ID seen so far, which never shrinks
+// 2) Log a line once a wide ID has been seen
+//  -> The header pads this goroutine's ID to the same width
+// 3) Reset the defaults
+//  -> The width starts over
+////
+func Test_Alog_GIDPadding(t *testing.T) {
+
+	// Pad directly, since real goroutine IDs can't be chosen
+	ResetDefaults()
+	assert.Equal(t, "7", std.padGID(7))
+	assert.Equal(t, "123", std.padGID(123))
+	assert.Equal(t, "7  ", std.padGID(7))
+	assert.Equal(t, "45 ", std.padGID(45))
+	assert.Equal(t, "123456", std.padGID(123456))
+	assert.Equal(t, "123   ", std.padGID(123))
+
+	// Log a line from this goroutine after the wide ID above
+	entries := []string{}
+	ConfigStdLogWriter(&entries)
+	ConfigDefaultLevel(DEBUG3)
+	EnableGID()
+	Log("MAIN", INFO, "Aligned")
+	gidStr := strconv.FormatUint(getGID(), 10)
+	if assert.Equal(t, 1, len(entries)) {
+		assert.Contains(t, entries[0], fmt.Sprintf("[MAIN :INFO:%-6s] Aligned", gidStr))
+	}
+	assert.True(t, VerifyLogs(entries, []ExpEntry{
+		ExpEntry{channel: "MAIN ", level: "INFO", body: "Aligned", hasGid: true},
+	}))
+
+	// Reset clears the width
+	ResetDefaults()
+	assert.Equal(t, "7", std.padGID(7))
 
 	// Reset for next test
 	ResetDefaults()

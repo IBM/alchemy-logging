@@ -90,10 +90,10 @@ func matchExp(entry string, exp ExpEntry, verbose bool) bool {
 	//  This section is optional, so may be empty
 	// - "\\[([^:]*):" - Open the bracketed header and parse the channel
 	// - "([^\\]:]*)" - Parse the level
-	// - "([^\\]\\s]*)\\]" - Parse the thread id if present (optional)
+	// - "([^\\]\\s]*) *\\]" - Parse the thread id if present (optional) and its padding
 	// - " ([\\s]*)" - Parse the indentation whitespace
 	// - "([^\\s].*)\n$" - Parse the message to the end of the line
-	r := regexp.MustCompile("^[0-9/]* [0-9:]* ([^\\]]*)\\[([^:]*):([^\\]:]*)([^\\]\\s]*)\\] ([\\s]*)([^\\s].*)\n$")
+	r := regexp.MustCompile("^[0-9/]* [0-9:]* ([^\\]]*)\\[([^:]*):([^\\]:]*)([^\\]\\s]*) *\\] ([\\s]*)([^\\s].*)\n$")
 
 	// Parse the log with the regex and make sure there's a (possibly empty) match
 	// for each of the regex groups.
