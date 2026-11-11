@@ -15,7 +15,7 @@ include(cmake/CPM.cmake)
 CPMAddPackage(
   NAME nlohmann_json
   GITHUB_REPOSITORY nlohmann/json
-  VERSION 3.9.1
+  VERSION 3.12.0
   GIT_SHALLOW true
   OPTIONS
     "JSON_BuildTests OFF"
