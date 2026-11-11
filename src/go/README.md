@@ -169,7 +169,7 @@ In addition to the standard configuration for default level and filters, there a
 
 1. `SetMaxChannelLen`: Set the truncation length for channel strings in the header.
 
-1. `EnableGID`/`DisableGID`: These functions enable or disable printing the numeric goroutine ID as part of the log statement header.
+1. `EnableGID`/`DisableGID`: These functions enable or disable printing the numeric goroutine ID as part of the log statement header. In the pretty-print format the ID is padded to the widest ID logged so far, so the headers line up.
 
 1. `EnableFullFuncSig`/`DisableFullFuncSig`: These functions enable or disable printing the full function signature as part of the `FnLog` functions.
 

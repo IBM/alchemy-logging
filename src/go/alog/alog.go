@@ -35,6 +35,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -138,6 +139,11 @@ type alogger struct {
 	// Bool to enable/disable displaying the goroutine ID in the header
 	enableGID bool
 
+	// Width of the widest goroutine ID shown in a pretty-print header so far.
+	// Shorter IDs are padded to it so that headers line up. It only grows, and
+	// it is updated atomically since headers are formatted under the read lock.
+	gidHeaderLen int32
+
 	// Bool to enable/disable displaying the full function signature for FnLog
 	fullFuncSig bool
 
@@ -181,6 +187,22 @@ func getGID() uint64 {
 	b = b[:bytes.IndexByte(b, ' ')]
 	n, _ := strconv.ParseUint(string(b), 10, 64)
 	return n
+}
+
+// Format a goroutine ID for the pretty-print header, right-padded with spaces
+// to the widest ID seen so far. A wider ID raises the width for later lines.
+func (cfg *alogger) padGID(gid uint64) string {
+	gidStr := strconv.FormatUint(gid, 10)
+	width := int32(len(gidStr))
+	for {
+		maxWidth := atomic.LoadInt32(&cfg.gidHeaderLen)
+		if width <= maxWidth {
+			return gidStr + strings.Repeat(" ", int(maxWidth-width))
+		}
+		if atomic.CompareAndSwapInt32(&cfg.gidHeaderLen, maxWidth, width) {
+			return gidStr
+		}
+	}
 }
 
 // The primary "enabled" check to preempt work when not needed
@@ -234,6 +256,7 @@ func (cfg *alogger) reset() {
 	cfg.indentMap = map[uint64]int{}
 	cfg.enableIndent = true
 	cfg.enableGID = false
+	atomic.StoreInt32(&cfg.gidHeaderLen, 0)
 	cfg.fullFuncSig = false
 	cfg.serviceName = ""
 	cfg.formatter = StdLogFormatter{}
@@ -284,7 +307,7 @@ func (p StdLogFormatter) makeHeader(e LogEntry) string {
 	gidString := ""
 	gid := getGID()
 	if std.enableGID {
-		gidString = fmt.Sprintf(":%d", gid)
+		gidString = ":" + std.padGID(gid)
 	}
 
 	// Get the indent string
